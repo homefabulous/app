@@ -1,0 +1,973 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67e7d2c9d13d75fc15dd90b4"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Habit Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #5e72e4;
+            --secondary-color: #f7fafc;
+            --success-color: #48bb78;
+            --error-color: #f56565;
+            --text-color: #2d3748;
+            --light-gray: #edf2f7;
+            --gray: #e2e8f0;
+            --dark-gray: #a0aec0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .month-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--secondary-color);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .month-title {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .month-selector {
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .month-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .month-nav button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        .month-nav button:hover {
+            background-color: var(--gray);
+        }
+
+        .month-bracket {
+            padding: 20px;
+        }
+
+        .days-header {
+            display: grid;
+            grid-template-columns: 200px repeat(31, 1fr);
+            gap: 5px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .day-cell {
+            min-width: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+
+        .day-cell.inactive {
+            color: var(--gray);
+        }
+
+        .habits-container {
+            display: grid;
+            grid-template-columns: 200px repeat(31, 1fr);
+            gap: 5px;
+            overflow-x: auto;
+        }
+
+        .habit-row {
+            display: contents;
+        }
+
+        .habit-name-container {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            left: 0;
+            background-color: white;
+            transition: all 0.2s;
+            border-radius: 5px;
+        }
+
+        .habit-name-container:hover {
+            background-color: var(--light-gray);
+        }
+
+        .habit-name {
+            flex-grow: 1;
+            cursor: pointer;
+            padding-right: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .delete-habit-btn {
+            background: none;
+            border: none;
+            color: var(--dark-gray);
+            cursor: button;
+            opacity: 0;
+            transition: all 0.2s;
+            padding: 5px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .habit-name-container:hover .delete-habit-btn {
+            opacity: 1;
+        }
+
+        .delete-habit-btn:hover {
+            color: var(--error-color);
+            background-color: rgba(245, 101, 101, 0.1);
+        }
+
+        .habit-name.editable {
+            padding: 0;
+        }
+
+        .habit-name-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--primary-color);
+            border-radius: 5px;
+            font-size: inherit;
+            font-weight: inherit;
+            outline: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .habit-day {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 40px;
+        }
+
+        .habit-day.inactive {
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--gray);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .checkbox:hover {
+            border-color: var(--primary-color);
+        }
+
+        .checkbox.checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .checkbox.checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 10px;
+            color: white;
+        }
+
+        .streak-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: var(--secondary-color);
+            border-top: 1px solid var(--gray);
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .streak-title {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .streak-bar {
+            height: 20px;
+            background-color: var(--light-gray);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .streak-progress {
+            height: 100%;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            width: 0;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .streak-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
+        .add-habit {
+            display: flex;
+            padding: 20px;
+            background-color: white;
+        }
+
+        .add-habit input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--gray);
+            border-radius: 5px;
+            margin-right: 10px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .add-habit input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .add-habit button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .add-habit button:hover {
+            background-color: #4a5dce;
+        }
+
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-cancel {
+            background-color: white;
+            border: 1px solid var(--gray);
+            color: var(--text-color);
+        }
+
+        .modal-btn-cancel:hover {
+            background-color: var(--light-gray);
+        }
+
+        .modal-btn-confirm {
+            background-color: var(--error-color);
+            border: 1px solid var(--error-color);
+            color: white;
+        }
+
+        .modal-btn-confirm:hover {
+            background-color: #e53e3e;
+            border-color: #e53e3e;
+        }
+
+        @media (max-width: 768px) {
+            .days-header, .habits-container {
+                grid-template-columns: 150px repeat(31, 1fr);
+            }
+            
+            .month-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .add-habit {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .add-habit input {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Year dropdown styles */
+        .year-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .year-dropdown-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .year-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 100px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            z-index: 1;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 300px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .year-dropdown-content a {
+            color: var(--text-color);
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.2s;
+        }
+
+        .year-dropdown-content a:hover {
+            background-color: var(--light-gray);
+        }
+
+        .year-dropdown:hover .year-dropdown-content {
+            display: block;
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--text-color);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Habit Tracker</h1>
+        </header>
+
+        <div class="month-display">
+            <div class="month-title">
+                <select class="month-selector" id="month-selector">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+                <div class="year-dropdown">
+                    <button class="year-dropdown-btn" id="current-year">
+                        <span id="year-display">2023</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="year-dropdown-content" id="year-dropdown">
+                        <!-- Years will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            <div class="month-nav">
+                <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <div class="month-bracket">
+            <div class="days-header" id="days-header">
+                <div class="habit-name">Habits</div>
+                <!-- Day numbers will be populated by JavaScript -->
+            </div>
+
+            <div class="habits-container" id="habits-container">
+                <!-- Habit rows will be added here -->
+            </div>
+        </div>
+
+        <div class="add-habit">
+            <input type="text" id="new-habit" placeholder="Add a new habit...">
+            <button id="add-habit-btn">Add Habit</button>
+        </div>
+
+        <div class="streak-container">
+            <div class="streak-title">
+                <span>Current Month's Progress</span>
+            </div>
+            <div class="streak-bar">
+                <div class="streak-progress" id="streak-progress"></div>
+            </div>
+            <div class="streak-stats">
+                <div>Completion Rate: <span id="completion-rate">0%</span></div>
+                <div>Days Completed: <span id="days-completed">0</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmation-modal">
+        <div class="modal-content">
+            <div class="modal-title">Delete Habit</div>
+            <p>Are you sure you want to delete this habit? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" id="modal-confirm">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize habit data
+            let habits = [];
+            let currentStreak = 0;
+            let habitToDelete = null;
+
+            // Current date management
+            let currentDate = new Date();
+            let currentMonth = currentDate.getMonth();
+            let currentYear = currentDate.getFullYear();
+            let daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            // DOM elements
+            const habitsContainer = document.getElementById('habits-container');
+            const daysHeader = document.getElementById('days-header');
+            const newHabitInput = document.getElementById('new-habit');
+            const addHabitBtn = document.getElementById('add-habit-btn');
+            const completionRate = document.getElementById('completion-rate');
+            const daysCompletedSpan = document.getElementById('days-completed');
+            const streakProgress = document.getElementById('streak-progress');
+            const monthSelector = document.getElementById('month-selector');
+            const prevMonthBtn = document.getElementById('prev-month');
+            const nextMonthBtn = document.getElementById('next-month');
+            const yearDisplay = document.getElementById('year-display');
+            const yearDropdown = document.getElementById('year-dropdown');
+            const currentYearBtn = document.getElementById('current-year');
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const modalCancel = document.getElementById('modal-cancel');
+            const modalConfirm = document.getElementById('modal-confirm');
+
+            // Initialize UI
+            function initialize() {
+                // Set current month in selector
+                monthSelector.selectedIndex = currentMonth;
+                yearDisplay.textContent = currentYear;
+                
+                // Populate year dropdown (10 years range)
+                for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                    const yearOption = document.createElement('a');
+                    yearOption.href = '#';
+                    yearOption.textContent = year;
+                    yearOption.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        currentYear = year;
+                        yearDisplay.textContent = year;
+                        daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                        updateMonthDisplay();
+                        renderDaysHeader();
+                        renderHabits();
+                        updateStats();
+                    });
+                    yearDropdown.appendChild(yearOption);
+                }
+                
+                // Load habits from localStorage or initialize
+                loadHabits();
+                updateMonthDisplay();
+                renderDaysHeader();
+                renderHabits();
+                updateStats();
+            }
+
+            // Update month display (show month name and year)
+            function updateMonthDisplay() {
+                const monthNames = ["January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"];
+                document.querySelector('.month-title').firstElementChild.value = currentMonth;
+                yearDisplay.textContent = currentYear;
+            }
+
+            // Render days header based on current month and year
+            function renderDaysHeader() {
+                // Clear existing day cells (keep first cell - "Habits")
+                while (daysHeader.children.length > 1) {
+                    daysHeader.removeChild(daysHeader.lastChild);
+                }
+                
+                daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                
+                // Add day numbers for current month
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dayCell = document.createElement('div');
+                    dayCell.className = 'day-cell';
+                    
+                    // Show weekday
+                    const date = new Date(currentYear, currentMonth, i);
+                    const weekday = date.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
+                    dayCell.textContent = `${i} (${weekday})`;
+                    
+                    daysHeader.appendChild(dayCell);
+                }
+                
+                // Add inactive days for months with < 31 days
+                for (let i = daysInMonth + 1; i <= 31; i++) {
+                    const dayCell = document.createElement('div');
+                    dayCell.className = 'day-cell inactive';
+                    dayCell.textContent = i;
+                    daysHeader.appendChild(dayCell);
+                }
+            }
+
+            // Month navigation
+            function changeMonth(offset) {
+                currentMonth += offset;
+                
+                // Handle year transition
+                if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                } else if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                
+                // Update UI
+                monthSelector.selectedIndex = currentMonth;
+                yearDisplay.textContent = currentYear;
+                daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                
+                updateMonthDisplay();
+                renderDaysHeader();
+                renderHabits();
+                updateStats();
+                saveHabits(); // Save habits when switching months
+            }
+
+            // Month selector change
+            monthSelector.addEventListener('change', function() {
+                currentMonth = parseInt(this.value);
+                daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                updateMonthDisplay();
+                renderDaysHeader();
+                renderHabits();
+                updateStats();
+                saveHabits(); // Save habits when switching months
+            });
+
+            // Month navigation buttons
+            prevMonthBtn.addEventListener('click', function() {
+                changeMonth(-1);
+            });
+
+            nextMonthBtn.addEventListener('click', function() {
+                changeMonth(1);
+            });
+
+            // Add habit
+            addHabitBtn.addEventListener('click', function() {
+                const habitName = newHabitInput.value.trim();
+                if (habitName) {
+                    addHabit(habitName);
+                    newHabitInput.value = '';
+                }
+            });
+
+            // Also add habit on Enter key
+            newHabitInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addHabitBtn.click();
+                }
+            });
+
+            // Modal actions
+            modalCancel.addEventListener('click', function() {
+                closeDeleteModal();
+            });
+
+            modalConfirm.addEventListener('click', function() {
+                if (habitToDelete) {
+                    deleteHabit(habitToDelete);
+                }
+                closeDeleteModal();
+            });
+
+            // Function to add a new habit
+            function addHabit(name) {
+                const monthYearKey = `${currentMonth}-${currentYear}`;
+                
+                const habit = {
+                    id: Date.now(),
+                    name: name,
+                    // Store completion data for each month separately
+                    completionData: {
+                        [monthYearKey]: Array(daysInMonth).fill(false) // Initialize for current month
+                    }
+                };
+                
+                habits.push(habit);
+                renderHabit(habit);
+                updateStats();
+                saveHabits();
+            }
+
+            // Function to render all habits
+            function renderHabits() {
+                // Clear existing habits
+                habitsContainer.innerHTML = '';
+                
+                // Render each habit
+                habits.forEach(habit => {
+                    renderHabit(habit);
+                });
+            }
+
+            // Function to render a habit row
+            function renderHabit(habit) {
+                const row = document.createElement('div');
+                row.className = 'habit-row';
+                row.dataset.id = habit.id;
+
+                // Habit name container
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'habit-name-container';
+
+                // Habit name
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'habit-name';
+                nameSpan.textContent = habit.name;
+                nameSpan.addEventListener('click', function() {
+                    editHabitName(habit, nameSpan, nameContainer);
+                });
+
+                // Delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-habit-btn';
+                deleteBtn.title = 'Delete habit';
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showDeleteModal(habit.id);
+                });
+
+                nameContainer.appendChild(nameSpan);
+                nameContainer.appendChild(deleteBtn);
+                row.appendChild(nameContainer);
+
+                // Get or initialize completion data for current month
+                const monthYearKey = `${currentMonth}-${currentYear}`;
+                if (!habit.completionData[monthYearKey]) {
+                    habit.completionData[monthYearKey] = Array(daysInMonth).fill(false);
+                    saveHabits(); // Save the initialized array
+                }
+
+                const currentMonthCompletion = habit.completionData[monthYearKey];
+
+                // Add day checkboxes
+                for (let i = 0; i < 31; i++) {
+                    const dayCell = document.createElement('div');
+                    dayCell.className = i < daysInMonth ? 'habit-day': 'habit-day inactive';
+
+                    if (i < daysInMonth) {
+                        const checkbox = document.createElement('div');
+                        checkbox.className = `checkbox ${currentMonthCompletion[i] ? 'checked' : ''}`;
+                        checkbox.dataset.day = i;
+
+                        checkbox.addEventListener('click', function() {
+                            currentMonthCompletion[i] = !currentMonthCompletion[i];
+                            this.classList.toggle('checked');
+                            updateStats();
+                            saveHabits();
+                        });
+
+                        dayCell.appendChild(checkbox);
+                    }
+
+                    row.appendChild(dayCell);
+                }
+
+                habitsContainer.appendChild(row);
+            }
+
+            // Function to show delete confirmation modal
+            function showDeleteModal(habitId) {
+                habitToDelete = habitId;
+                confirmationModal.style.display = 'flex';
+            }
+
+            // Function to close delete confirmation modal
+            function closeDeleteModal() {
+                habitToDelete = null;
+                confirmationModal.style.display = 'none';
+            }
+
+            // Function to delete a habit
+            function deleteHabit(habitId) {
+                // Remove from habits array
+                habits = habits.filter(habit => habit.id !== habitId);
+                
+                // Remove from DOM
+                const habitRow = document.querySelector(`.habit-row[data-id="${habitId}"]`);
+                if (habitRow) {
+                    habitRow.remove();
+                }
+                
+                updateStats();
+                saveHabits();
+            }
+
+            // Function to edit habit name
+            function editHabitName(habit, nameSpan, container) {
+                const currentName = nameSpan.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'habit-name-input';
+                input.value = currentName;
+                input.focus();
+
+                container.style.padding = '0';
+                nameSpan.style.display = 'none';
+                container.insertBefore(input, container.firstChild);
+
+                const handleBlur = function() {
+                    const newName = input.value.trim();
+                    if (newName && newName !== currentName) {
+                        habit.name = newName;
+                        nameSpan.textContent = newName;
+                        saveHabits();
+                    } else {
+                        nameSpan.textContent = currentName;
+                    }
+                    container.style.padding = '10px';
+                    nameSpan.style.display = 'block';
+                    container.removeChild(input);
+                };
+
+                input.addEventListener('blur', handleBlur);
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        input.blur();
+                    }
+                });
+            }
+
+            // Calculate and update statistics
+            function updateStats() {
+                let totalCompletedDays = 0;
+                
+                const monthYearKey = `${currentMonth}-${currentYear}`;
+                const today = new Date();
+                const isCurrentMonth = currentMonth === today.getMonth() && currentYear === today.getFullYear();
+                const todayDate = isCurrentMonth ? today.getDate() : daysInMonth;
+                
+                habits.forEach(habit => {
+                    // Ensure we have completion data for this month
+                    if (!habit.completionData[monthYearKey]) {
+                        habit.completionData[monthYearKey] = Array(daysInMonth).fill(false);
+                    }
+                    
+                    // Count completed days for current month
+                    for (let day = 0; day < todayDate; day++) {
+                        if (habit.completionData[monthYearKey][day]) {
+                            totalCompletedDays++;
+                        }
+                    }
+                });
+
+                // Calculate completion percentage
+                const possibleDays = habits.length * daysInMonth;
+                const completionPercentage = possibleDays > 0 
+                    ? Math.round((totalCompletedDays / possibleDays) * 100) 
+                    : 0;
+                
+                // Update UI
+                completionRate.textContent = `${completionPercentage}%`;
+                daysCompletedSpan.textContent = totalCompletedDays;
+                streakProgress.style.width = `${completionPercentage}%`;
+            }
+
+            // Save habits to localStorage
+            function saveHabits() {
+                localStorage.setItem('habits', JSON.stringify(habits));
+            }
+
+            // Load habits from localStorage
+            function loadHabits() {
+                const savedHabits = localStorage.getItem('habits');
+                if (savedHabits) {
+                    habits = JSON.parse(savedHabits);
+                    
+                    // Ensure each habit has completionData structure
+                    habits.forEach(habit => {
+                        if (!habit.completionData) {
+                            habit.completionData = {};
+                        }
+                        
+                        const monthYearKey = `${currentMonth}-${currentYear}`;
+                        if (!habit.completionData[monthYearKey]) {
+                            habit.completionData[monthYearKey] = Array(daysInMonth).fill(false);
+                        }
+                    });
+                }
+            }
+
+            // Initialize the app
+            initialize();
+        });
+    </script>
+</body>
+</html>
