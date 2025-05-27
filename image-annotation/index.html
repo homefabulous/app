@@ -1,0 +1,672 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"657827321bf8e371c4d23399"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Annotation Tool with Shapes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .annotation-marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: #f00;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .annotation-marker:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+        .annotation-marker::after {
+            content: attr(data-label);
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .annotation-marker:hover::after {
+            opacity: 1;
+        }
+        #image-container {
+            position: relative;
+            display: inline-block;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 100%;
+        }
+        #uploaded-image {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+        }
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .coordinates-table {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .highlighted {
+            animation: pulse 1s infinite;
+        }
+        .shape {
+            stroke-width: 2px;
+            fill-opacity: 0.2;
+            stroke-linejoin: round;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-700 mb-2">
+                <i class="fas fa-shapes mr-2"></i>Advanced Image Annotation Tool
+            </h1>
+            <p class="text-gray-600">Draw bounding boxes or polygons on the image and view annotations</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel - Upload and Controls -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-md">
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2" for="image-upload">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i>Upload Image
+                    </label>
+                    <input type="file" id="image-upload", accept="image/*" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2" for="annotation-label">
+                        <i class="fas fa-tag mr-2"></i>Annotation Label
+                    </label>
+                    <input type="text" id="annotation-label" placeholder="Enter label" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-drafting-compass mr-2"></i>Annotation Type
+                    </label>
+                    <select id="annotation-type" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="point">Point</option>
+                        <option value="bbox">Bounding Box (bbox)</option>
+                        <option value="polygon">Polygon</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-palette mr-2"></i>Shape Color
+                    </label>
+                    <div class="flex space-x-2">
+                        <button data-color="#FF0000" class="color-btn w-8 h-8 rounded-full bg-red-500 border-2 border-white focus:outline-none focus:ring-2 focus:ring-gray-400"></button>
+                        <button data-color="#00FF00" class="color-btn w-8 h-8 rounded-full bg-green-500 border-2 border-white focus:outline-none focus:ring-2 focus:ring-gray-400"></button>
+                        <button data-color="#0000FF" class="color-btn w-8 h-8 rounded-full bg-blue-500 border-2 border-white focus:outline-none focus:ring-2 focus:ring-gray-400"></button>
+                        <button data-color="#FFFF00" class="color-btn w-8 h-8 rounded-full bg-yellow-500 border-2 border-white focus:outline-none focus:ring-2 focus:ring-gray-400"></button>
+                        <button data-color="#FF00FF" class="color-btn w-8 h-8 rounded-full bg-purple-500 border-2 border-white focus:outline-none focus:ring-2 focus:ring-gray-400"></button>
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button id="clear-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-trash-alt mr-2"></i>Clear All
+                    </button>
+                    <button id="export-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition duration-200">
+                        <i class="fas fa-file-export mr-2"></i>Export Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Center Panel - Image with Annotations -->
+            <div class="lg:col-span-2">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div id="image-container" class="mx-auto">
+                        <div id="drop-zone" class="flex items-center justify-center p-12 border-2 border-dashed border-gray-300 rounded-lg text-center">
+                            <div>
+                                <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-500">Upload an image or drag & drop here</p>
+                            </div>
+                        </div>
+                        <img id="uploaded-image" class="hidden">
+                        <canvas id="canvas-overlay" class="hidden"></canvas>
+                    </div>
+                </div>
+
+                <!-- Annotations Table -->
+                <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-4">
+                        <i class="fas fa-list-ul mr-2"></i>Annotations List
+                    </h3>
+                    <div class="coordinates-table">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coordinates</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Color</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coordinates-list" class="bg-white divide-y divide-gray-200">
+                                <!-- Coordinates will be added here dynamically -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state" class="text-center py-8 text-gray-500">
+                            <i class="fas fa-info-circle text-3xl mb-2"></i>
+                            <p>No annotations yet. Draw shapes on the image to add them.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const imageUpload = document.getElementById('image-upload');
+            const dropZone = document.getElementById('drop-zone');
+            const uploadedImage = document.getElementById('uploaded-image');
+            const imageContainer = document.getElementById('image-container');
+            const overlayCanvas = document.getElementById('canvas-overlay');
+            const annotationLabel = document.getElementById('annotation-label');
+            const annotationType = document.getElementById('annotation-type');
+            const colorButtons = document.querySelectorAll('.color-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const coordinatesList = document.getElementById('coordinates-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            // Canvas context
+            let ctx = overlayCanvas.getContext('2d');
+            
+            // State variables
+            let currentColor = '#FF0000';
+            let annotations = [];
+            let nextAnnotationId = 1;
+            let isDrawing = false;
+            let currentPoints = [];
+            let imgWidth, imgHeight;
+            
+            // Initialize
+            setupEventListeners();
+            
+            function setupEventListeners() {
+                // Image upload
+                imageUpload.addEventListener('change', handleImageUpload);
+                
+                // Drag and drop
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+                });
+                
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+                    
+                    if (e.dataTransfer.files.length) {
+                        imageUpload.files = e.dataTransfer.files;
+                        handleImageUpload();
+                    }
+                });
+                
+                // Color selection
+                colorButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        currentColor = button.dataset.color;
+                        colorButtons.forEach(btn => btn.classList.remove('ring-2', 'ring-gray-400'));
+                        button.classList.add('ring-2', 'ring-gray-400');
+                    });
+                });
+                
+                // Default select first color
+                colorButtons[0].classList.add('ring-2', 'ring-gray-400');
+                
+                // Clear button
+                clearBtn.addEventListener('click', clearAllAnnotations);
+                
+                // Export button
+                exportBtn.addEventListener('click', exportData);
+                
+                // Image mouse events for drawing
+                imageContainer.addEventListener('mousedown', startDrawing);
+                imageContainer.addEventListener('mousemove', drawShape);
+                imageContainer.addEventListener('mouseup', endDrawing);
+                imageContainer.addEventListener('mouseleave', endDrawing);
+            }
+            
+            function handleImageUpload() {
+                const file = imageUpload.files[0];
+                if (file && file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        uploadedImage.src = e.target.result;
+                        uploadedImage.onload = function() {
+                            // Set canvas dimensions to match image
+                            overlayCanvas.width = this.width;
+                            overlayCanvas.height = this.height;
+                            imgWidth = this.width;
+                            imgHeight = this.height;
+                            
+                            uploadedImage.classList.remove('hidden');
+                            overlayCanvas.classList.remove('hidden');
+                            dropZone.classList.add('hidden');
+                            
+                            // Clear previous annotations when new image is loaded
+                            clearAllAnnotations();
+                        };
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            function startDrawing(e) {
+                if (!uploadedImage.src || e.target !== uploadedImage) return;
+                
+                const annotationTypeVal = annotationType.value;
+                
+                if (annotationTypeVal === 'point') {
+                    // For points, just create the annotation immediately
+                    const rect = uploadedImage.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    createAnnotation({
+                        type: 'point',
+                        coordinates: [x, y],
+                        label: annotationLabel.value.trim() || 'Point'
+                    });
+                    
+                    annotationLabel.value = '';
+                    return;
+                }
+                
+                isDrawing = true;
+                currentPoints = [];
+                
+                const rect = uploadedImage.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                currentPoints.push({x, y});
+                
+                // Clear the canvas temporarily to show preview
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            }
+            
+            function drawShape(e) {
+                if (!isDrawing || !uploadedImage.src || e.target !== uploadedImage) return;
+                
+                const rect = uploadedImage.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // For bbox, we only need two points (start and current)
+                // For polygon, we collect all points
+                if (annotationType.value === 'bbox' && currentPoints.length === 2) {
+                    currentPoints[1] = {x, y};
+                } else {
+                    currentPoints.push({x, y});
+                }
+                
+                // Redraw all previous shapes
+                redrawCanvas();
+                
+                // Draw the current shape being drawn
+                ctx.save();
+                ctx.strokeStyle = currentColor;
+                ctx.fillStyle = currentColor;
+                
+                if (annotationType.value === 'bbox' && currentPoints.length >= 2) {
+                    // Draw bbox preview
+                    const start = currentPoints[0];
+                    const end = currentPoints[1] || {x, y};
+                    const width = end.x - start.x;
+                    const height = end.y - start.y;
+                    
+                    ctx.strokeRect(start.x, start.y, width, height);
+                    ctx.fillRect(start.x, start.y, width, height);
+                    ctx.globalAlpha = 0.2;
+                } else if (annotationType.value === 'polygon' && currentPoints.length >= 2) {
+                    // Draw polygon preview
+                    ctx.beginPath();
+                    ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+                    
+                    for (let i = 1; i < currentPoints.length; i++) {
+                        ctx.lineTo(currentPoints[i].x, currentPoints[i].y);
+                    }
+                    
+                    ctx.lineTo(x, y); // Current mouse position
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fill();
+                    ctx.globalAlpha = 0.2;
+                }
+                
+                ctx.restore();
+            }
+            
+            function endDrawing(e) {
+                if (!isDrawing || !uploadedImage.src) return;
+                
+                isDrawing = false;
+                
+                const annotationTypeVal = annotationType.value;
+                const label = annotationLabel.value.trim() || annotationTypeVal;
+                
+                if (annotationTypeVal === 'bbox' && currentPoints.length >= 2) {
+                    // Create bbox annotation [x1, y1, width, height]
+                    const start = currentPoints[0];
+                    const end = currentPoints[1];
+                    const width = end.x - start.x;
+                    const height = end.y - start.y;
+                    
+                    createAnnotation({
+                        type: 'bbox',
+                        coordinates: [start.x, start.y, width, height],
+                        label: label
+                    });
+                } else if (annotationTypeVal === 'polygon' && currentPoints.length >= 3) {
+                    // Create polygon annotation [[x1,y1], [x2,y2], ...]
+                    const points = currentPoints.map(p => [p.x, p.y]);
+                    createAnnotation({
+                        type: 'polygon',
+                        coordinates: points,
+                        label: label
+                    });
+                }
+                
+                // Clear current drawing
+                currentPoints = [];
+                annotationLabel.value = '';
+                annotationLabel.focus();
+            }
+            
+            function createAnnotation(annotation) {
+                // Add common properties
+                const fullAnnotation = {
+                    id: nextAnnotationId++,
+                    color: currentColor,
+                    ...annotation
+                };
+                
+                annotations.push(fullAnnotation);
+                redrawCanvas();
+                updateCoordinatesList();
+                
+                // Hide empty state if it's the first annotation
+                if (annotations.length === 1) {
+                    emptyState.classList.add('hidden');
+                }
+            }
+            
+            function redrawCanvas() {
+                // Clear canvas
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                
+                // Draw all annotations
+                annotations.forEach(annotation => {
+                    ctx.save();
+                    ctx.strokeStyle = annotation.color;
+                    ctx.fillStyle = annotation.color;
+                    
+                    if (annotation.type === 'point') {
+                        // Draw point
+                        const [x, y] = annotation.coordinates;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'white';
+                        ctx.stroke();
+                    } else if (annotation.type === 'bbox') {
+                        // Draw bounding box
+                        const [x, y, width, height] = annotation.coordinates;
+                        ctx.strokeRect(x, y, width, height);
+                        ctx.fillRect(x, y, width, height);
+                        ctx.globalAlpha = 0.2;
+                    } else if (annotation.type === 'polygon') {
+                        // Draw polygon
+                        const points = annotation.coordinates;
+                        if (points.length >= 3) {
+                            ctx.beginPath();
+                            ctx.moveTo(points[0][0], points[0][1]);
+                            
+                            for (let i = 1; i < points.length; i++) {
+                                ctx.lineTo(points[i][0], points[i][1]);
+                            }
+                            
+                            ctx.closePath();
+                            ctx.stroke();
+                            ctx.fill();
+                            ctx.globalAlpha = 0.2;
+                        }
+                    }
+                    
+                    ctx.restore();
+                });
+            }
+            
+            function highlightAnnotationInTable(id) {
+                // Remove highlight from all rows
+                document.querySelectorAll('#coordinates-list tr').forEach(row => {
+                    row.classList.remove('bg-indigo-50');
+                });
+                
+                // Highlight the corresponding row
+                const row = document.querySelector(`#coordinates-list tr[data-id="${id}"]`);
+                if (row) {
+                    row.classList.add('bg-indigo-50');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Find and highlight the annotation on canvas
+                    const annotation = annotations.find(a => a.id === id);
+                    if (annotation) {
+                        // Temporary highlight effect
+                        ctx.save();
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 3;
+                        
+                        if (annotation.type === 'point') {
+                            const [x, y] = annotation.coordinates;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 12, 0, Math.PI * 2);
+                            ctx.stroke();
+                        } else if (annotation.type === 'bbox') {
+                            const [x, y, width, height] = annotation.coordinates;
+                            ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+                        } else if (annotation.type === 'polygon') {
+                            const points = annotation.coordinates;
+                            if (points.length >= 3) {
+                                ctx.beginPath();
+                                ctx.moveTo(points[0][0], points[0][1]);
+                                for (let i = 1; i < points.length; i++) {
+                                    ctx.lineTo(points[i][0], points[i][1]);
+                                }
+                                ctx.closePath();
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        ctx.restore();
+                        
+                        // Remove highlight after 3 seconds
+                        setTimeout(() => {
+                            redrawCanvas();
+                        }, 3000);
+                    }
+                }
+            }
+            
+            function deleteAnnotation(id) {
+                // Remove from array
+                annotations = annotations.filter(annotation => annotation.id !== id);
+                
+                // Redraw canvas
+                redrawCanvas();
+                
+                // Update coordinates list
+                updateCoordinatesList();
+                
+                // Show empty state if no annotations left
+                if (annotations.length === 0) {
+                    emptyState.classList.remove('hidden');
+                }
+            }
+            
+            function updateCoordinatesList() {
+                coordinatesList.innerHTML = '';
+                
+                annotations.forEach(annotation => {
+                    const row = document.createElement('tr');
+                    row.dataset.id = annotation.id;
+                    row.className = 'hover:bg-gray-50 cursor-pointer';
+                    row.addEventListener('click', () => highlightAnnotationInTable(annotation.id));
+                    
+                    // Format coordinates based on type
+                    let coordinatesStr = '';
+                    if (annotation.type === 'point') {
+                        coordinatesStr = `[ ${annotation.coordinates[0]}, ${annotation.coordinates[1]} ]`;
+                    } else if (annotation.type === 'bbox') {
+                        coordinatesStr = `[ ${annotation.coordinates.join(', ')} ]`;
+                    } else if (annotation.type === 'polygon') {
+                        const pointsStr = annotation.coordinates.map(p => `[ ${p.join(', ')} ]`).join(', ');
+                        coordinatesStr = `[ ${pointsStr} ]`;
+                    }
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${annotation.label}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">${annotation.type}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 font-mono" style="word-break: break-word;">
+                            ${annotation.type}: ${coordinatesStr}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="w-3 h-3 rounded-full" style="background-color: ${annotation.color}"></div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="text-red-600 hover:text-red-900 delete-row" data-id="${annotation.id}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    coordinatesList.appendChild(row);
+                });
+                
+                // Add event listeners to delete buttons
+                document.querySelectorAll('.delete-row').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = parseInt(this.dataset.id);
+                        deleteAnnotation(id);
+                    });
+                });
+            }
+            
+            function clearAllAnnotations() {
+                // Clear annotations array
+                annotations = [];
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                
+                // Update coordinates list
+                updateCoordinatesList();
+                
+                // Show empty state
+                emptyState.classList.remove('hidden');
+            }
+            
+            function exportData() {
+                if (annotations.length === 0) {
+                    alert('No annotations to export');
+                    return;
+                }
+                
+                // Convert absolute coordinates to relative (percentage) if needed
+                const exportedAnnotations = annotations.map(anno => {
+                    const coords = JSON.parse(JSON.stringify(anno.coordinates));
+                    
+                    if (anno.type === 'point') {
+                        return {
+                            ...anno,
+                            coordinates: [
+                                Math.round((coords[0] / imgWidth) * 1000) / 1000,
+                                Math.round((coords[1] / imgHeight) * 1000) / 1000
+                            ]
+                        };
+                    } else if (anno.type === 'bbox') {
+                        return {
+                            ...anno,
+                            coordinates: [
+                                Math.round((coords[0] / imgWidth) * 1000) / 1000,
+                                Math.round((coords[1] / imgHeight) * 1000) / 1000,
+                                Math.round((coords[2] / imgWidth) * 1000) / 1000,
+                                Math.round((coords[3] / imgHeight) * 1000) / 1000
+                            ]
+                        };
+                    } else if (anno.type === 'polygon') {
+                        return {
+                            ...anno,
+                            coordinates: coords.map(point => [
+                                Math.round((point[0] / imgWidth) * 1000) / 1000,
+                                Math.round((point[1] / imgHeight) * 1000) / 1000
+                            ])
+                        };
+                    }
+                    return anno;
+                });
+                
+                const data = {
+                    image: uploadedImage.src,
+                    imageWidth: imgWidth,
+                    imageHeight: imgHeight,
+                    annotations: exportedAnnotations
+                };
+                
+                const dataStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'annotations.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
+</body>
+</html>
