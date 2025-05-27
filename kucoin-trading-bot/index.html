@@ -1,0 +1,1469 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"66044204b87a6331d6c88b97"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KuCoin Futures Trading Agent</title>
+    <script src="https://cdn.jsdelivr.net/npm/ccxt@2.7.93/dist/ccxt.browser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e;
+            color: #e6e6e6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #40c9ff;
+        }
+        .card {
+            background-color: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .card-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #40c9ff;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            background-color: #1a1a2e;
+            color: #fff;
+            font-size: 14px;
+        }
+        button {
+            background-color: #40c9ff;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background-color: #00a1e4;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #5a6268;
+        }
+        button.success {
+            background-color: #28a745;
+        }
+        button.success:hover {
+            background-color: #218838;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #16213e;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #40c9ff;
+            color: #000;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected {
+            background-color: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+        .status-disconnected {
+            background-color: #F44336;
+        }
+        .order {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+        }
+        .order.buy {
+            color: #4CAF50;
+        }
+        .order.sell {
+            color: #F44336;
+        }
+        .log {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #1a1a2e;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px;
+        }
+        .log-entry.info {
+            color: #40c9ff;
+        }
+        .log-entry.success {
+            color: #4CAF50;
+        }
+        .log-entry.error {
+            color: #F44336;
+        }
+        .log-entry.warning {
+            color: #FFC107;
+        }
+        .strategy-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .strategy-box {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .strategy-box:hover {
+            border-color: #40c9ff;
+        }
+        .strategy-box.selected {
+            border-color: #40c9ff;
+            background-color: rgba(64, 201, 255, 0.1);
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .backtest-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #1a1a2e;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+        .backtest-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .metric-card {
+            background-color: #16213e;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #40c9ff;
+            margin-top: 5px;
+        }
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: #1a1a2e;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #40c9ff;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #000;
+            font-weight: bold;
+        }
+        .trade-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .trade-item {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .trade-item.buy {
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        .trade-item.sell {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #40c9ff;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">KuCoin Futures Trading Agent</div>
+            <div>
+                <span id="connection-status" class="status-indicator status-disconnected"></span>
+                <span id="connection-text">Disconnected</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="card">
+                    <div class="card-title">API Configuration</div>
+                    <input type="text" id="api-key" placeholder="KuCoin API Key">
+                    <input type="password" id="api-secret" placeholder="KuCoin API Secret">
+                    <input type="password" id="api-passphrase" placeholder="KuCoin API Passphrase">
+                    <button id="connect-button">Connect to KuCoin</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Strategy Configuration</div>
+                    
+                    <div class="strategy-selector">
+                        <div class="strategy-box" data-strategy="trend_following">Trend Following</div>
+                        <div class="strategy-box" data-strategy="mean_reversion">Mean Reversion</div>
+                        <div class="strategy-box" data-strategy="breakout">Breakout</div>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" data-tab="parameters">Parameters</div>
+                        <div class="tab" data-tab="risk">Risk Management</div>
+                        <div class="tab" data-tab="backtest">Backtesting</div>
+                    </div>
+
+                    <div class="tab-content active" id="parameters-tab">
+                        <select id="symbol">
+                            <option value="BTC/USDT:USDT">BTC/USDT:USDT</option>
+                            <option value="ETH/USDT:USDT">ETH/USDT:USDT</option>
+                            <option value="SOL/USDT:USDT">SOL/USDT:USDT</option>
+                        </select>
+                        <select id="timeframe">
+                            <option value="1m">1 Minute</option>
+                            <option value="5m">5 Minutes</option>
+                            <option value="15m">15 Minutes</option>
+                            <option value="1h" selected>1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="1d">1 Day</option>
+                        </select>
+                        <input type="number" id="position-size" placeholder="Position Size (USDT)" value="100">
+                        <input type="number" id="leverage" placeholder="Leverage (1-100)" min="1" max="100" value="10">
+                    </div>
+
+                    <div class="tab-content" id="risk-tab">
+                        <input type="number" id="stop-loss" placeholder="Stop Loss (%)" value="5">
+                        <input type="number" id="take-profit" placeholder="Take Profit (%)" value="10">
+                        <input type="number" id="trailing-stop" placeholder="Trailing Stop (%)" value="2">
+                        <input type="number" id="max-daily-loss" placeholder="Max Daily Loss (%)" value="10">
+                    </div>
+
+                    <div class="tab-content" id="backtest-tab">
+                        <input type="number" id="backtest-period" placeholder="Backtest Period (Days)" value="30">
+                        <div class="btn-group">
+                            <button id="run-backtest" class="success">Run Backtest</button>
+                            <button id="export-backtest" class="secondary">Export Results</button>
+                        </div>
+                        <div class="progress-container">
+                            <div id="backtest-progress" class="progress-bar" style="width: 0%">0%</div>
+                        </div>
+                        <div id="backtest-results" class="backtest-results" style="display: none;">
+                            <div class="section-title">Backtest Results</div>
+                            <div class="backtest-metrics">
+                                <div class="metric-card">
+                                    <div>Total Profit</div>
+                                    <div id="total-profit" class="metric-value">0 USDT</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div>Profit %</div>
+                                    <div id="profit-percent" class="metric-value">0%</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div>Total Trades</div>
+                                    <div id="total-trades" class="metric-value">0</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div>Win Rate</div>
+                                    <div id="win-rate" class="metric-value">0%</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div>Max Drawdown</div>
+                                    <div id="max-drawdown" class="metric-value">0%</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div>Profit Factor</div>
+                                    <div id="profit-factor" class="metric-value">0</div>
+                                </div>
+                            </div>
+                            <div class="section-title">Trade History</div>
+                            <div id="backtest-trades" class="trade-list">
+                                <!-- Trade items will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="start-trading">Start Trading</button>
+                    <button id="stop-trading" disabled>Stop Trading</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-title">Position & Balance</div>
+                    <div id="balance-display">Balance: Loading...</div>
+                    <div id="position-display">No active position</div>
+                    <div class="chart-container">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                    <button id="close-position" disabled>Close Position</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Order History</div>
+                    <div id="order-history"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Trading Log</div>
+            <div class="log" id="trading-log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let exchange;
+        let activeStrategy = null;
+        let tradingActive = false;
+        let priceChart;
+        let currentPosition = null;
+        let accountBalance = 0;
+        let marketData = [];
+        let selectedStrategy = 'trend_following';
+        let websocket = null;
+
+        // DOM elements
+        const connectButton = document.getElementById('connect-button');
+        const startTradingButton = document.getElementById('start-trading');
+        const stopTradingButton = document.getElementById('stop-trading');
+        const closePositionButton = document.getElementById('close-position');
+        const symbolSelect = document.getElementById('symbol');
+        const timeframeSelect = document.getElementById('timeframe');
+        const strategyBoxes = document.querySelectorAll('.strategy-box');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const tradingLog = document.getElementById('trading-log');
+        const orderHistory = document.getElementById('order-history');
+        const positionDisplay = document.getElementById('position-display');
+        const balanceDisplay = document.getElementById('balance-display');
+        const connectionStatus = document.getElementById('connection-status');
+        const connectionText = document.getElementById('connection-text');
+        const runBacktestButton = document.getElementById('run-backtest');
+        const exportBacktestButton = document.getElementById('export-backtest');
+        const backtestResults = document.getElementById('backtest-results');
+        const backtestProgress = document.getElementById('backtest-progress');
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('price-chart').getContext('2d');
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Price',
+                        borderColor: '#40c9ff',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        data: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'realtime',
+                            realtime: {
+                                duration: 86400000, // 24 hours
+                                refresh: 1000,
+                                delay: 1000,
+                                onRefresh: chart => {
+                                    if (marketData.length > 0) {
+                                        chart.data.datasets[0].data.push({
+                                            x: new Date(marketData[marketData.length - 1][0]),
+                                            y: marketData[marketData.length - 1][4]
+                                        });
+                                    }
+                                }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#e6e6e6'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e6e6e6'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Log messages to console and UI
+        function logMessage(message, type = 'info') {
+            const now = new Date();
+            const timestamp = now.toISOString().split('T')[0] + ' ' + now.toTimeString().split(' ')[0];
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            tradingLog.appendChild(logEntry);
+            tradingLog.scrollTop = tradingLog.scrollHeight;
+            console.log(`[${type}] ${message}`);
+        }
+
+        // Connect to KuCoin
+        async function connectToKuCoin() {
+            const apiKey = document.getElementById('api-key').value;
+            const apiSecret = document.getElementById('api-secret').value;
+            const passphrase = document.getElementById('api-passphrase').value;
+
+            if (!apiKey || !apiSecret || !passphrase) {
+                logMessage('Please enter all API credentials', 'error');
+                return;
+            }
+
+            try {
+                logMessage('Connecting to KuCoin Futures...');
+                connectButton.disabled = true;
+                connectButton.textContent = 'Connecting...';
+
+                // Initialize exchange
+                exchange = new ccxt.kucoinfutures({
+                    apiKey: apiKey,
+                    secret: apiSecret,
+                    password: passphrase,
+                    enableRateLimit: true,
+                    options: {
+                        defaultType: 'future'
+                    }
+                });
+
+                // Test connection
+                await exchange.loadMarkets();
+                const balance = await exchange.fetchBalance();
+                
+                accountBalance = balance.USDT.total;
+                balanceDisplay.textContent = `Balance: ${accountBalance.toFixed(2)} USDT`;
+                
+                connectionStatus.className = 'status-indicator status-connected';
+                connectionText.textContent = 'Connected';
+                connectButton.textContent = 'Connected';
+                
+                logMessage('Successfully connected to KuCoin Futures', 'success');
+                
+                // Initialize WebSocket for price updates
+                initWebSocket();
+
+            } catch (error) {
+                logMessage(`Connection failed: ${error.message}`, 'error');
+                connectButton.disabled = false;
+                connectButton.textContent = 'Connect to KuCoin';
+            }
+        }
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const symbol = symbolSelect.value.split(':')[0]; // Remove :USDT suffix
+            const wsSymbol = symbol.replace('/', '-');
+            
+            if (websocket) {
+                websocket.close();
+            }
+            
+            websocket = new WebSocket(`wss://ws-api.kucoin.com/endpoint`);
+            
+            websocket.onopen = () => {
+                logMessage('WebSocket connected for real-time data', 'success');
+                
+                // Subscribe to ticker and candlestick data
+                const subscribeMsg = {
+                    "id": Date.now(),
+                    "type": "subscribe",
+                    "topic": `/market/candles:${wsSymbol}_${timeframeSelect.value.toUpperCase()}`,
+                    "privateChannel": false,
+                    "response": true
+                };
+                
+                websocket.send(JSON.stringify(subscribeMsg));
+            };
+            
+            websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'message' && data.topic.includes('candles')) {
+                    const candle = data.data;
+                    const formattedCandle = [
+                        parseInt(candle[0]),         // timestamp
+                        parseFloat(candle[1]),       // open
+                        parseFloat(candle[2]),       // close
+                        parseFloat(candle[3]),       // high
+                        parseFloat(candle[4]),       // low
+                        parseFloat(candle[5]),       // volume
+                    ];
+                    
+                    updateMarketData(formattedCandle);
+                }
+            };
+            
+            websocket.onerror = (error) => {
+                logMessage(`WebSocket error: ${error.message}`, 'error');
+            };
+            
+            websocket.onclose = () => {
+                logMessage('WebSocket disconnected', 'error');
+            };
+        }
+
+        // Update market data array
+        function updateMarketData(newCandle) {
+            // Check if we already have this candle
+            const existingIndex = marketData.findIndex(c => c[0] === newCandle[0]);
+            
+            if (existingIndex >= 0) {
+                marketData[existingIndex] = newCandle;
+            } else {
+                marketData.push(newCandle);
+                
+                // Keep only the last 1000 candles
+                if (marketData.length > 1000) {
+                    marketData.shift();
+                }
+            }
+            
+            // Update strategy if trading is active
+            if (tradingActive && activeStrategy) {
+                activeStrategy.evaluate(marketData);
+            }
+        }
+
+        // Start trading with selected strategy
+        async function startTrading() {
+            if (!exchange) {
+                logMessage('Please connect to KuCoin first', 'error');
+                return;
+            }
+            
+            if (tradingActive) {
+                logMessage('Trading is already active', 'error');
+                return;
+            }
+            
+            const symbol = symbolSelect.value;
+            const timeframe = timeframeSelect.value;
+            const positionSize = parseFloat(document.getElementById('position-size').value);
+            const leverage = parseInt(document.getElementById('leverage').value);
+            const stopLoss = parseFloat(document.getElementById('stop-loss').value) / 100;
+            const takeProfit = parseFloat(document.getElementById('take-profit').value) / 100;
+            const trailingStop = parseFloat(document.getElementById('trailing-stop').value) / 100;
+            const maxDailyLoss = parseFloat(document.getElementById('max-daily-loss').value) / 100;
+            
+            if (positionSize > accountBalance) {
+                logMessage('Position size exceeds account balance', 'error');
+                return;
+            }
+            
+            try {
+                // Set leverage
+                await exchange.setLeverage(leverage, symbol);
+                
+                // Initialize strategy
+                switch(selectedStrategy) {
+                    case 'trend_following':
+                        activeStrategy = new TrendFollowingStrategy(exchange, symbol, positionSize, {
+                            stopLoss, takeProfit, trailingStop
+                        });
+                        break;
+                    case 'mean_reversion':
+                        activeStrategy = new MeanReversionStrategy(exchange, symbol, positionSize, {
+                            stopLoss, takeProfit, trailingStop
+                        });
+                        break;
+                    case 'breakout':
+                        activeStrategy = new BreakoutStrategy(exchange, symbol, positionSize, {
+                            stopLoss, takeProfit, trailingStop
+                        });
+                        break;
+                }
+                
+                // Load initial market data
+                const candles = await exchange.fetchOHLCV(symbol, timeframe);
+                marketData = candles;
+                
+                tradingActive = true;
+                startTradingButton.disabled = true;
+                stopTradingButton.disabled = false;
+                
+                logMessage(`Started trading with ${selectedStrategy.replace('_', ' ')} strategy`, 'success');
+                
+            } catch (error) {
+                logMessage(`Failed to start trading: ${error.message}`, 'error');
+            }
+        }
+
+        // Stop trading
+        function stopTrading() {
+            tradingActive = false;
+            activeStrategy = null;
+            startTradingButton.disabled = false;
+            stopTradingButton.disabled = true;
+            logMessage('Trading stopped', 'info');
+        }
+
+        // Close current position
+        async function closePosition() {
+            if (!exchange || !currentPosition) {
+                logMessage('No active position to close', 'error');
+                return;
+            }
+            
+            try {
+                const symbol = symbolSelect.value;
+                
+                // Create opposite order to close position
+                const orderSide = currentPosition.side === 'long' ? 'sell' : 'buy';
+                const orderAmount = Math.abs(currentPosition.contracts);
+                
+                logMessage(`Closing ${currentPosition.side} position of ${orderAmount} contracts...`);
+                
+                const order = await exchange.createOrder(
+                    symbol,
+                    'market',
+                    orderSide,
+                    orderAmount,
+                    null,
+                    {
+                        'closeOrder': true
+                    }
+                );
+                
+                logOrder(order, true);
+                
+                // Update position display
+                currentPosition = null;
+                positionDisplay.textContent = 'No active position';
+                closePositionButton.disabled = true;
+                
+            } catch (error) {
+                logMessage(`Failed to close position: ${error.message}`, 'error');
+            }
+        }
+
+        // Log order to history
+        function logOrder(order, isClosing = false) {
+            const orderElement = document.createElement('div');
+            orderElement.className = `order ${order.side}`;
+            
+            const time = new Date(order.timestamp).toLocaleTimeString();
+            const symbolParts = order.symbol.split('/');
+            const symbol = symbolParts[0];
+            
+            const action = isClosing ? 'Closed' : 
+                          order.side === 'buy' ? 'Bought' : 'Sold';
+            
+            orderElement.textContent = `${time} - ${action} ${order.amount} ${symbol} at ${order.price}`;
+            orderHistory.appendChild(orderElement);
+            orderHistory.scrollTop = orderHistory.scrollHeight;
+        }
+
+        // Backtest runner
+        async function runBacktest() {
+            if (!exchange) {
+                logMessage('Please connect to KuCoin first', 'error');
+                return;
+            }
+            
+            const symbol = symbolSelect.value;
+            const timeframe = timeframeSelect.value;
+            const positionSize = parseFloat(document.getElementById('position-size').value);
+            const leverage = parseInt(document.getElementById('leverage').value);
+            const stopLoss = parseFloat(document.getElementById('stop-loss').value) / 100;
+            const takeProfit = parseFloat(document.getElementById('take-profit').value) / 100;
+            const trailingStop = parseFloat(document.getElementById('trailing-stop').value) / 100;
+            const daysToTest = parseInt(document.getElementById('backtest-period').value);
+            
+            if (!daysToTest || daysToTest < 1 || daysToTest > 365) {
+                logMessage('Please enter a valid backtest period (1-365 days)', 'error');
+                return;
+            }
+            
+            try {
+                logMessage(`Starting backtest for ${daysToTest} days...`, 'info');
+                runBacktestButton.disabled = true;
+                
+                // Calculate date range
+                const now = new Date();
+                const endTime = now.getTime();
+                const startTime = endTime - (daysToTest * 24 * 60 * 60 * 1000);
+                
+                // Load historical data
+                logMessage('Loading historical data...', 'info');
+                let allCandles = [];
+                let currentTime = startTime;
+                
+                // Show progress bar
+                backtestProgress.style.width = '0%';
+                backtestProgress.textContent = '0%';
+                
+                let backtestStrategy;
+                
+                // Initialize strategy
+                switch(selectedStrategy) {
+                    case 'trend_following':
+                        backtestStrategy = new TrendFollowingStrategy(exchange, symbol, positionSize, {
+                            stopLoss, takeProfit, trailingStop
+                        });
+                        break;
+                    case 'mean_reversion':
+                        backtestStrategy = new MeanReversionStrategy(exchange, symbol, positionSize, {
+                            stopLoss, takeProfit, trailingStop
+                        });
+                        break;
+                    case 'breakout':
+                        backtestStrategy = new BreakoutStrategy(exchange, symbol, positionSize, {
+                            stopLoss, takeProfit, trailingStop
+                        });
+                        break;
+                }
+                
+                // Track results
+                const results = {
+                    initialBalance: positionSize,
+                    currentBalance: positionSize,
+                    trades: [],
+                    maxDrawdown: 0,
+                    peakBalance: positionSize
+                };
+                
+                // Fetch all candles
+                while (currentTime < endTime) {
+                    const candleLimit = 1000; // Max candles per fetch
+                    const candles = await exchange.fetchOHLCV(symbol, timeframe, currentTime, candleLimit);
+                    
+                    if (candles.length === 0) break;
+                    
+                    // Add to our collection
+                    allCandles = allCandles.concat(candles);
+                    currentTime = candles[candles.length - 1][0];
+                    
+                    // Update progress
+                    const progress = Math.min(100, Math.floor((currentTime - startTime) / (endTime - startTime) * 100));
+                    backtestProgress.style.width = `${progress}%`;
+                    backtestProgress.textContent = `${progress}%`;
+                }
+                
+                // Clear progress bar
+                backtestProgress.style.width = '0%';
+                backtestProgress.textContent = '0%';
+                
+                logMessage(`Loaded ${allCandles.length} candles for backtesting`, 'success');
+                
+                // Run backtest on the data
+                logMessage('Running backtest...', 'info');
+                const totalCandles = allCandles.length;
+                let currentBalance = results.initialBalance;
+                
+                for (let i = 0; i < totalCandles; i++) {
+                    // Simulate market data updates
+                    const currentCandle = allCandles[i];
+                    const currentSlice = allCandles.slice(0, i + 1);
+                    
+                    // Update progress
+                    const progress = Math.floor((i / totalCandles) * 100);
+                    backtestProgress.style.width = `${progress}%`;
+                    backtestProgress.textContent = `${progress}%`;
+                    
+                    // Run strategy evaluation
+                    await backtestStrategy.evaluate(currentSlice);
+                    
+                    // If we have a position, calculate current PnL
+                    if (backtestStrategy.position) {
+                        const currentPrice = currentCandle[4];
+                        const position = backtestStrategy.position;
+                        
+                        let unrealizedPnl;
+                        if (position.side === 'long') {
+                            unrealizedPnl = (currentPrice - position.entryPrice) / position.entryPrice * positionSize;
+                        } else {
+                            unrealizedPnl = (position.entryPrice - currentPrice) / position.entryPrice * positionSize;
+                        }
+                        
+                        currentBalance = results.initialBalance + results.trades.reduce((sum, trade) => sum + trade.profit, 0) + unrealizedPnl;
+                    
+                        // Update max drawdown
+                        results.peakBalance = Math.max(results.peakBalance, currentBalance);
+                        const drawdown = ((results.peakBalance - currentBalance) / results.peakBalance) * 100;
+                        results.maxDrawdown = Math.max(results.maxDrawdown, drawdown);
+                    }
+                }
+                
+                // We're done - calculate final metrics
+                backtestProgress.style.width = '100%';
+                backtestProgress.textContent = '100%';
+                
+                // Calculate final metrics
+                const totalProfit = results.trades.reduce((sum, trade) => sum + trade.profit, 0);
+                const profitableTrades = results.trades.filter(t => t.profit > 0).length;
+                const winRate = (profitableTrades / results.trades.length * 100) || 0;
+                const profitPercentage = (totalProfit / results.initialBalance * 100) || 0;
+                
+                // Calculate profit factor
+                const grossProfit = results.trades.reduce((sum, trade) => trade.profit > 0 ? sum + trade.profit : sum, 0);
+                const grossLoss = -results.trades.reduce((sum, trade) => trade.profit < 0 ? sum + trade.profit : sum, 0);
+                const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
+                
+                // Update UI with results
+                document.getElementById('total-profit').textContent = `${totalProfit.toFixed(2)} USDT`;
+                document.getElementById('profit-percent').textContent = `${profitPercentage.toFixed(2)}%`;
+                document.getElementById('total-trades').textContent = results.trades.length;
+                document.getElementById('win-rate').textContent = `${winRate.toFixed(2)}%`;
+                document.getElementById('max-drawdown').textContent = `${results.maxDrawdown.toFixed(2)}%`;
+                document.getElementById('profit-factor').textContent = profitFactor.toFixed(2);
+                
+                // Display trade history
+                const tradesList = document.getElementById('backtest-trades');
+                tradesList.innerHTML = '';
+                
+                results.trades.forEach(trade => {
+                    const tradeItem = document.createElement('div');
+                    tradeItem.className = `trade-item ${trade.side}`;
+                    
+                    const timestamp = new Date(trade.timestamp).toLocaleString();
+                    const profitColor = trade.profit > 0 ? '#4CAF50' : '#F44336';
+                    
+                    tradeItem.innerHTML = `
+                        <div>${timestamp}</div>
+                        <div>${trade.side.toUpperCase()} @ ${trade.price.toFixed(2)}</div>
+                        <div style="color: ${profitColor}">${trade.profit > 0 ? '+' : ''}${trade.profit.toFixed(2)} (${(trade.profit / results.initialBalance * 100).toFixed(2)}%)</div>
+                    `;
+                    
+                    tradesList.appendChild(tradeItem);
+                });
+                
+                // Show results
+                backtestResults.style.display = 'block';
+                runBacktestButton.disabled = false;
+                
+                logMessage(`Backtest completed. ${results.trades.length} trades, ${profitPercentage.toFixed(2)}% profit`, 'success');
+                
+            } catch (error) {
+                logMessage(`Backtest failed: ${error.message}`, 'error');
+                runBacktestButton.disabled = false;
+                backtestProgress.style.width = '0%';
+                backtestProgress.textContent = '0%';
+            }
+        }
+
+        // Export backtest results
+        function exportBacktestResults() {
+            // Get all the metrics
+            const totalProfit = document.getElementById('total-profit').textContent;
+            const profitPercent = document.getElementById('profit-percent').textContent;
+            const totalTrades = document.getElementById('total-trades').textContent;
+            const winRate = document.getElementById('win-rate').textContent;
+            const maxDrawdown = document.getElementById('max-drawdown').textContent;
+            const profitFactor = document.getElementById('profit-factor').textContent;
+            
+            // Get all trades
+            const trades = [];
+            const tradeElements = document.querySelectorAll('#backtest-trades .trade-item');
+            tradeElements.forEach(trade => {
+                const columns = trade.textContent.trim().split(/\s\s+/);
+                trades.push({
+                    time: columns[0],
+                    side: columns[1].split(' ')[0],
+                    price: parseFloat(columns[1].split(' ')[1].replace('@ ', '')),
+                    profit: parseFloat(columns[2].split(' ')[0]),
+                    profitPercent: columns[2].match(/\((.*?)\)/)[1]
+                });
+            });
+            
+            // Create CSV content
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Add metrics header
+            csvContent += "Metric,Value\n";
+            csvContent += `Total Profit,${totalProfit}\n`;
+            csvContent += `Profit Percentage,${profitPercent}\n`;
+            csvContent += `Total Trades,${totalTrades}\n`;
+            csvContent += `Win Rate,${winRate}\n`;
+            csvContent += `Max Drawdown,${maxDrawdown}\n`;
+            csvContent += `Profit Factor,${profitFactor}\n\n`;
+            
+            // Add trades header
+            csvContent += "Timestamp,Side,Price,Profit,Profit %\n";
+            
+            // Add trade data
+            trades.forEach(trade => {
+                csvContent += `${trade.time},${trade.side},${trade.price},${trade.profit},${trade.profitPercent}\n`;
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "backtest_results.csv");
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            document.body.removeChild(link);
+            
+            logMessage('Backtest results exported to CSV', 'success');
+        }
+
+        // Strategy classes
+        class BaseStrategy {
+            constructor(exchange, symbol, positionSize, riskParams) {
+                this.exchange = exchange;
+                this.symbol = symbol;
+                this.positionSize = positionSize;
+                this.riskParams = riskParams || {};
+                this.position = null;
+                this.isBacktesting = false;
+                this.backtestResults = null;
+            }
+            
+            async evaluate(data) {
+                // To be implemented by child classes
+            }
+            
+            async enterPosition(side) {
+                if (this.position) {
+                    if (!this.isBacktesting) {
+                        logMessage('Already in a position, cannot enter new one', 'info');
+                    }
+                    return;
+                }
+                
+                try {
+                    const currentPrice = data[data.length - 1][4];
+                    const timestamp = data[data.length - 1][0];
+                    
+                    if (this.isBacktesting) {
+                        // In backtesting mode, simulate order execution
+                        this.position = {
+                            side: side,
+                            entryPrice: currentPrice,
+                            entryTime: timestamp,
+                            contracts: side === 'long' ? this.positionSize : -this.positionSize
+                        };
+                        
+                        if (this.backtestResults) {
+                            this.backtestResults.trades.push({
+                                timestamp: timestamp,
+                                side: side,
+                                price: currentPrice,
+                                profit: 0, // Will be calculated when position is closed
+                                status: 'open'
+                            });
+                        }
+                        
+                        logMessage(`[Backtest] Entered ${side} position at ${currentPrice}`, 'info');
+                    } else {
+                        // Real trading mode
+                        const order = await this.exchange.createOrder(
+                            this.symbol,
+                            'market',
+                            side,
+                            this.positionSize
+                        );
+                        
+                        this.position = {
+                            side: side,
+                            entryPrice: order.price,
+                            entryTime: Date.now(),
+                            contracts: side === 'long' ? this.positionSize : -this.positionSize
+                        };
+                        
+                        currentPosition = this.position;
+                        positionDisplay.textContent = `${side.toUpperCase()} position - Size: ${this.positionSize}, Entry: ${order.price}`;
+                        closePositionButton.disabled = false;
+                        
+                        logOrder(order);
+                        logMessage(`Entered ${side} position at ${order.price}`, 'success');
+                    }
+                    
+                } catch (error) {
+                    logMessage(`Failed to enter ${side} position: ${error.message}`, 'error');
+                }
+            }
+            
+            async exitPosition() {
+                if (!this.position) {
+                    if (!this.isBacktesting) {
+                        logMessage('No position to exit', 'info');
+                    }
+                    return;
+                }
+                
+                try {
+                    const currentData = this.currentData;
+                    const currentPrice = currentData[currentData.length - 1][4];
+                    const timestamp = currentData[currentData.length - 1][0];
+                    
+                    if (this.isBacktesting) {
+                        // In backtesting mode, calculate PnL
+                        let pnl;
+                        if (this.position.side === 'long') {
+                            pnl = (currentPrice - this.position.entryPrice) / this.position.entryPrice * this.positionSize;
+                        } else {
+                            pnl = (this.position.entryPrice - currentPrice) / this.position.entryPrice * this.positionSize;
+                        }
+                        
+                        // Find the open trade and update it
+                        if (this.backtestResults) {
+                            const openTrade = this.backtestResults.trades.find(t => t.status === 'open');
+                            if (openTrade) {
+                                openTrade.profit = pnl;
+                                openTrade.status = 'closed';
+                                openTrade.exitPrice = currentPrice;
+                                openTrade.exitTime = timestamp;
+                                
+                                // Update current balance in results
+                                this.backtestResults.currentBalance += pnl;
+                            }
+                        }
+                        
+                        logMessage(`[Backtest] Exited position at ${currentPrice} (PNL: ${pnl.toFixed(2)} USDT)`, 'info');
+                    } else {
+                        // Real trading mode
+                        const exitSide = this.position.side === 'long' ? 'sell' : 'buy';
+                        const exitAmount = Math.abs(this.position.contracts);
+                        
+                        const order = await this.exchange.createOrder(
+                            this.symbol,
+                            'market',
+                            exitSide,
+                            exitAmount
+                        );
+                        
+                        const pnl = this.position.side === 'long' ?
+                            (order.price - this.position.entryPrice) / this.position.entryPrice * 100 :
+                            (this.position.entryPrice - order.price) / this.position.entryPrice * 100;
+                        
+                        logOrder(order, true);
+                        logMessage(`Exited position at ${order.price} (PNL: ${pnl.toFixed(2)}%)`, 'success');
+                        
+                        // Update position display if in real trading mode
+                        currentPosition = null;
+                        positionDisplay.textContent = 'No active position';
+                        closePositionButton.disabled = true;
+                    }
+                    
+                    // Clear the position in both modes
+                    this.position = null;
+                    
+                } catch (error) {
+                    logMessage(`Failed to exit position: ${error.message}`, 'error');
+                }
+            }
+            
+            checkStopConditions(currentPrice) {
+                if (!this.position) return false;
+                
+                const { stopLoss, takeProfit, trailingStop } = this.riskParams;
+                const entryPrice = this.position.entryPrice;
+                let shouldExit = false;
+                let reason = '';
+                
+                // Check stop loss
+                if (stopLoss) {
+                    if (this.position.side === 'long' && currentPrice <= entryPrice * (1 - stopLoss)) {
+                        shouldExit = true;
+                        reason = `Stop loss triggered (${(stopLoss * 100).toFixed(1)}%)`;
+                    } else if (this.position.side === 'short' && currentPrice >= entryPrice * (1 + stopLoss)) {
+                        shouldExit = true;
+                        reason = `Stop loss triggered (${(stopLoss * 100).toFixed(1)}%)`;
+                    }
+                }
+                
+                // Check take profit
+                if (takeProfit && !shouldExit) {
+                    if (this.position.side === 'long' && currentPrice >= entryPrice * (1 + takeProfit)) {
+                        shouldExit = true;
+                        reason = `Take profit triggered (${(takeProfit * 100).toFixed(1)}%)`;
+                    } else if (this.position.side === 'short' && currentPrice <= entryPrice * (1 - takeProfit)) {
+                        shouldExit = true;
+                        reason = `Take profit triggered (${(takeProfit * 100).toFixed(1)}%)`;
+                    }
+                }
+                
+                if (shouldExit) {
+                    if (!this.isBacktesting) {
+                        logMessage(reason, 'info');
+                    }
+                    this.exitPosition();
+                }
+                
+                return shouldExit;
+            }
+        }
+
+        class TrendFollowingStrategy extends BaseStrategy {
+            constructor(exchange, symbol, positionSize, riskParams) {
+                super(exchange, symbol, positionSize, riskParams);
+                this.emaFastPeriod = 12;
+                this.emaSlowPeriod = 26;
+                this.emaFast = [];
+                this.emaSlow = [];
+            }
+            
+            calculateEMA(data, period, previousEMA = []) {
+                const multiplier = 2 / (period + 1);
+                const ema = [];
+                
+                if (data.length === 0) return ema;
+                
+                // If we have previous EMA values, use the last one as starting point
+                const startIdx = previousEMA.length > 0 ? data.length - 1 : period - 1;
+                let initialValue = previousEMA.length > 0 ? previousEMA[previousEMA.slice(-1)[0]] : 
+                                  data.slice(0, period).reduce((sum, val) => sum + val[4], 0) / period;
+                
+                for (let i = 0; i < startIdx; i++) {
+                    ema.push(null);
+                }
+                
+                ema.push(initialValue);
+                
+                for (let i = startIdx + 1; i < data.length; i++) {
+                    const currentValue = data[i][4];
+                    const currentEMA = (currentValue - ema[i-1]) * multiplier + ema[i-1];
+                    ema.push(currentEMA);
+                }
+                
+                return ema;
+            }
+            
+            async evaluate(data) {
+                // Store current data for potential exit position calculation
+                this.currentData = data;
+                
+                if (data.length < Math.max(this.emaFastPeriod, this.emaSlowPeriod)) {
+                    if (!this.isBacktesting) {
+                        logMessage('Not enough data for EMA calculation', 'info');
+                    }
+                    return;
+                }
+                
+                // Calculate EMAs
+                this.emaFast = this.calculateEMA(data, this.emaFastPeriod, this.emaFast);
+                this.emaSlow = this.calculateEMA(data, this.emaSlowPeriod, this.emaSlow);
+                
+                const currentPrice = data[data.length - 1][4];
+                const fastEMA = this.emaFast[this.emaFast.length - 1];
+                const slowEMA = this.emaSlow[this.emaSlow.length - 1];
+                const previousFastEMA = this.emaFast[this.emaFast.length - 2] || fastEMA;
+                const previousSlowEMA = this.emaSlow[this.emaSlow.length - 2] || slowEMA;
+                
+                // Check stop conditions first
+                if (this.checkStopConditions(currentPrice)) {
+                    return;
+                }
+                
+                // Check for crossover signals
+                if (currentPrice > fastEMA && fastEMA > slowEMA) {
+                    // Uptrend
+                    if (this.position?.side !== 'long') {
+                        if (this.position) {
+                            await this.exitPosition();
+                        }
+                        await this.enterPosition('long');
+                    }
+                } else if (currentPrice < fastEMA && fastEMA < slowEMA) {
+                    // Downtrend
+                    if (this.position?.side !== 'short') {
+                        if (this.position) {
+                            await this.exitPosition();
+                        }
+                        await this.enterPosition('short');
+                    }
+                }
+            }
+        }
+
+        class MeanReversionStrategy extends BaseStrategy {
+            constructor(exchange, symbol, positionSize, riskParams) {
+                super(exchange, symbol, positionSize, riskParams);
+                this.bollingerPeriod = 20;
+                this.bollingerStdDev = 2;
+                this.rsiPeriod = 14;
+                this.rsiOverbought = 70;
+                this.rsiOversold = 30;
+            }
+            
+            calculateRSI(data, period) {
+                if (data.length < period + 1) return Array(data.length).fill(null);
+                
+                const rsi = Array(period).fill(null);
+                let gains = 0;
+                let losses = 0;
+                
+                // Calculate initial average gains and losses
+                for (let i = 1; i <= period; i++) {
+                    const change = data[i][4] - data[i-1][4];
+                    if (change > 0) gains += change;
+                    else losses -= change;
+                }
+                
+                let avgGain = gains / period;
+                let avgLoss = losses / period;
+                
+                if (avgLoss === 0) {
+                    rsi.push(100);
+                } else {
+                    const rs = avgGain / avgLoss;
+                    rsi.push(100 - (100 / (1 + rs)));
+                }
+                
+                // Calculate subsequent RSI values
+                for (let i = period + 1; i < data.length; i++) {
+                    const change = data[i][4] - data[i-1][4];
+                    let currentGain = 0;
+                    let currentLoss = 0;
+                    
+                    if (change > 0) currentGain = change;
+                    else currentLoss = -change;
+                    
+                    avgGain = ((avgGain * (period - 1)) + currentGain) / period;
+                    avgLoss = ((avgLoss * (period - 1)) + currentLoss) / period;
+                    
+                    if (avgLoss === 0) {
+                        rsi.push(100);
+                    } else {
+                        const rs = avgGain / avgLoss;
+                        rsi.push(100 - (100 / (1 + rs)));
+                    }
+                }
+                
+                return rsi;
+            }
+            
+            calculateBollingerBands(data, period, stdDev) {
+                if (data.length < period) return { upper: Array(data.length).fill(null), middle: Array(data.length).fill(null), lower: Array(data.length).fill(null) };
+                
+                const middle = Array(period - 1).fill(null);
+                const upper = Array(period - 1).fill(null);
+                const lower = Array(period - 1).fill(null);
+                
+                for (let i = period - 1; i < data.length; i++) {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    const prices = slice.map(c => c[4]);
+                    const mean = prices.reduce((sum, price) => sum + price, 0) / period;
+                    const variance = prices.reduce((sum, price) => sum + Math.pow(price - mean, 2), 0) / period;
+                    const stdDeviation = Math.sqrt(variance);
+                    
+                    middle.push(mean);
+                    upper.push(mean + stdDeviation * stdDev);
+                    lower.push(mean - stdDeviation * stdDev);
+                }
+                
+                return { upper, middle, lower };
+            }
+            
+            async evaluate(data) {
+                // Store current data for potential exit position calculation
+                this.currentData = data;
+                
+                if (data.length < Math.max(this.bollingerPeriod, this.rsiPeriod)) {
+                    if (!this.isBacktesting) {
+                        logMessage('Not enough data for indicators calculation', 'info');
+                    }
+                    return;
+                }
+                
+                // Calculate indicators
+                const rsi = this.calculateRSI(data, this.rsiPeriod);
+                const bollinger = this.calculateBollingerBands(data, this.bollingerPeriod, this.bollingerStdDev);
+                
+                const currentPrice = data[data.length - 1][4];
+                const currentRSI = rsi[rsi.length - 1];
+                const upperBand = bollinger.upper[bollinger.upper.length - 1];
+                const lowerBand = bollinger.lower[bollinger.lower.length - 1];
+                
+                // Check stop conditions first
+                if (this.checkStopConditions(currentPrice)) {
+                    return;
+                }
+                
+                // Check for mean reversion signals
+                if (currentPrice > upperBand && currentRSI > this.rsiOverbought) {
+                    // Overbought condition
+                    if (this.position?.side !== 'short') {
+                        if (this.position) {
+                            await this.exitPosition();
+                        }
+                        await this.enterPosition('short');
+                    }
+                } else if (currentPrice < lowerBand && currentRSI < this.rsiOversold) {
+                    // Oversold condition
+                    if (this.position?.side !== 'long') {
+                        if (this.position) {
+                            await this.exitPosition();
+                        }
+                        await this.enterPosition('long');
+                    }
+                }
+            }
+        }
+
+        class BreakoutStrategy extends BaseStrategy {
+            constructor(exchange, symbol, positionSize, riskParams) {
+                super(exchange, symbol, positionSize, riskParams);
+                this.rangePeriod = 20;
+                this.confirmationPeriod = 3;
+                this.priceRange = [];
+                this.highRange = [];
+                this.lowRange = [];
+            }
+            
+            calculatePriceRange(data, period) {
+                if (data.length < period) return { high: Array(data.length).fill(null), low: Array(data.length].fill(null) };
+                
+                const high = Array(period - 1).fill(null);
+                const low = Array(period - 1).fill(null);
+                
+                for (let i = period - 1; i < data.length; i++) {
+                    const slice = data.slice(i - period + 1, i + 1);
+                    const highs = slice.map(c => c[3]);
+                    const lows = slice.map(c => c[4]);
+                    
+                    high.push(Math.max(...highs));
+                    low.push(Math.min(...lows));
+                }
+                
+                return { high, low };
+            }
+            
+            async evaluate(data) {
+                // Store current data for potential exit position calculation
+                this.currentData = data;
+                
+                if (data.length < this.rangePeriod + this.confirmationPeriod) {
+                    if (!this.isBacktesting) {
+                        logMessage('Not enough data for breakout detection', 'info');
+                    }
+                    return;
+                }
+                
+                // Calculate price range
+                const range = this.calculatePriceRange(data, this.rangePeriod);
+                
+                const currentPrice = data[data.length - 1][4];
+                const rangeHigh = range.high[range.high.length - 1];
+                const rangeLow = range.low[range.low.length - 1];
+                
+                // Check stop conditions first
+                if (this.checkStopConditions(currentPrice)) {
+                    return;
+                }
+                
+                // Check for breakout signals
+                if (currentPrice > rangeHigh) {
+                    // Potential upside breakout - need confirmation
+                    let confirmed = true;
+                    for (let i = 1; i <= this.confirmationPeriod; i++) {
+                        if (data[data.length - i][4] <= rangeHigh) {
+                            confirmed = false;
+                            break;
+                        }
+                    }
+                    
+                    if (confirmed && this.position?.side !== 'long') {
+                        if (this.position) {
+                            await this.exitPosition();
+                        }
+                        await this.enterPosition('long');
+                    }
+                } else if (currentPrice < rangeLow) {
+                    // Potential downside breakout - need confirmation
+                    let confirmed = true;
+                    for (let i = 1; i <= this.confirmationPeriod; i++) {
+                        if (data[data.length - i][4] >= range
+  </script>
+</html>
