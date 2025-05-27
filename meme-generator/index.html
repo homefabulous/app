@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"638f308fc4444c6ca870b60a"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Generator Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dropzone {
+            border: 2px dashed #ccc;
+            transition: all 0.3s ease;
+        }
+        .dropzone.active {
+            border-color: #4f46e5;
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+        .text-input {
+            -webkit-text-stroke: 1px black;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+        }
+        .meme-container {
+            position: relative;
+            max-width: 100%;
+        }
+        .meme-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            font-size: 2.5rem;
+            word-wrap: break-word;
+            cursor: move;
+            user-select: none;
+        }
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        .font-option {
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .font-option:hover {
+            background-color: #e5e7eb;
+        }
+        .font-option.selected {
+            background-color: #4f46e5;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-600 mb-2">Meme Generator Pro</h1>
+            <p class="text-gray-600">Create hilarious memes in seconds!</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel - Controls -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Meme Controls</h2>
+                
+                <!-- Template Selection -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2 text-gray-700">Choose Template</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="template-option cursor-pointer" data-template="https://i.imgflip.com/1bij.jpg">
+                            <img src="https://i.imgflip.com/1bij.jpg" alt="One Does Not Simply" class="rounded-md hover:opacity-80">
+                        </div>
+                        <div class="template-option cursor-pointer" data-template="https://i.imgflip.com/1g8my.jpg">
+                            <img src="https://i.imgflip.com/1g8my.jpg" alt="Distracted Boyfriend" class="rounded-md hover:opacity-80">
+                        </div>
+                        <div class="template-option cursor-pointer" data-template="https://i.imgflip.com/9vct.jpg">
+                            <img src="https://i.imgflip.com/9vct.jpg" alt="Waiting Skeleton" class="rounded-md hover:opacity-80">
+                        </div>
+                        <div class="template-option cursor-pointer" data-template="https://i.imgflip.com/1h7in3.jpg">
+                            <img src="https://i.imgflip.com/1h7in3.jpg" alt="Drake Hotline Bling" class="rounded-md hover:opacity-80">
+                        </div>
+                        <div class="template-option cursor-pointer" data-template="https://i.imgflip.com/1ihzfe.jpg">
+                            <img src="https://i.imgflip.com/1ihzfe.jpg" alt="Batman Slapping Robin" class="rounded-md hover:opacity-80">
+                        </div>
+                        <div class="template-option cursor-pointer" data-template="https://i.imgflip.com/30b1gx.jpg">
+                            <img src="https://i.imgflip.com/30b1gx.jpg" alt="Change My Mind" class="rounded-md hover:opacity-80">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Upload Image -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2 text-gray-700">Or Upload Your Own</h3>
+                    <div id="dropzone" class="dropzone rounded-lg p-8 text-center cursor-pointer">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-indigo-500 mb-2"></i>
+                        <p class="text-gray-600">Drag & drop an image here</p>
+                        <p class="text-sm text-gray-500 mt-1">or click to browse</p>
+                        <input type="file" id="fileInput" class="hidden" accept="image/*">
+                    </div>
+                </div>
+                
+                <!-- Text Controls -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2 text-gray-700">Add Text</h3>
+                    <div class="flex mb-4">
+                        <input type="text" id="topTextInput" placeholder="Top text" class="flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button id="addTopText" class="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 transition">Add</button>
+                    </div>
+                    <div class="flex">
+                        <input type="text" id="bottomTextInput" placeholder="Bottom text" class="flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button id="addBottomText" class="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700 transition">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Text Customization -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-2 text-gray-700">Customize Text</h3>
+                    
+                    <!-- Color Picker -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Text Color</label>
+                        <div class="flex space-x-2">
+                            <div class="color-option bg-white border border-gray-300" data-color="white"></div>
+                            <div class="color-option bg-yellow-300" data-color="#fde047"></div>
+                            <div class="color-option bg-red-500" data-color="#ef4444"></div>
+                            <div class="color-option bg-green-500" data-color="#22c55e"></div>
+                            <div class="color-option bg-blue-500" data-color="#3b82f6"></div>
+                            <div class="color-option bg-black" data-color="black"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Font Selection -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Font</label>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="font-option selected" data-font="Impact">Impact</div>
+                            <div class="font-option" data-font="Arial">Arial</div>
+                            <div class="font-option" data-font="Comic Sans MS">Comic Sans</div>
+                            <div class="font-option" data-font="Times New Roman">Times</div>
+                            <div class="font-option" data-font="Courier New">Courier</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Size Slider -->
+                    <div>
+                        <label for="textSize" class="block text-sm font-medium text-gray-700 mb-1">Text Size</label>
+                        <input type="range" id="textSize" min="20" max="80" value="40" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>Small</span>
+                            <span>Medium</span>
+                            <span>Large</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Download Button -->
+                <button id="downloadBtn" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition flex items-center justify-center">
+                    <i class="fas fa-download mr-2"></i> Download Meme
+                </button>
+            </div>
+            
+            <!-- Middle Panel - Preview -->
+            <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Meme Preview</h2>
+                <div class="flex-1 flex items-center justify-center">
+                    <div id="memePreview" class="meme-container w-full max-w-md">
+                        <img id="memeImage" src="https://i.imgflip.com/1bij.jpg" alt="Meme template" class="w-full rounded-lg">
+                        <!-- Text elements will be added here dynamically -->
+                    </div>
+                </div>
+                <div class="mt-4 text-center text-sm text-gray-500">
+                    <p>Drag text to reposition, click to select for editing</p>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Recent Memes -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Your Recent Memes</h2>
+                <div id="recentMemes" class="grid grid-cols-2 gap-2">
+                    <!-- Recent memes will appear here -->
+                    <div class="text-center p-4 bg-gray-100 rounded-lg">
+                        <i class="fas fa-image text-3xl text-gray-400 mb-2"></i>
+                        <p class="text-sm text-gray-600">No memes yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('fileInput');
+            const memeImage = document.getElementById('memeImage');
+            const memePreview = document.getElementById('memePreview');
+            const topTextInput = document.getElementById('topTextInput');
+            const bottomTextInput = document.getElementById('bottomTextInput');
+            const addTopTextBtn = document.getElementById('addTopText');
+            const addBottomTextBtn = document.getElementById('addBottomText');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const colorOptions = document.querySelectorAll('.color-option');
+            const fontOptions = document.querySelectorAll('.font-option');
+            const textSizeSlider = document.getElementById('textSize');
+            const templateOptions = document.querySelectorAll('.template-option');
+            const recentMemesContainer = document.getElementById('recentMemes');
+            
+            // State variables
+            let selectedTextElement = null;
+            let currentColor = 'white';
+            let currentFont = 'Impact';
+            let currentSize = 40;
+            let recentMemes = [];
+            
+            // Initialize with default template
+            updateMemeTemplate('https://i.imgflip.com/1bij.jpg');
+            
+            // Event Listeners
+            
+            // Template selection
+            templateOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const templateUrl = this.getAttribute('data-template');
+                    updateMemeTemplate(templateUrl);
+                });
+            });
+            
+            // Drag and drop functionality
+            dropzone.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length) {
+                    const file = e.target.files[0];
+                    if (file.type.match('image.*')) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            updateMemeTemplate(event.target.result);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }
+            });
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropzone.classList.add('active');
+            }
+            
+            function unhighlight() {
+                dropzone.classList.remove('active');
+            }
+            
+            dropzone.addEventListener('drop', function(e) {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                if (file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        updateMemeTemplate(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Add text functionality
+            addTopTextBtn.addEventListener('click', function() {
+                addText(topTextInput.value, 'top');
+                topTextInput.value = '';
+            });
+            
+            addBottomTextBtn.addEventListener('click', function() {
+                addText(bottomTextInput.value, 'bottom');
+                bottomTextInput.value = '';
+            });
+            
+            // Text input enter key support
+            topTextInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addText(topTextInput.value, 'top');
+                    topTextInput.value = '';
+                }
+            });
+            
+            bottomTextInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addText(bottomTextInput.value, 'bottom');
+                    bottomTextInput.value = '';
+                }
+            });
+            
+            // Text customization
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    currentColor = this.getAttribute('data-color');
+                    if (selectedTextElement) {
+                        selectedTextElement.style.color = currentColor;
+                    }
+                });
+            });
+            
+            fontOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove selected class from all options
+                    fontOptions.forEach(opt => opt.classList.remove('selected'));
+                    // Add to clicked option
+                    this.classList.add('selected');
+                    
+                    currentFont = this.getAttribute('data-font');
+                    if (selectedTextElement) {
+                        selectedTextElement.style.fontFamily = currentFont;
+                    }
+                });
+            });
+            
+            textSizeSlider.addEventListener('input', function() {
+                currentSize = parseInt(this.value);
+                if (selectedTextElement) {
+                    selectedTextElement.style.fontSize = `${currentSize}px`;
+                }
+            });
+            
+            // Download functionality
+            downloadBtn.addEventListener('click', downloadMeme);
+            
+            // Functions
+            
+            function updateMemeTemplate(src) {
+                memeImage.src = src;
+                // Clear existing text elements
+                document.querySelectorAll('.meme-text').forEach(el => el.remove());
+                selectedTextElement = null;
+            }
+            
+            function addText(text, position) {
+                if (!text.trim()) return;
+                
+                const textElement = document.createElement('div');
+                textElement.className = 'meme-text';
+                textElement.textContent = text;
+                textElement.style.color = currentColor;
+                textElement.style.fontFamily = currentFont;
+                textElement.style.fontSize = `${currentSize}px`;
+                
+                if (position === 'top') {
+                    textElement.style.top = '10px';
+                } else {
+                    textElement.style.bottom = '10px';
+                }
+                
+                // Make text draggable
+                makeDraggable(textElement);
+                
+                // Select on click
+                textElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectTextElement(textElement);
+                });
+                
+                memePreview.appendChild(textElement);
+                selectTextElement(textElement);
+            }
+            
+            function makeDraggable(element) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                
+                element.onmousedown = dragMouseDown;
+                
+                function dragMouseDown(e) {
+                    e = e || window.event;
+                    e.preventDefault();
+                    // Get the mouse cursor position at startup
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    document.onmouseup = closeDragElement;
+                    // Call a function whenever the cursor moves
+                    document.onmousemove = elementDrag;
+                }
+                
+                function elementDrag(e) {
+                    e = e || window.event;
+                    e.preventDefault();
+                    // Calculate the new cursor position
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    // Set the element's new position
+                    const top = element.offsetTop - pos2;
+                    const left = element.offsetLeft - pos1;
+                    
+                    // Constrain to meme container
+                    const containerRect = memePreview.getBoundingClientRect();
+                    const elementRect = element.getBoundingClientRect();
+                    
+                    if (top >= 0 && top <= containerRect.height - elementRect.height) {
+                        element.style.top = top + 'px';
+                        element.style.bottom = '';
+                    }
+                    
+                    if (left >= 0 && left <= containerRect.width - elementRect.width) {
+                        element.style.left = left + 'px';
+                        element.style.right = '';
+                    }
+                }
+                
+                function closeDragElement() {
+                    // Stop moving when mouse button is released
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+            }
+            
+            function selectTextElement(element) {
+                // Deselect previous
+                if (selectedTextElement) {
+                    selectedTextElement.style.border = '';
+                }
+                
+                // Select new
+                selectedTextElement = element;
+                element.style.border = '2px dashed rgba(79, 70, 229, 0.7)';
+                
+                // Update inputs to match selected text
+                if (element.textContent) {
+                    if (element.style.top) {
+                        topTextInput.value = element.textContent;
+                    } else {
+                        bottomTextInput.value = element.textContent;
+                    }
+                }
+                
+                // Update customization controls
+                currentColor = element.style.color || 'white';
+                currentFont = element.style.fontFamily || 'Impact';
+                currentSize = parseInt(element.style.fontSize) || 40;
+                
+                // Update slider
+                textSizeSlider.value = currentSize;
+                
+                // Update color selection
+                colorOptions.forEach(opt => {
+                    if (opt.getAttribute('data-color') === currentColor) {
+                        opt.style.border = '2px solid #4f46e5';
+                    } else {
+                        opt.style.border = opt.classList.contains('bg-white') ? '1px solid #d1d5db' : '';
+                    }
+                });
+                
+                // Update font selection
+                fontOptions.forEach(opt => {
+                    if (opt.getAttribute('data-font') === currentFont) {
+                        opt.classList.add('selected');
+                    } else {
+                        opt.classList.remove('selected');
+                    }
+                });
+            }
+            
+            // Click on preview to deselect
+            memePreview.addEventListener('click', function() {
+                if (selectedTextElement) {
+                    selectedTextElement.style.border = '';
+                    selectedTextElement = null;
+                    topTextInput.value = '';
+                    bottomTextInput.value = '';
+                }
+            });
+            
+            function downloadMeme() {
+                if (!memeImage.src) return;
+                
+                // Use html2canvas to capture the meme
+                html2canvas(memePreview).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'meme.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    // Add to recent memes
+                    addToRecentMemes(canvas.toDataURL('image/png'));
+                });
+            }
+            
+            function addToRecentMemes(dataUrl) {
+                // Limit to 6 recent memes
+                if (recentMemes.length >= 6) {
+                    recentMemes.pop();
+                }
+                
+                recentMemes.unshift(dataUrl);
+                updateRecentMemesDisplay();
+            }
+            
+            function updateRecentMemesDisplay() {
+                recentMemesContainer.innerHTML = '';
+                
+                if (recentMemes.length === 0) {
+                    recentMemesContainer.innerHTML = `
+                        <div class="text-center p-4 bg-gray-100 rounded-lg">
+                            <i class="fas fa-image text-3xl text-gray-400 mb-2"></i>
+                            <p class="text-sm text-gray-600">No memes yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                recentMemes.forEach((meme, index) => {
+                    const memeElement = document.createElement('div');
+                    memeElement.className = 'cursor-pointer';
+                    memeElement.innerHTML = `
+                        <img src="${meme}" alt="Recent meme ${index + 1}" class="w-full h-auto rounded-lg hover:opacity-90">
+                    `;
+                    memeElement.addEventListener('click', function() {
+                        if (confirm('Load this meme?')) {
+                            updateMemeTemplate(meme);
+                        }
+                    });
+                    recentMemesContainer.appendChild(memeElement);
+                });
+            }
+            
+            // Load html2canvas dynamically
+            function loadHtml2Canvas() {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            
+            // Load html2canvas when needed
+            downloadBtn.addEventListener('click', function() {
+                if (typeof html2canvas === 'undefined') {
+                    loadHtml2Canvas().then(() => {
+                        downloadMeme();
+                    }).catch(err => {
+                        alert('Failed to load image generator. Please try again.');
+                        console.error(err);
+                    });
+                } else {
+                    downloadMeme();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
