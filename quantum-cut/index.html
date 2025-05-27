@@ -1,0 +1,1058 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67eac64fcdf8c58da88f401e"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantumCut AI Pro - Advanced Video Editing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+        }
+        .pro-gradient-bg {
+            background: linear-gradient(135deg, #4a6cf7, #a777e3, #ff6b6b);
+        }
+        .video-preview {
+            aspect-ratio: 16/9;
+        }
+        .waveform {
+            height: 60px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .waveform::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: waveform-animation 2s linear infinite;
+        }
+        @keyframes waveform-animation {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .timeline-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: white;
+            z-index: 10;
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        .progress-ring-circle {
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 0.3s;
+        }
+        .lut-thumbnail {
+            width: 60px;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lut-thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 2px #a777e3;
+        }
+        .lut-thumbnail.active {
+            box-shadow: 0 0 0 3px #6e8efb;
+        }
+        .slider-handle::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #a777e3;
+            cursor: pointer;
+        }
+        .color-control {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #d1d5db, #000);
+        }
+        .color-control::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: 2px solid #a777e3;
+        }
+        .editor-tab {
+            transition: all 0.2s;
+        }
+        .editor-tab:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .editor-tab.active {
+            background-color: rgba(167, 119, 227, 0.2);
+            border-left: 3px solid #a777e3;
+        }
+        .effect-card {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .effect-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .effect-card.active {
+            border-color: #a777e3;
+            box-shadow: 0 0 0 2px #a777e3;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg py-4 px-6 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-atom text-2xl"></i>
+                <h1 class="text-2xl font-bold">QuantumCut AI <span class="text-xs bg-white text-purple-700 px-2 py-1 rounded-full ml-1">PRO</span></h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="#" class="hover:text-gray-200 transition">Features</a>
+                <a href="#" class="hover:text-gray-200 transition">Pricing</a>
+                <a href="#" class="hover:text-gray-200 transition">Tutorials</a>
+                <a href="#" class="hover:text-gray-200 transition">Assets</a>
+                <a href="#" class="hover:text-gray-200 transition">Support</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button class="hidden md:block px-4 py-2 rounded-full bg-white text-purple-700 font-semibold hover:bg-gray-100 transition">
+                    Upgrade to Pro
+                </button>
+                <div class="flex items-center space-x-1 cursor-pointer">
+                    <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <span class="hidden md:inline">Account</span>
+                </div>
+                <button class="md:hidden text-xl">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Left Panel - Project Settings -->
+            <div class="lg:col-span-1 bg-gray-800 rounded-xl p-6 shadow-lg flex flex-col">
+                <h2 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fas fa-cog mr-2"></i> Project Settings
+                </h2>
+                
+                <!-- Project Info -->
+                <div class="mb-6">
+                    <label class="block text-sm text-gray-400 mb-2">Project Name</label>
+                    <input type="text" placeholder="My Awesome Video" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                </div>
+                
+                <!-- Upload Area -->
+                <div id="upload-area" class="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center mb-6 cursor-pointer hover:border-purple-500 transition">
+                    <i class="fas fa-cloud-upload-alt text-4xl mb-3 text-gray-400"></i>
+                    <p class="text-gray-400 mb-2">Drag & drop your video file</p>
+                    <p class="text-sm text-gray-500">or click to browse files</p>
+                    <input type="file" id="file-input" class="hidden" accept="video/*">
+                </div>
+                
+                <!-- Selected File Info -->
+                <div id="file-info" class="hidden bg-gray-700 rounded-lg p-4 mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-video text-purple-400 mr-2"></i>
+                            <span id="file-name" class="font-medium truncate max-w-[140px]">sample_video.mp4</span>
+                        </div>
+                        <button id="remove-file" class="text-gray-400 hover:text-white">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        <div class="flex justify-between mb-1">
+                            <span>Duration:</span>
+                            <span id="file-duration">00:02:45</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Size:</span>
+                            <span id="file-size">245 MB</span>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span>Resolution:</span>
+                            <span id="file-resolution">1920x1080</span>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span>FPS:</span>
+                            <span id="file-fps">30</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Project Settings -->
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3 flex items-center">
+                        <i class="fas fa-project-diagram mr-2"></i> Output Settings
+                    </h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Output Resolution</label>
+                            <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>Source (1920x1080)</option>
+                                <option>4K (3840x2160)</option>
+                                <option>1080p (1920x1080)</option>
+                                <option>720p (1280x720)</option>
+                                <option>Vertical (1080x1920)</option>
+                                <option>Square (1080x1080)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Frame Rate</label>
+                            <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>Source (30fps)</option>
+                                <option>60fps (Smoother)</option>
+                                <option>30fps (Standard)</option>
+                                <option>24fps (Cinematic)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Output Format</label>
+                            <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option>MP4 (H.264)</option>
+                                <option>MOV (ProRes)</option>
+                                <option>WebM (VP9)</option>
+                                <option>GIF (Animated)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Processing Button -->
+                <button id="process-btn" class="w-full gradient-bg py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed mt-auto" disabled>
+                    <i class="fas fa-magic"></i>
+                    <span>Process Video</span>
+                </button>
+            </div>
+            
+            <!-- Center Panel - Video Preview & Timeline -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Video Preview with Effect Controls -->
+                <div class="bg-gray-800 rounded-xl p-4 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-play-circle mr-2"></i> Preview
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-sliders-h mr-1"></i> Controls
+                            </button>
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-expand mr-1"></i> Fullscreen
+                            </button>
+                        </div>
+                    </div>
+                    <div id="video-container" class="video-preview bg-black rounded-lg overflow-hidden flex items-center justify-center relative">
+                        <div id="video-placeholder" class="text-center p-6">
+                            <i class="fas fa-video text-5xl text-gray-600 mb-4"></i>
+                            <p class="text-gray-500">Your video will appear here</p>
+                        </div>
+                        <video id="video-player" class="w-full h-full hidden" controls></video>
+                        <div id="processing-overlay" class="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center hidden">
+                            <svg class="w-16 h-16 mb-4" viewBox="0 0 100 100">
+                                <circle class="text-gray-600" cx="50" cy="50" r="45" stroke-width="8" fill="none" stroke="currentColor"></circle>
+                                <circle class="progress-ring-circle text-purple-500" cx="50" cy="50" r="45" stroke-width="8" fill="none" stroke="currentColor"></circle>
+                            </svg>
+                            <p class="text-xl font-semibold mb-2">Processing Video</p>
+                            <p id="progress-text" class="text-gray-400">Analyzing content...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline Editor with Enhanced Tools -->
+                <div class="bg-gray-800 rounded-xl p-4 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-sliders-h mr-2"></i> Timeline Editor
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-layer-group mr-1"></i> Tracks
+                            </button>
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-magic mr-1"></i> Auto-Mix
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Timeline -->
+                    <div class="mb-4 bg-gray-900 rounded-lg p-2">
+                        <div class="flex mb-1 overflow-x-auto">
+                            <button class="px-2 py-1 text-xs bg-gray-700 rounded mr-1">Video 1</button>
+                            <button class="px-2 py-1 text-xs bg-gray-700 rounded mr-1">Audio</button>
+                            <button class="px-2 py-1 text-xs bg-gray-700 rounded mr-1">Music</button>
+                            <button class="px-2 py-1 text-xs bg-gray-700 rounded mr-1">Effects</button>
+                            <button class="px-2 py-1 text-xs bg-gradient-to-r from-purple-500 to-pink-500 rounded">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="waveform mb-2 flex items-center">
+                            <div class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center mr-2">
+                                <i class="fas fa-play text-xs"></i>
+                            </div>
+                            <div class="flex-1 h-full relative">
+                                <div class="timeline-marker" style="left: 30%;"></div>
+                                <div class="absolute left-0 top-0 bottom-0 w-1/3 bg-gradient-to-r from-purple-500/30 to-pink-500/30 rounded"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-400 px-2">
+                            <span>0:00</span>
+                            <span id="video-duration">0:00</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Controls -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <div class="bg-gray-700 rounded-lg p-2 flex-1 min-w-[120px]">
+                            <div class="text-xs text-gray-400 mb-1">Key Moments</div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                                <div class="text-sm">5 detected</div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-2 flex-1 min-w-[120px]">
+                            <div class="text-xs text-gray-400 mb-1">Audio Peaks</div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                                <div class="text-sm">3 marked</div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-2 flex-1 min-w-[120px]">
+                            <div class="text-xs text-gray-400 mb-1">Quality Score</div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                                <div class="text-sm">82/100</div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-2 flex-1 min-w-[120px]">
+                            <div class="text-xs text-gray-400 mb-1">AI Analysis</div>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                                <div class="text-sm">94% match</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline Actions -->
+                    <div class="flex flex-wrap gap-3">
+                        <button class="px-4 py-2 bg-gray-700 rounded-lg flex items-center space-x-2 hover:bg-gray-600 transition">
+                            <i class="fas fa-cut"></i>
+                            <span>Split</span>
+                        </button>
+                        <button class="px-4 py-2 bg-gray-700 rounded-lg flex items-center space-x-2 hover:bg-gray-600 transition">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Speed</span>
+                        </button>
+                        <button class="px-4 py-2 bg-gray-700 rounded-lg flex items-center space-x-2 hover:bg-gray-600 transition">
+                            <i class="fas fa-subscript"></i>
+                            <span>Text</span>
+                        </button>
+                        <button class="px-4 py-2 bg-gray-700 rounded-lg flex items-center space-x-2 hover:bg-gray-600 transition">
+                            <i class="fas fa-transition"></i>
+                            <span>Transition</span>
+                        </button>
+                        <button class="px-4 py-2 bg-purple-600 rounded-lg flex items-center space-x-2 hover:bg-purple-700 transition ml-auto">
+                            <i class="fas fa-save"></i>
+                            <span>Export</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- AI Suggestions with Details -->
+                <div class="bg-gray-800 rounded-xl p-4 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold flex items-center">
+                            <i class="fas fa-lightbulb mr-2"></i> AI Analysis
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-filter mr-1"></i> Filter
+                            </button>
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-cog mr-1"></i> Settings
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                        <div class="bg-gray-700 rounded-lg p-3 flex items-start group">
+                            <div class="bg-purple-500 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-bolt text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium mb-1 flex justify-between">
+                                    <span>Highlight Moment</span>
+                                    <span class="text-xs text-gray-400 ml-2">1:05-1:12</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-2">This segment has high visual interest with multiple faces and motion that would engage viewers.</p>
+                                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Mark</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Trim Around</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Favorite</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 flex items-start group">
+                            <div class="bg-blue-500 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-volume-mute text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium mb-1 flex justify-between">
+                                    <span>Silent Section</span>
+                                    <span class="text-xs text-gray-400 ml-2">0:42-0:49</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-2">7-second silent segment detected. Consider trimming or adding background music.</p>
+                                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Trim</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Add Music</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Ignore</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 flex items-start group">
+                            <div class="bg-green-500 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-music text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium mb-1 flex justify-between">
+                                    <span>Music Sync Point</span>
+                                    <span class="text-xs text-gray-400 ml-2">1:58</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-2">Perfect moment to sync a beat drop or transition for maximum impact.</p>
+                                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Add Marker</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Split Here</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Sync Music</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-3 flex items-start group">
+                            <div class="bg-yellow-500 rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-1 flex-shrink-0">
+                                <i class="fas fa-exclamation text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium mb-1 flex justify-between">
+                                    <span>Quality Warning</span>
+                                    <span class="text-xs text-gray-400 ml-2">2:15-2:18</span>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-2">Low light segment that might benefit from color correction.</p>
+                                <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Auto-Correct</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Apply LUT</button>
+                                    <button class="text-xs bg-gray-600 px-2 py-1 rounded hover:bg-gray-500">Ignore</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Advanced Editing Tools -->
+            <div class="lg:col-span-1 bg-gray-800 rounded-xl p-6 shadow-lg space-y-6">
+                <!-- Editor Tabs -->
+                <div class="flex border-b border-gray-700">
+                    <button class="editor-tab px-4 py-2 active" data-tab="effects">
+                        <i class="fas fa-sliders-h mr-2"></i> Effects
+                    </button>
+                    <button class="editor-tab px-4 py-2" data-tab="color">
+                        <i class="fas fa-palette mr-2"></i> Color
+                    </button>
+                    <button class="editor-tab px-4 py-2" data-tab="audio">
+                        <i class="fas fa-music mr-2"></i> Audio
+                    </button>
+                </div>
+                
+                <!-- Effects Panel -->
+                <div id="effects-panel" class="tab-panel">
+                    <h3 class="font-semibold mb-3 flex items-center">
+                        <i class="fas fa-magic mr-2"></i> AI Editing Styles
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600 active">
+                            <div class="text-purple-400 mb-1 flex items-center">
+                                <i class="fas fa-bolt mr-1"></i>
+                                <span class="text-sm font-medium">Dynamic Cuts</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Fast-paced, engaging edits</p>
+                        </div>
+                        <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600">
+                            <div class="text-blue-400 mb-1 flex items-center">
+                                <i class="fas fa-water mr-1"></i>
+                                <span class="text-sm font-medium">Smooth Transitions</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Cinematic flow between shots</p>
+                        </div>
+                        <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600">
+                            <div class="text-green-400 mb-1 flex items-center">
+                                <i class="fas fa-book mr-1"></i>
+                                <span class="text-sm font-medium">Documentary</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Narrative-driven editing</p>
+                        </div>
+                        <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600">
+                            <div class="text-pink-400 mb-1 flex items-center">
+                                <i class="fas fa-mobile-alt mr-1"></i>
+                                <span class="text-sm font-medium">Social Media</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Vertical short clips</p>
+                        </div>
+                        <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600">
+                            <div class="text-yellow-400 mb-1 flex items-center">
+                                <i class="fas fa-film mr-1"></i>
+                                <span class="text-sm font-medium">Cinematic</span>
+                            </div>
+                            <p class="text-xs text-gray-400">Widescreen movie effect</p>
+                        </div>
+                        <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600">
+                            <div class="effect-card bg-gray-700 rounded-lg p-3 border border-gray-600">
+                                <div class="text-red-400 mb-1 flex items-center">
+                                    <i class="fas fa-running mr-1"></i>
+                                    <span class="text-sm font-medium">Action</span>
+                                </div>
+                                <p class="text-xs text-gray-400">High-energy sequences</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-semibold mb-3 flex items-center">
+                        <i class="fas fa-cube mr-2"></i> LUTs & Presets
+                    </h3>
+                    <div class="mb-3">
+                        <div class="flex space-x-2 overflow-x-auto pb-2">
+                            <div class="lut-thumbnail active" style="background: linear-gradient(135deg, #434343, #000000);" data-lut="none">
+                                <div class="w-full h-full flex items-center justify-center text-xs">None</div>
+                            </div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #f5f7fa, #c3cfe2);" data-lut="cool"></div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #fff1eb, #ace0f9);" data-lut="warm"></div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #ffc3a0, #ffafbd);" data-lut="vintage"></div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #cc2b5e, #753a88);" data-lut="dramatic"></div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #4568dc, #b06ab3);" data-lut="cinematic"></div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #000000, #434343);" data-lut="bw"></div>
+                            <div class="lut-thumbnail" style="background: linear-gradient(135deg, #f3e7e9, #e3eeff);" data-lut="light"></div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-semibold mb-3 flex items-center">
+                        <i class="fas fa-star mr-2"></i> Premium Effects
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-gray-700/50 rounded-lg p-3 border border-dashed border-gray-600 flex flex-col items-center justify-center">
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full w-8 h-8 flex items-center justify-center mb-1">
+                                <i class="fas fa-crown text-xs text-white"></i>
+                            </div>
+                            <span class="text-xs text-center">Glitch Effect</span>
+                        </div>
+                        <div class="bg-gray-700/50 rounded-lg p-3 border border-dashed border-gray-600 flex flex-col items-center justify-center">
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full w-8 h-8 flex items-center justify-center mb-1">
+                                <i class="fas fa-crown text-xs text-white"></i>
+                            </div>
+                            <span class="text-xs text-center">VHS Effect</span>
+                        </div>
+                        <div class="bg-gray-700/50 rounded-lg p-3 border border-dashed border-gray-600 flex flex-col items-center justify-center">
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full w-8 h-8 flex items-center justify-center mb-1">
+                                <i class="fas fa-crown text-xs text-white"></i>
+                            </div>
+                            <span class="text-xs text-center">Animated Text</span>
+                        </div>
+                        <div class="bg-gray-700/50 rounded-lg p-3 border border-dashed border-gray-600 flex flex-col items-center justify-center">
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full w-8 h-8 flex items-center justify-center mb-1">
+                                <i class="fas fa-crown text-xs text-white"></i>
+                            </div>
+                            <span class="text-xs text-center">Motion Blur</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Color Panel -->
+                <div id="color-panel" class="tab-panel hidden">
+                    <h3 class="font-semibold mb-4 flex items-center">
+                        <i class="fas fa-sliders-h mr-2"></i> Color Correction
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Brightness</span>
+                                <span id="brightness-value">0</span>
+                            </label>
+                            <input type="range" min="-100" max="100" value="0" class="color-control brightness-slider w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Contrast</span>
+                                <span id="contrast-value">0</span>
+                            </label>
+                            <input type="range" min="-100" max="100" value="0" class="color-control contrast-slider w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Saturation</span>
+                                <span id="saturation-value">0</span>
+                            </label>
+                            <input type="range" min="-100" max="100" value="0" class="color-control saturation-slider w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Temperature</span>
+                                <span id="temp-value">0</span>
+                            </label>
+                            <input type="range" min="-100" max="100" value="0" class="color-control temp-slider w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Tint</span>
+                                <span id="tint-value">0</span>
+                            </label>
+                            <input type="range" min="-100" max="100" value="0" class="color-control tint-slider w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Vibrance</span>
+                                <span id="vibrance-value">0</span>
+                            </label>
+                            <input type="range" min="-100" max="100" value="0" class="color-control vibrance-slider w-full">
+                        </div>
+                        
+                        <div class="flex space-x-2 pt-2">
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-eye-dropper mr-1"></i> White Balance
+                            </button>
+                            <button class="px-3 py-1 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition">
+                                <i class="fas fa-history mr-1"></i> Reset All
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-semibold mt-6 mb-3 flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i> Curves
+                    </h3>
+                    <div class="bg-gray-700 rounded-lg p-2 mb-4">
+                        <canvas id="curves-canvas" class="w-full h-32"></canvas>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button class="px-2 py-1 bg-gray-700 rounded text-xs hover:bg-gray-600 transition">RGB</button>
+                        <button class="px-2 py-1 bg-gray-700 rounded text-xs hover:bg-gray-600 transition">Red</button>
+                        <button class="px-2 py-1 bg-gray-700 rounded text-xs hover:bg-gray-600 transition">Green</button>
+                        <button class="px-2 py-1 bg-gray-700 rounded text-xs hover:bg-gray-600 transition">Blue</button>
+                        <button class="px-2 py-1 bg-gray-700 rounded text-xs hover:bg-gray-600 transition">Luma</button>
+                        <button class="px-2 py-1 bg-gray-700 rounded text-xs hover:bg-gray-600 transition">Reset</button>
+                    </div>
+                </div>
+                
+                <!-- Audio Panel -->
+                <div id="audio-panel" class="tab-panel hidden">
+                    <h3 class="font-semibold mb-3 flex items-center">
+                        <i class="fas fa-volume-up mr-2"></i> Audio Mixer
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Original Audio</span>
+                                <span id="original-audio-value">0dB</span>
+                            </label>
+                            <input type="range" min="-30" max="12" value="0" class="color-control audio-slider w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Music Track</span>
+                                <span id="music-audio-value">-9dB</span>
+                            </label>
+                            <input type="range" min="-30" max="12" value="-9" class="color-control audio-slider w-full">
+                        </div>
+                        
+                        <div class="pb-2">
+                            <label class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>Sound Effects</span>
+                                <span id="sfx-audio-value">-12dB</span>
+                            </label>
+                            <input type="range" min="-30" max="12" value="-12" class="color-control audio-slider w-full">
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-3 mb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="text-sm font-medium">Audio Enhancements</h4>
+                                <button class="text-xs bg-gray-800 px-2 py-1 rounded hover:bg-gray-700">Auto</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button class="px-2 py-1 bg-gray-800 rounded text-xs hover:bg-gray-700 transition">Clear Speech</button>
+                                <button class="px-2 py-1 bg-gray-800 rounded text-xs hover:bg-gray-700 transition">Remove Noise</button>
+                                <button class="px-2 py-1 bg-gray-800 rounded text-xs hover:bg-gray-700 transition">Bass Boost</button>
+                                <button class="px-2 py-1 bg-gray-800 rounded text-xs hover:bg-gray-700 transition">Normalize</button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-700 rounded-lg p-3">
+                            <h4 class="text-sm font-medium mb-2">Background Music</h4>
+                            <div class="flex items-center space-x-2 mb-2">
+                                <button class="p-2 bg-gray-800 rounded-full hover:bg-gray-700">
+                                    <i class="fas fa-music text-sm"></i>
+                                </button>
+                                <div class="flex-1 text-xs truncate">No music selected</div>
+                                <button class="p-2 bg-gray-800 rounded-full hover:bg-gray-700">
+                                    <i class="fas fa-times text-sm"></i>
+                                </button>
+                            </div>
+                            <button class="w-full py-2 bg-gray-800 rounded-lg text-sm hover:bg-gray-700 transition">
+                                <i class="fas fa-plus mr-1"></i> Add Music Track
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-semibold mt-6 mb-3 flex items-center">
+                        <i class="fas fa-wave-square mr-2"></i> Auto Ducking
+                    </h3>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm text-gray-400">Enable Ducking</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                        </label>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        Automatically lowers music volume when speech is detected.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 py-8 mt-12">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">QuantumCut AI</h3>
+                    <p class="text-gray-400">Next-generation AI video editing platform with professional studio features for creators of all levels.</p>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">Product</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">Features</a></li>
+                        <li><a href="#" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition">Templates</a></li>
+                        <li><a href="#" class="hover:text-white transition">Assets</a></li>
+                        <li><a href="#" class="hover:text-white transition">API</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">Resources</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">Documentation</a></li>
+                        <li><a href="#" class="hover:text-white transition">Tutorials</a></li>
+                        <li><a href="#" class="hover:text-white transition">Blog</a></li>
+                        <li><a href="#" class="hover:text-white transition">Community</a></li>
+                        <li><a href="#" class="hover:text-white transition">Support</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">Connect</h4>
+                    <div class="flex space-x-4 mb-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-discord"></i></a>
+                    </div>
+                    <p class="text-gray-400 mb-2">Subscribe to our newsletter</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Your email" class="bg-gray-700 px-3 py-2 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-purple-500 w-full">
+                        <button class="bg-purple-600 px-4 py-2 rounded-r-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-500 text-sm">
+                <p>© 2023 QuantumCut AI. All rights reserved. <span class="hidden md:inline">|</span> <a href="#" class="hover:text-white transition">Terms</a> <span class="hidden md:inline">|</span> <a href="#" class="hover:text-white transition">Privacy</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const fileDuration = document.getElementById('file-duration');
+        const fileSize = document.getElementById('file-size');
+        const removeFileBtn = document.getElementById('remove-file');
+        const processBtn = document.getElementById('process-btn');
+        const videoContainer = document.getElementById('video-container');
+        const videoPlaceholder = document.getElementById('video-placeholder');
+        const videoPlayer = document.getElementById('video-player');
+        const processingOverlay = document.getElementById('processing-overlay');
+        const progressText = document.getElementById('progress-text');
+        const videoDurationEl = document.getElementById('video-duration');
+        const progressRing = document.querySelector('.progress-ring-circle');
+        const editorTabs = document.querySelectorAll('.editor-tab');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        const lutThumbnails = document.querySelectorAll('.lut-thumbnail');
+        const effectCards = document.querySelectorAll('.effect-card');
+        const colorSliders = document.querySelectorAll('.color-control:not(.audio-slider)');
+        const audioSliders = document.querySelectorAll('.audio-slider');
+
+        // Initialize tab switching
+        editorTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and panels
+                editorTabs.forEach(t => t.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.add('hidden'));
+                
+                // Add active class to clicked tab and show corresponding panel
+                tab.classList.add('active');
+                const panelId = tab.getAttribute('data-tab') + '-panel';
+                document.getElementById(panelId).classList.remove('hidden');
+            });
+        });
+
+        // Initialize LUT selection
+        lutThumbnails.forEach(lut => {
+            lut.addEventListener('click', () => {
+                lutThumbnails.forEach(l => l.classList.remove('active'));
+                lut.classList.add('active');
+                const lutName = lut.getAttribute('data-lut');
+                // Apply LUT filter to video here
+                console.log('Applying LUT:', lutName);
+            });
+        });
+
+        // Initialize effect card selection
+        effectCards.forEach(card => {
+            card.addEventListener('click', () => {
+                effectCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                // Apply selected effect here
+            });
+        });
+
+        // Initialize color correction sliders
+        colorSliders.forEach(slider => {
+            const type = slider.classList.contains('brightness-slider') ? 'brightness' : 
+                         slider.classList.contains('contrast-slider') ? 'contrast' :
+                         slider.classList.contains('saturation-slider') ? 'saturation' :
+                         slider.classList.contains('temp-slider') ? 'temp' :
+                         slider.classList.contains('tint-slider') ? 'tint' : 'vibrance';
+            
+            slider.addEventListener('input', () => {
+                const value = slider.value;
+                document.getElementById(`${type}-value`).textContent = value;
+                // Apply color correction here
+                console.log(`Setting ${type} to ${value}`);
+            });
+        });
+
+        // Initialize audio sliders
+        audioSliders.forEach(slider => {
+            const type = slider === audioSliders[0] ? 'original-audio' : 
+                         slider === audioSliders[1] ? 'music-audio' : 'sfx-audio';
+            
+            slider.addEventListener('input', () => {
+                const value = slider.value;
+                document.getElementById(`${type}-value`).textContent = `${value}dB`;
+                // Adjust audio levels here
+                console.log(`Setting ${type} to ${value}dB`);
+            });
+        });
+
+        // Event Listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-purple-500');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-purple-500');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-purple-500');
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFileUpload(fileInput.files[0]);
+            }
+        });
+        
+        removeFileBtn.addEventListener('click', resetFileUpload);
+        processBtn.addEventListener('click', processVideo);
+
+        // Functions
+        function handleFileUpload(file) {
+            if (!file.type.match('video.*')) {
+                alert('Please upload a video file');
+                return;
+            }
+            
+            // Display file info
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('hidden');
+            processBtn.disabled = false;
+            
+            // Create video preview
+            const videoURL = URL.createObjectURL(file);
+            videoPlayer.src = videoURL;
+            videoPlayer.classList.remove('hidden');
+            videoPlaceholder.classList.add('hidden');
+            
+            // Get video duration and details
+            videoPlayer.onloadedmetadata = () => {
+                fileDuration.textContent = formatTime(videoPlayer.duration);
+                videoDurationEl.textContent = formatTime(videoPlayer.duration);
+                
+                // Simulate additional file info
+                document.getElementById('file-resolution').textContent = 
+                    `${videoPlayer.videoWidth}x${videoPlayer.videoHeight}`;
+                document.getElementById('file-fps').textContent = '30'; // Simulated
+            };
+        }
+        
+        function resetFileUpload() {
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            videoPlayer.src = '';
+            videoPlayer.classList.add('hidden');
+            videoPlaceholder.classList.remove('hidden');
+            processingOverlay.classList.add('hidden');
+            processBtn.disabled = true;
+        }
+        
+        function processVideo() {
+            processingOverlay.classList.remove('hidden');
+            processBtn.disabled = true;
+            
+            // Simulate processing with progress updates
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                progressRing.style.strokeDashoffset = 283 - (283 * progress / 100);
+                
+                if (progress <= 20) {
+                    progressText.textContent = "Analyzing video content...";
+                } else if (progress <= 40) {
+                    progressText.textContent = "Detecting key moments...";
+                } else if (progress <= 60) {
+                    progressText.textContent = "Applying color correction...";
+                } else if (progress <= 80) {
+                    progressText.textContent = "Optimizing audio mix...";
+                } else if (progress <= 90) {
+                    progressText.textContent = "Rendering final output...";
+                } else {
+                    progressText.textContent = "Processing complete!";
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        // Here you would typically enable export functionality
+                    }, 500);
+                }
+            }, 200);
+        }
+        
+        function formatTime(seconds) {
+            const date = new Date(0);
+            date.setSeconds(seconds);
+            return date.toISOString().substr(11, 8);
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Initialize simple curves canvas
+        const curvesCanvas = document.getElementById('curves-canvas');
+        if (curvesCanvas) {
+            const ctx = curvesCanvas.getContext('2d');
+            
+            // Draw grid
+            ctx.strokeStyle = '#4a5568';
+            ctx.lineWidth = 1;
+            
+            // Horizontal lines
+            for (let i = 0; i <= 10; i++) {
+                const y = i * (curvesCanvas.height / 10);
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(curvesCanvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Vertical lines
+            for (let i = 0; i <= 10; i++) {
+                const x = i * (curvesCanvas.width / 10);
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, curvesCanvas.height);
+                ctx.stroke();
+            }
+            
+            // Draw curve
+            ctx.strokeStyle = '#a777e3';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const points = [
+                { x: 0, y: curvesCanvas.height },
+                { x: curvesCanvas.width * 0.3, y: curvesCanvas.height * 0.6 },
+                { x: curvesCanvas.width * 0.7, y: curvesCanvas.height * 0.4 },
+                { x: curvesCanvas.width, y: 0 }
+            ];
+            
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                const xc = (points[i].x + points[i - 1].x) / 2;
+                const yc = (points[i].y + points[i - 1].y) / 2;
+                ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
+            }
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
