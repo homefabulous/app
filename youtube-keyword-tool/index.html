@@ -1,0 +1,780 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67289ee48302feb27fe9a335"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Keyword Research Tool | Find Low Competition Keywords</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #FF0000 0%, #FF8C00 100%);
+        }
+        
+        .keyword-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .competition-low {
+            background-color: #10b981;
+        }
+        
+        .competition-medium {
+            background-color: #f59e0b;
+        }
+        
+        .competition-high {
+            background-color: #ef4444;
+        }
+        
+        .search-volume-high {
+            color: #10b981;
+        }
+        
+        .search-volume-medium {
+            color: #f59e0b;
+        }
+        
+        .search-volume-low {
+            color: #ef4444;
+        }
+        
+        .tabs button.active {
+            background-color: white;
+            color: #ef4444;
+            border-bottom: 3px solid #ef4444;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #e5e7eb;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #3b82f6, #6366f1);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #374151;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="gradient-bg text-white py-8 px-4 md:px-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl md:text-4xl font-bold">YouTube Keyword Power Tool</h1>
+                        <p class="mt-2 text-red-100">Discover low-competition, high-search-volume keywords to outrank competitors</p>
+                    </div>
+                    <div class="hidden md:flex items-center space-x-2 bg-white/10 py-2 px-4 rounded-full">
+                        <i class="fab fa-youtube text-red-500 text-2xl"></i>
+                        <span class="font-semibold">YouTube Certified</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-6xl mx-auto px-4 md:px-8 py-8 -mt-8">
+            <!-- Input Card -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="md:col-span-2">
+                        <label for="video-title" class="block text-lg font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-heading mr-2 text-red-500"></i>Your Video Title
+                        </label>
+                        <input type="text" id="video-title" placeholder="Enter your video title (e.g., How to make perfect scrambled eggs)" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-red-500 transition-colors duration-300">
+                        <div class="mt-1 text-sm text-gray-500">Enter your main video topic or title to get keyword suggestions</div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-lg font-semibold text-gray-800 mb-2">
+                            <i class="fas fa-filter mr-2 text-red-500"></i>Filters
+                        </label>
+                        <div class="flex space-x-2">
+                            <select id="country" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="global">🌎 Global</option>
+                                <option value="us">🇺🇸 United States</option>
+                                <option value="uk">🇬🇧 United Kingdom</option>
+                                <option value="ca">🇨🇦 Canada</option>
+                                <option value="au">🇦🇺 Australia</option>
+                                <option value="in">🇮🇳 India</option>
+                            </select>
+                            <select id="language" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="en">English</option>
+                                <option value="es">Spanish</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="hi">Hindi</option>
+                                <option value="fr">French</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button id="analyze-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                        <i class="fas fa-bolt mr-2"></i> Find Winning Keywords
+                    </button>
+                    <button id="advanced-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center">
+                        <i class="fas fa-sliders-h mr-2"></i> Advanced
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="hidden">
+                <!-- Tabs -->
+                <div class="tabs flex mb-6 bg-gray-100 rounded-lg p-1">
+                    <button class="tab-btn active flex-1 py-3 px-4 rounded-lg font-semibold" data-tab="keywords">
+                        <i class="fas fa-key mr-2"></i> Keywords
+                    </button>
+                    <button class="tab-btn flex-1 py-3 px-4 rounded-lg font-semibold" data-tab="analysis">
+                        <i class="fas fa-chart-bar mr-2"></i> Title Analysis
+                    </button>
+                    <button class="tab-btn flex-1 py-3 px-4 rounded-lg font-semibold" data-tab="competitors">
+                        <i class="fas fa-users mr-2"></i> Competitor Analysis
+                    </button>
+                </div>
+                
+                <!-- Keywords Tab -->
+                <div id="keywords-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">Top Keyword Opportunities</h3>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-600">Sort by:</span>
+                            <select id="sort-keywords" class="border border-gray-300 rounded-lg px-3 py-1">
+                                <option value="relevance">Relevance</option>
+                                <option value="volume">Search Volume</option>
+                                <option value="competition">Competition</option>
+                                <option value="score">Opportunity Score</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8" id="keywords-container">
+                        <!-- Keyword cards will be inserted here by JavaScript -->
+                    </div>
+                    
+                    <div class="flex justify-center mb-8">
+                        <button id="load-more" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg transition-colors duration-300">
+                            Load More Keywords
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Analysis Tab -->
+                <div id="analysis-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow p-6 mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Title Optimization Score</h3>
+                        <div class="flex items-center">
+                            <div class="text-5xl font-bold text-red-600 mr-4">87</div>
+                            <div class="flex-1">
+                                <div class="progress-bar w-full mb-2">
+                                    <div class="progress-fill" style="width: 87%"></div>
+                                </div>
+                                <p class="text-gray-600">Your title has a high optimization score. We suggest minor improvements to maximize CTR.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-3">Title Highlights</h4>
+                            <ul class="space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <span>Includes main keyword at the beginning</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                    <span>Under 60 characters for full visibility</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-2"></i>
+                                    <span>Could benefit from more power words (try adding "Easy", "Secret", "Best")</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-3">Suggested Improved Titles</h4>
+                            <ul class="space-y-3">
+                                <li class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                    The Secret to Perfect Scrambled Eggs (Pro Chef Technique)
+                                </li>
+                                <li class="p-3 bg-gray-100 rounded-lg">
+                                    5-Minute Perfect Scrambled Eggs (Better Than Restaurant Quality)
+                                </li>
+                                <li class="p-3 bg-gray-100 rounded-lg">
+                                    How to Make Scrambled Eggs Like a Michelin Star Chef
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Competitor Tab -->
+                <div id="competitors-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow p-6 mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Top Ranking Videos</h3>
+                        <p class="text-gray-600 mb-4">Here's what you're up against. We've analyzed the top 5 ranking videos for your target keyword.</p>
+                        
+                        <div class="space-y-4">
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                <div class="flex items-start">
+                                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-red-500 mr-4 flex-shrink-0">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold">Perfect Scrambled Eggs - Pro Chef Secrets</h4>
+                                        <div class="flex items-center text-sm text-gray-500 mt-1">
+                                            <span class="mr-3">Gourmet Cooking</span>
+                                            <span><i class="fas fa-eye mr-1"></i> 2.4M views</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs bg-red-500 text-white px-2 py-1 rounded-full inline-block">97% Match</div>
+                                        <div class="mt-2 flex items-center justify-end">
+                                            <span class="text-xs bg-gray-100 px-2 py-1 rounded mr-1">45% Retention</span>
+                                            <span class="text-xs bg-gray-100 px-2 py-1 rounded">8.2% CTR</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                <div class="flex items-start">
+                                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center text-amber-500 mr-4 flex-shrink-0">
+                                        <i class="fas fa-award"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold">How to Make Perfect Scrambled Eggs Every Time</h4>
+                                        <div class="flex items-center text-sm text-gray-500 mt-1">
+                                            <span class="mr-3">Home Cooking</span>
+                                            <span><i class="fas fa-eye mr-1"></i> 1.8M views</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs bg-amber-500 text-white px-2 py-1 rounded-full inline-block">89% Match</div>
+                                        <div class="mt-2 flex items-center justify-end">
+                                            <span class="text-xs bg-gray-100 px-2 py-1 rounded mr-1">52% Retention</span>
+                                            <span class="text-xs bg-gray-100 px-2 py-1 rounded">7.5% CTR</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                                <div class="flex items-start">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500 mr-4 flex-shrink-0">
+                                        <i class="fas fa-medal"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold">The Best Way to Scramble Eggs (Tested 10 Methods)</h4>
+                                        <div class="flex items-center text-sm text-gray-500 mt-1">
+                                            <span class="mr-3">Food Science</span>
+                                            <span><i class="fas fa-eye mr-1"></i> 1.2M views</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs bg-blue-500 text-white px-2 py-1 rounded-full inline-block">84% Match</div>
+                                        <div class="mt-2 flex items-center justify-end">
+                                            <span class="text-xs bg-gray-100 px-2 py-1 rounded mr-1">61% Retention</span>
+                                            <span class="text-xs bg-gray-100 px-2 py-1 rounded">6.9% CTR</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Competitor Analysis Summary</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <div class="text-red-500 font-bold mb-1">Avg. Video Length</div>
+                                <div class="text-2xl font-bold">7:24</div>
+                                <div class="text-sm text-gray-600 mt-1">Your video should be 6-8 minutes</div>
+                            </div>
+                            <div class="bg-amber-50 p-4 rounded-lg">
+                                <div class="text-amber-500 font-bold mb-1">Avg. CTR</div>
+                                <div class="text-2xl font-bold">7.7%</div>
+                                <div class="text-sm text-gray-600 mt-1">Need CTR above 7% to rank</div>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <div class="text-green-500 font-bold mb-1">Avg. Retention</div>
+                                <div class="text-2xl font-bold">53%</div>
+                                <div class="text-sm text-gray-600 mt-1">Aim for 55%+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pro Tips Section -->
+            <div id="pro-tips" class="mt-12 bg-gradient-to-r from-red-50 to-amber-50 border border-red-100 rounded-lg p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-lightbulb text-yellow-500 mr-2"></i> Pro Tips for YouTube SEO Success
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-start">
+                        <div class="bg-red-500 text-white rounded-full p-2 mr-3 flex-shrink-0">
+                            <i class="fas fa-microphone-alt text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Use Your Keywords Naturally</h4>
+                            <p class="text-gray-600 text-sm">Include your main keyword in: title, first 100 characters of description, first paragraph of description, and naturally throughout your script.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-blue-500 text-white rounded-full p-2 mr-3 flex-shrink-0">
+                            <i class="fas fa-user-clock text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Longer Videos Perform Better</h4>
+                            <p class="text-gray-600 text-sm">YouTube favors videos that keep viewers watching. Aim for 8-12 minutes for most topics (but don't add fluff just to hit this).</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-500 text-white rounded-full p-2 mr-3 flex-shrink-0">
+                            <i class="fas fa-clock text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Publish Consistently</h4>
+                            <p class="text-gray-600 text-sm">Uploading 1-2 videos per week consistently signals to YouTube that you're an active creator worth promoting.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-purple-500 text-white rounded-full p-2 mr-3 flex-shrink-0">
+                            <i class="fas fa-chart-line text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-1">Analyze & Optimize</h4>
+                            <p class="text-gray-600 text-sm">After publishing, check Analytics to see where viewers drop off, then adjust your future content accordingly.</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="mt-4 bg-white text-red-600 border border-red-200 hover:bg-red-50 font-semibold py-2 px-4 rounded-lg transition-colors duration-300 inline-flex items-center">
+                    <i class="fas fa-rocket mr-2"></i> Get My Personalized YouTube SEO Plan
+                </button>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="bg-gray-900 text-gray-300 py-12 px-4">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-white text-lg font-semibold mb-4">YouTube Keyword Power Tool</h4>
+                    <p class="text-sm">The most advanced YouTube keyword research tool to help creators find low-competition, high-potential keywords and outrank competitors.</p>
+                </div>
+                <div>
+                    <h4 class="text-white text-lg font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors">Home</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">How It Works</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white text-lg font-semibold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition-colors">YouTube SEO Guide</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Keyword Research Tips</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Video Ranking Factors</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Creator Success Stories</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white text-lg font-semibold mb-4">Subscribe</h4>
+                    <p class="text-sm mb-4">Get weekly YouTube growth tips and keyword updates.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Your email" class="px-3 py-2 bg-gray-800 text-white rounded-l-lg focus:outline-none focus:ring-1 focus:ring-red-500 flex-1">
+                        <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-r-lg">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="max-w-6xl mx-auto mt-8 pt-8 border-t border-gray-800 text-sm text-center">
+                <p>© 2023 YouTube Keyword Power Tool. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        // Sample keyword data (in a real app, this would come from an API)
+        const keywordData = [
+            {
+                keyword: "how to make perfect scrambled eggs",
+                volume: 135000,
+                competition: 0.32,
+                score: 92,
+                cpr: 45,
+                trend: "rising",
+                ctr: 8.2,
+                variations: [
+                    "perfect scrambled eggs recipe",
+                    "best way to scramble eggs",
+                    "professional scrambled eggs"
+                ]
+            },
+            {
+                keyword: "fluffy scrambled eggs",
+                volume: 82000,
+                competition: 0.18,
+                score: 95,
+                cpr: 32,
+                trend: "steady",
+                ctr: 8.5,
+                variations: [
+                    "how to make fluffy scrambled eggs",
+                    "fluffy eggs recipe",
+                    "super fluffy scrambled eggs"
+                ]
+            },
+            {
+                keyword: "scrambled eggs like a chef",
+                volume: 48000,
+                competition: 0.12,
+                score: 98,
+                cpr: 28,
+                trend: "rising",
+                ctr: 9.1,
+                variations: [
+                    "how chefs make scrambled eggs",
+                    "professional chef scrambled eggs",
+                    "restaurant style scrambled eggs"
+                ]
+            },
+            {
+                keyword: "easy scrambled eggs recipe",
+                volume: 67000,
+                competition: 0.25,
+                score: 89,
+                cpr: 41,
+                trend: "steady",
+                ctr: 7.5,
+                variations: [
+                    "simple scrambled eggs recipe",
+                    "quick scrambled eggs",
+                    "3 ingredient scrambled eggs"
+                ]
+            },
+            {
+                keyword: "best scrambled eggs technique",
+                volume: 39000,
+                competition: 0.15,
+                score: 96,
+                cpr: 26,
+                trend: "rising",
+                ctr: 8.8,
+                variations: [
+                    "scientific scrambled eggs method",
+                    "perfect scrambled eggs technique",
+                    "Gordon Ramsay scrambled eggs"
+                ]
+            },
+            {
+                keyword: "microwave scrambled eggs",
+                volume: 104000,
+                competition: 0.45,
+                score: 76,
+                cpr: 58,
+                trend: "steady",
+                ctr: 6.2,
+                variations: [
+                    "how to scramble eggs in microwave",
+                    "microwave egg recipe",
+                    "quick microwave scrambled eggs"
+                ]
+            }
+        ];
+        
+        // DOM Elements
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const videoTitleInput = document.getElementById('video-title');
+        const resultsSection = document.getElementById('results-section');
+        const keywordsContainer = document.getElementById('keywords-container');
+        const loadMoreBtn = document.getElementById('load-more');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const sortSelect = document.getElementById('sort-keywords');
+        
+        // Variables
+        let currentKeywords = [];
+        let displayedCount = 0;
+        const initialDisplayCount = 6;
+        const incrementDisplayCount = 3;
+        
+        // Event Listeners
+        analyzeBtn.addEventListener('click', analyzeKeywords);
+        loadMoreBtn.addEventListener('click', loadMoreKeywords);
+        sortSelect.addEventListener('change', sortKeywords);
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+        
+        // Functions
+        function analyzeKeywords() {
+            const title = videoTitleInput.value.trim();
+            
+            if (!title) {
+                alert('Please enter a video title to analyze');
+                return;
+            }
+            
+            // In a real app, we would send this to an API and get keyword data back
+            // For this demo, we're using the sample data above
+            
+            // Show loading state
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Analyzing...';
+            analyzeBtn.disabled = true;
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                currentKeywords = getRelevantKeywords(title);
+                displayedCount = Math.min(initialDisplayCount, currentKeywords.length);
+                
+                displayKeywords(currentKeywords.slice(0, displayedCount));
+                resultsSection.classList.remove('hidden');
+                
+                // Reset button
+                analyzeBtn.innerHTML = '<i class="fas fa-bolt mr-2"></i> Find Winning Keywords';
+                analyzeBtn.disabled = false;
+                
+                // Scroll to results
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            }, 1500);
+        }
+        
+        function getRelevantKeywords(title) {
+            // In a real app, this would call an API with the title
+            // For demo purposes, we're manipulating the sample data based on the title
+            
+            const lowercaseTitle = title.toLowerCase();
+            
+            return keywordData
+                .map(kw => {
+                    // Add some relevance scoring based on title match
+                    const relevance = lowercaseTitle.includes(kw.keyword.split(' ')[0]) ? 
+                        kw.score + 5 : kw.score;
+                    return {...kw, relevance};
+                })
+                .sort((a, b) => b.score - a.score);
+        }
+        
+        function displayKeywords(keywords) {
+            keywordsContainer.innerHTML = '';
+            
+            keywords.forEach(keyword => {
+                const card = document.createElement('div');
+                card.className = 'keyword-card bg-white rounded-lg shadow p-6 transition-transform duration-300 hover:shadow-lg';
+                
+                // Determine competition class
+                let competitionClass = 'competition-high';
+                if (keyword.competition < 0.3) {
+                    competitionClass = 'competition-low';
+                } else if (keyword.competition < 0.5) {
+                    competitionClass = 'competition-medium';
+                }
+                
+                // Determine volume class
+                let volumeClass = 'search-volume-low';
+                if (keyword.volume > 80000) {
+                    volumeClass = 'search-volume-high';
+                } else if (keyword.volume > 40000) {
+                    volumeClass = 'search-volume-medium';
+                }
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-gray-800">${keyword.keyword}</h3>
+                        <div class="flex items-center">
+                            <span class="text-sm font-semibold mr-2 ${volumeClass}">${formatNumber(keyword.volume)}</span>
+                            <div class="tooltip cursor-pointer">
+                                <span class="text-xs px-2 py-1 rounded-full ${competitionClass} text-white">${getCompetitionText(keyword.competition)}</span>
+                                <span class="tooltiptext">
+                                    <div class="text-left">
+                                        <div class="font-semibold mb-1">Competition Breakdown:</div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>Search Volume:</span>
+                                            <span>${formatNumber(keyword.volume)}</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>Competition:</span>
+                                            <span>${(keyword.competition * 100).toFixed(0)}/100</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>Click Potential:</span>
+                                            <span>${keyword.ctr.toFixed(1)}% CTR</span>
+                                        </div>
+                                        <div class="flex justify-between text-sm font-semibold mt-2">
+                                            <span>Opportunity Score:</span>
+                                            <span>${keyword.score}/100</span>
+                                        </div>
+                                    </div>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center text-sm text-gray-500 mb-4">
+                        <span class="mr-3"><i class="fas fa-bullseye mr-1"></i> ${keyword.cpr}% Click Potential</span>
+                        <span>
+                            <i class="fas ${keyword.trend === 'rising' ? 'fa-arrow-up text-green-500' : 'fa-arrow-right text-gray-400'} mr-1"></i>
+                            ${keyword.trend === 'rising' ? 'Rising' : 'Steady'} Trend
+                        </span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="text-xs text-gray-500 mb-1">OPPORTUNITY SCORE</div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full" style="width: ${keyword.score}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-3">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Related Variations:</h4>
+                        <ul class="space-y-1 text-sm text-gray-600">
+                            ${keyword.variations.slice(0, 3).map(variation => 
+                                `<li class="flex items-start">
+                                    <i class="fas fa-check-circle text-green-500 text-xs mt-1 mr-2"></i>
+                                    <span>${variation}</span>
+                                </li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                    
+                    <div class="flex justify-between mt-4">
+                        <button class="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-1"></i> Add to List
+                        </button>
+                        <button class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-1 rounded-lg transition-colors">
+                            <i class="fas fa-share-alt mr-1"></i> Share
+                        </button>
+                    </div>
+                `;
+                
+                keywordsContainer.appendChild(card);
+            });
+            
+            // Show/hide load more button
+            loadMoreBtn.classList.toggle('hidden', displayedCount >= currentKeywords.length);
+        }
+        
+        function loadMoreKeywords() {
+            const nextBatch = currentKeywords.slice(displayedCount, displayedCount + incrementDisplayCount);
+            displayKeywords([...document.querySelectorAll('.keyword-card'), ...nextBatch]);
+            displayedCount += incrementDisplayCount;
+        }
+        
+        function sortKeywords() {
+            const sortBy = sortSelect.value;
+            
+            switch(sortBy) {
+                case 'volume':
+                    currentKeywords.sort((a, b) => b.volume - a.volume);
+                    break;
+                case 'competition':
+                    currentKeywords.sort((a, b) => a.competition - b.competition);
+                    break;
+                case 'score':
+                    currentKeywords.sort((a, b) => b.score - a.score);
+                    break;
+                case 'relevance':
+                default:
+                    currentKeywords.sort((a, b) => b.relevance - a.relevance);
+                    break;
+            }
+            
+            displayedCount = Math.min(initialDisplayCount, currentKeywords.length);
+            displayKeywords(currentKeywords.slice(0, displayedCount));
+        }
+        
+        function switchTab(tabId) {
+            // Update active tab button
+            tabBtns.forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabId) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Show selected tab content
+            tabContents.forEach(content => {
+                if (content.id === `${tabId}-tab`) {
+                    content.classList.remove('hidden');
+                } else {
+                    content.classList.add('hidden');
+                }
+            });
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num;
+        }
+        
+        function getCompetitionText(competition) {
+            if (competition < 0.3) return 'Low';
+            if (competition < 0.5) return 'Medium';
+            return 'High';
+        }
+    </script>
+</body>
+</html>
