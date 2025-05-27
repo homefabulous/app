@@ -1,0 +1,1619 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67ebb6b588d370667c7b69b9"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Compass - Your Complete Life Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .section-title {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            bottom: -5px;
+            left: 0;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+    </style>
+</head>
+<body class="pb-20">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h1 class="text-3xl font-bold">Life Compass</h1>
+                    <p class="text-blue-100 mt-1 text-sm">Your complete life navigation system</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="export-btn" class="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-sm font-medium transition flex items-center">
+                        <i class="fas fa-file-export mr-1"></i>Export
+                    </button>
+                    <button id="import-btn" class="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-sm font-medium transition flex items-center">
+                        <i class="fas fa-file-import mr-1"></i>Import
+                    </button>
+                    <button id="profile-btn" class="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium hover:bg-blue-50 transition flex items-center">
+                        <i class="fas fa-user mr-1"></i>Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 mt-8">
+        <!-- Welcome Section -->
+        <section class="mb-10">
+            <div class="bg-white rounded-xl shadow-md p-6 relative overflow-hidden">
+                <div class="absolute -right-16 -top-16 w-48 h-48 bg-purple-200 rounded-full opacity-20"></div>
+                <div class="absolute -left-16 -bottom-16 w-48 h-48 bg-blue-200 rounded-full opacity-20"></div>
+                <div class="relative z-10">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-3">Welcome to Your Life Planner</h2>
+                    <p class="text-gray-600 mb-4 text-sm max-w-3xl">Organize every aspect of your life in one place. Track your progress, set goals, and achieve balance across all important areas.</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button id="add-category-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center text-sm">
+                            <i class="fas fa-plus mr-1"></i> Add New Category
+                        </button>
+                        <button id="view-all-btn" class="border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition flex items-center text-sm">
+                            <i class="fas fa-list mr-1"></i> View All Goals
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Life Categories Grid -->
+        <section class="mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-800 section-title">Life Categories</h2>
+                <div class="relative">
+                    <input id="category-search" type="text" placeholder="Search categories..." class="py-1 px-3 pr-8 rounded-full text-sm bg-white border border-gray-300 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <i class="fas fa-search absolute right-3 top-2 text-gray-400"></i>
+                </div>
+            </div>
+            
+            <div id="categories-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Categories will be dynamically added here -->
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section class="mb-12">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 section-title">Recent Activity</h2>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Recent Updates -->
+                    <div class="border-r border-gray-200 pr-6">
+                        <h3 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-bell text-yellow-500 mr-2"></i> Recent Updates
+                        </h3>
+                        <ul id="recent-updates" class="space-y-3 max-h-48 overflow-y-auto pr-2">
+                            <!-- Updates will be added here dynamically -->
+                        </ul>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="border-r border-gray-200 pr-6">
+                        <h3 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-bolt text-blue-500 mr-2"></i> Quick Actions
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button id="quick-add-goal" class="bg-blue-50 text-blue-600 p-2 rounded-lg text-xs font-medium hover:bg-blue-100 transition flex flex-col items-center">
+                                <i class="fas fa-bullseye text-sm mb-1"></i>
+                                <span>Add Goal</span>
+                            </button>
+                            <button id="quick-view-tasks" class="bg-purple-50 text-purple-600 p-2 rounded-lg text-xs font-medium hover:bg-purple-100 transition flex flex-col items-center">
+                                <i class="fas fa-tasks text-sm mb-1"></i>
+                                <span>View Tasks</span>
+                            </button>
+                            <button id="quick-view-progress" class="bg-green-50 text-green-600 p-2 rounded-lg text-xs font-medium hover:bg-green-100 transition flex flex-col items-center">
+                                <i class="fas fa-chart-line text-sm mb-1"></i>
+                                <span>Progress</span>
+                            </button>
+                            <button id="quick-view-calendar" class="bg-pink-50 text-pink-600 p-2 rounded-lg text-xs font-medium hover:bg-pink-100 transition flex flex-col items-center">
+                                <i class="fas fa-calendar-alt text-sm mb-1"></i>
+                                <span>Calendar</span>
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <h4 class="text-xs uppercase font-semibold text-gray-500 mb-2">Shortcuts</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <button class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs hover:bg-gray-200 transition">
+                                    <i class="fas fa-utensils mr-1"></i>Food
+                                </button>
+                                <button class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs hover:bg-gray-200 transition">
+                                    <i class="fas fa-dumbbell mr-1"></i>Workout
+                                </button>
+                                <button class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs hover:bg-gray-200 transition">
+                                    <i class="fas fa-book mr-1"></i>Reading
+                                </button>
+                                <button class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs hover:bg-gray-200 transition">
+                                    <i class="fas fa-money-bill-wave mr-1"></i>Finance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Overview -->
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-chart-pie text-green-500 mr-2"></i> Life Balance
+                        </h3>
+                        <div class="flex justify-center">
+                            <div class="relative w-40 height-full">
+                                <div id="balance-chart" class="w-full h-full"></div>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <p id="balance-percentage" class="text-2xl font-bold">0%</p>
+                                        <p class="text-xs text-gray-500">Balance</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="balance-legend" class="mt-4 grid grid-cols-2 gap-2">
+                            <!-- Legend items will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-3">Life Compass</h3>
+                    <p class="text-gray-400 text-sm">Your complete life navigation system to achieve balance and fulfillment.</p>
+                    <div class="flex space-x-3 mt-3">
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-3 text-sm">Quick Links</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Features</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Tips & Tricks</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Support</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-3 text-sm">Data Management</h4>
+                    <div class="space-y-2">
+                        <button id="reset-data-btn" class="text-gray-400 hover:text-white text-left text-sm w-full">
+                            <i class="fas fa-trash-alt mr-1"></i> Reset All Data
+                        </button>
+                        <button id="backup-data-btn" class="text-gray-400 hover:text-white text-left text-sm w-full">
+                            <i class="fas fa-save mr-1"></i> Backup Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400 text-sm">
+                <p>&copy; 2023 Life Compass. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Action Button -->
+    <div class="fixed bottom-6 right-6">
+        <button id="fab" class="bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center pulse">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add Category Modal -->
+    <div id="add-category-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fade-in">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Add New Category</h3>
+                <form id="add-category-form">
+                    <div class="mb-4">
+                        <label for="category-name" class="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                        <input type="text" id="category-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="category-icon" class="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+                        <select id="category-icon" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="fa-brain">Brain</option>
+                            <option value="fa-heartbeat">Health</option>
+                            <option value="fa-briefcase">Career</option>
+                            <option value="fa-heart">Relationships</option>
+                            <option value="fa-gamepad">Hobbies</option>
+                            <option value="fa-spa">Spiritual</option>
+                            <option value="fa-home">Home</option>
+                            <option value="fa-globe">Travel</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="category-color" class="block text-sm font-medium text-gray-700 mb-1">Color Theme</label>
+                        <select id="category-color" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="purple">Purple</option>
+                            <option value="blue">Blue</option>
+                            <option value="red">Red</option>
+                            <option value="green">Green</option>
+                            <option value="yellow">Yellow</option>
+                            <option value="pink">Pink</option>
+                            <option value="indigo">Indigo</option>
+                            <option value="teal">Teal</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-add-category" class="px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                            Add Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Goal Modal -->
+    <div id="add-goal-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fade-in">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Add New Goal</h3>
+                <form id="add-goal-form">
+                    <div class="mb-4">
+                        <label for="goal-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select id="goal-category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- Categories will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="goal-title" class="block text-sm font-medium text-gray-700 mb-1">Goal Title</label>
+        '               <input type="text" id="goal-title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="goal-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="goal-description" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="goal-due-date" class="block text-sm font-medium text-gray-700 mb-1">Due Date (optional)</label>
+                        <input type="date" id="goal-due-date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-add-goal" class="px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                            Add Goal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Goals Modal -->
+    <div id="view-goals-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 animate-fade-in max-h-[80vh] flex flex-col" style="z-index: 10000">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800">All Goals</h3>
+            </div>
+            <div id="goals-list-container" class="overflow-y-auto p-4 flex-1">
+                <!-- Goals will be listed here -->
+            </div>
+            <div class="p-4 border-t border-gray-200 flex justify-end">
+                <button id="close-view-goals" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fade-in">
+            <div class="p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-16 height-full rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl mr-4">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800" id="profile-username">User</h3>
+                        <p class="text-gray-600 text-sm">Member since <span id="member-since">2023</span></p>
+                    </div>
+                </div>
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-1">Categories</h4>
+                        <p class="text-gray-600" id="categories-count">0</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-1">Goals</h4>
+                        <p class="text-gray-600" id="goals-count">0</p>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-1">Tasks Completed</h4>
+                        <p class="text-gray-600" id="tasks-completed">0</p>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="close-profile" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import/Export Modal -->
+    <div id="data-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fade-in">
+            <div class="p-6">
+                <div class="flex border-b border-gray-200">
+                    <button id="export-tab" class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">Export Data</button>
+                    <button id="import-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Import Data</button>
+                </div>
+                <div id="export-content" class="py-4">
+                    <p class="text-gray-600 text-sm mb-4">Export all your data as a JSON file for backup.</p>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Data</label>
+                        <textarea id="export-data" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="5" readonly></textarea>
+                    </div>
+                    <button id="download-export" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        <i class="fas fa-download mr-2"></i> Download Backup
+                    </button>
+                </div>
+                <div id="import-content" class="py-4 hidden">
+                    <p class="text-gray-600 text-sm mb-4">Import your data from a previously exported JSON file. This will overwrite your current data!</p>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Upload JSON File</label>
+                        <input type="file" id="import-file" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex space-x-3">
+                        <button id="cancel-import" class="flex-1 px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 transition">
+                            Cancel
+                        </button>
+                        <button id="confirm-import" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                            Import Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate-fade-in">
+            <div class="p-6">
+                <h3 id="confirm-title" class="text-lg font-bold text-gray-800 mb-4">Confirm Action</h3>
+                <p id="confirm-message" class="text-gray-600 mb-6">Are you sure you want to perform this action?</p>
+                <div class="flex justify-end space-x-3">
+                    <button id="confirm-cancel" class="px-4 py-2 text-gray-600 rounded-md hover:bg-gray-100 transition">
+                        Cancel
+                    </button>
+                    <button id="confirm-action" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        let appData = {
+            categories: [],
+            goals: [],
+            completedTasks: [],
+            recentActivities: [],
+            settings: {
+                username: "Life Planner User",
+                createdAt: new Date().toISOString()
+            }
+        };
+
+        // Color themes
+        const colorThemes = {
+            purple: {
+                bgLight: 'bg-purple-100',
+                text: 'text-purple-800',
+                bg: 'bg-purple-600',
+                hover: 'hover:bg-purple-700',
+                border: 'border-purple-500'
+            },
+            blue: {
+                bgLight: 'bg-blue-100',
+                text: 'text-blue-800',
+                bg: 'bg-blue-600',
+                hover: 'hover:bg-blue-700',
+                border: 'border-blue-500'
+            },
+            red: {
+                bgLight: 'bg-red-100',
+                text: 'text-red-800',
+                bg: 'bg-red-600',
+                hover: 'hover:bg-red-700',
+                border: 'border-red-500'
+            },
+            green: {
+                bgLight: 'bg-green-100',
+                text: 'text-green-800',
+                bg: 'bg-green-600',
+                hover: 'hover:bg-green-700',
+                border: 'border-green-500'
+            },
+            yellow: {
+                bgLight: 'bg-yellow-100',
+                text: 'text-yellow-800',
+                bg: 'bg-yellow-600',
+                hover: 'hover:bg-yellow-700',
+                border: 'border-yellow-500'
+            },
+            pink: {
+                bgLight: 'bg-pink-100',
+                text: 'text-pink-800',
+                bg: 'bg-pink-600',
+                hover: 'hover:bg-pink-700',
+                border: 'border-pink-500'
+            },
+            indigo: {
+                bgLight: 'bg-indigo-100',
+                text: 'text-indigo-800',
+                bg: 'bg-indigo-600',
+                hover: 'hover:bg-indigo-700',
+                border: 'border-indigo-500'
+            },
+            teal: {
+                bgLight: 'bg-teal-100',
+                text: 'text-teal-800',
+                bg: 'bg-teal-600',
+                hover: 'hover:bg-teal-700',
+                border: 'border-teal-500'
+            }
+        };
+
+        // DOM Elements
+        const categoriesContainer = document.getElementById('categories-container');
+        const recentUpdatesList = document.getElementById('recent-updates');
+        const balancePercentage = document.getElementById('balance-percentage');
+        const balanceChart = document.getElementById('balance-chart');
+        const balanceLegend = document.getElementById('balance-legend');
+
+        // Modals
+        const addCategoryModal = document.getElementById('add-category-modal');
+        const addGoalModal = document.getElementById('add-goal-modal');
+        const viewGoalsModal = document.getElementById('view-goals-modal');
+        const profileModal = document.getElementById('profile-modal');
+        const dataModal = document.getElementById('data-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+
+        // Buttons
+        const addCategoryBtn = document.getElementById('add-category-btn');
+        const viewAllBtn = document.getElementById('view-all-btn');
+        const quickAddGoal = document.getElementById('quick-add-goal');
+        const quickViewTasks = document.getElementById('quick-view-tasks');
+        const quickViewProgress = document.getElementById('quick-view-progress');
+        const quickViewCalendar = document.getElementById('quick-view-calendar');
+        const profileBtn = document.getElementById('profile-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const fab = document.getElementById('fab');
+        const resetDataBtn = document.getElementById('reset-data-btn');
+        const backupDataBtn = document.getElementById('backup-data-btn');
+
+        // Form elements
+        const addCategoryForm = document.getElementById('add-category-form');
+        const addGoalForm = document.getElementById('add-goal-form');
+        const goalCategorySelect = document.getElementById('goal-category');
+
+        // Data modal tabs
+        const exportTab = document.getElementById('export-tab');
+        const importTab = document.getElementById('import-tab');
+        const exportContent = document.getElementById('export-content');
+        const importContent = document.getElementById('import-content');
+        const exportDataTextarea = document.getElementById('export-data');
+        const importFileInput = document.getElementById('import-file');
+
+        // Confirmation modal elements
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmActionBtn = document.getElementById('confirm-action');
+
+        // Initialize the app
+        function initApp() {
+            loadData();
+            renderCategories();
+            renderRecentActivities();
+            updateBalanceChart();
+            updateProfileStats();
+            
+            // Set initial animation for elements
+            document.querySelectorAll('.card').forEach((el, i) => {
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, 100 * i);
+            });
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const savedData = localStorage.getItem('lifePlannerData');
+            if (savedData) {
+                appData = JSON.parse(savedData);
+            } else {
+                // Add some default categories if no data exists
+                appData.categories = [
+                    {
+                        id: 'cat1',
+                        name: 'Personal Development',
+                        icon: 'fa-brain',
+                        color: 'purple',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'cat2',
+                        name: 'Health & Fitness',
+                        icon: 'fa-heartbeat',
+                        color: 'red',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'cat3',
+                        name: 'Career & Finance',
+                        icon: 'fa-briefcase',
+                        color: 'blue',
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                appData.goals = [
+                    {
+                        id: 'goal1',
+                        categoryId: 'cat1',
+                        title: 'Read 12 books this year',
+                        description: 'Focus on personal growth and fiction books',
+                        dueDate: new Date(new Date().getFullYear(), 11, 31).toISOString().split('T')[0],
+                        completed: false,
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'goal2',
+                        categoryId: 'cat2',
+                        title: 'Work out 3 times a week',
+                        description: 'Mix of cardio and strength training',
+                        dueDate: null,
+                        completed: false,
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                saveData();
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('lifePlannerData', JSON.stringify(appData));
+        }
+
+        // Render categories
+        function renderCategories() {
+            categoriesContainer.innerHTML = '';
+            
+            appData.categories.forEach(category => {
+                const goalsInCategory = appData.goals.filter(goal => goal.categoryId === category.id);
+                const completedGoals = goalsInCategory.filter(goal => goal.completed).length;
+                const progress = goalsInCategory.length > 0 ? Math.round((completedGoals / goalsInCategory.length) * 100) : 0;
+                
+                const theme = colorThemes[category.color] || colorThemes.purple;
+                
+                const card = document.createElement('div');
+                card.className = `card bg-white rounded-xl shadow-md overflow-hidden h-64 relative opacity-0 transform transition-all duration-300 ease-out`;
+                card.style.transform = 'translateY(10px)';
+                
+                card.innerHTML = `
+                    <div class="p-6 h-full flex flex-col">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="${theme.bgLight} ${theme.text} p-3 rounded-lg">
+                                <i class="${category.icon} text-2xl"></i>
+                            </div>
+                            <span class="bg-${category.color}-100 text-${category.color}-800 text-xs px-2 py-1 rounded-full">
+                                ${goalsInCategory.length} goals
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${category.name}</h3>
+                        <p class="text-gray-600 mb-4">${getCategoryDescription(category.name)}</p>
+                        <div class="mt-auto">
+                            <div class="flex justify-between items-center text-sm text-gray-500 mb-2">
+                                <span>Progress</span>
+                                <span>${progress}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="${theme.bg} h-2 rounded-full" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                        <button class="absolute bottom-4 right-4 ${theme.bg} text-white w-10 h-10 rounded-full flex items-center justify-center hover:${theme.hover} transition">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    viewGoalsForCategory(category.id);
+                });
+                
+                categoriesContainer.appendChild(card);
+                
+                // Animate the card in
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100);
+            });
+        }
+
+        // Get a description for a category based on its name
+        function getCategoryDescription(name) {
+            const descriptions = {
+                'Personal Development': 'Grow your skills, knowledge, and mindset to become your best self.',
+                'Health & Fitness': 'Track workouts, nutrition, sleep, and overall wellbeing.',
+                'Career & Finance': 'Manage your professional growth and financial health.',
+                'Relationships': 'Nurture your connections with family, friends, and partners.',
+                'Recreation & Hobbies': 'Make time for fun, creativity, and personal interests.',
+                'Spirituality & Purpose': 'Connect with your deeper values and life meaning.'
+            };
+            
+            return descriptions[name] || 'Track and improve this important area of your life.';
+        }
+
+        // View goals for a specific category
+        function viewGoalsForCategory(categoryId) {
+            const category = appData.categories.find(c => c.id === categoryId);
+            if (!category) return;
+            
+            const goals = appData.goals.filter(goal => goal.categoryId === categoryId);
+            const theme = colorThemes[category.color] || colorThemes.purple;
+            
+            const goalsListContainer = document.getElementById('goals-list-container');
+            goalsListContainer.innerHTML = '';
+            
+            // Add category header
+            const header = document.createElement('div');
+            header.className = 'flex items-center mb-6';
+            header.innerHTML = `
+                <div class="${theme.bgLight} ${theme.text} p-3 rounded-lg mr-4">
+                    <i class="${category.icon} text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">${category.name} Goals</h3>
+            `;
+            goalsListContainer.appendChild(header);
+            
+            if (goals.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'text-gray-500 text-center py-8';
+                emptyMessage.textContent = 'No goals added yet. Click "Add Goal" to get started.';
+                goalsListContainer.appendChild(emptyMessage);
+            } else {
+                goals.forEach(goal => {
+                    const goalCard = document.createElement('div');
+                    const cardClasses = `mb-4 p-4 border rounded-lg ${goal.completed ? 'bg-gray-50 border-gray-200' : 'bg-white'} ${theme.border} border-2`;
+                    goalCard.className = cardClasses;
+                    
+                    goalCard.innerHTML = `
+                        <div class="flex justify-between">
+                            <h4 class="font-medium ${goal.completed ? 'text-gray-500 line-through' : 'text-gray-800'}">${goal.title}</h4>
+                            <div class="flex items-center space-x-2">
+                                ${!goal.completed ? `<button class="edit-goal text-gray-400 hover:text-${category.color}-600" data-id="${goal.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>` : ''}
+                                <button class="toggle-goal text-${goal.completed ? 'gray-400' : category.color + '-600'}" data-id="${goal.id}">
+                                    <i class="fas fa-${goal.completed ? 'undo' : 'check'}"></i>
+                                </button>
+                                <button class="delete-goal text-gray-400 hover:text-red-600" data-id="${goal.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        ${goal.description ? `<p class="text-sm text-gray-600 mt-2">${goal.description}</p>` : ''}
+                        ${goal.dueDate ? `<p class="text-xs mt-2 text-gray-500"><i class="fas fa-calendar-alt mr-1"></i> Due: ${formatDate(goal.dueDate)}</p>` : ''}
+                    `;
+                    
+                    goalsListContainer.appendChild(goalCard);
+                });
+
+                // Add event listeners for buttons
+                document.querySelectorAll('.edit-goal').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const goalId = btn.getAttribute('data-id');
+                        editGoal(goalId, categoryId);
+                    });
+                });
+                
+                document.querySelectorAll('.toggle-goal').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const goalId = btn.getAttribute('data-id');
+                        toggleGoalCompletion(goalId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-goal').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const goalId = btn.getAttribute('data-id');
+                        confirmDeleteGoal(goalId);
+                    });
+                });
+            }
+            
+            // Add "Add Goal" button at the bottom
+            const addGoalButton = document.createElement('button');
+            addGoalButton.className = `w-full mt-4 px-4 py-2 ${theme.bg} text-white rounded-lg hover:${theme.hover} transition flex items-center justify-center`;
+            addGoalButton.innerHTML = `<i class="fas fa-plus mr-2"></i> Add Goal`;
+            addGoalButton.addEventListener('click', () => {
+                showAddGoalModal(categoryId);
+                closeModal(viewGoalsModal);
+            });
+            
+            goalsListContainer.appendChild(addGoalButton);
+            
+            showModal(viewGoalsModal);
+        }
+
+        // Show all goals in the view goals modal
+        function showAllGoals() {
+            const goalsListContainer = document.getElementById('goals-list-container');
+            goalsListContainer.innerHTML = '';
+            
+            if (appData.goals.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'text-gray-500 text-center py-8';
+                emptyMessage.textContent = 'No goals added yet. Click "Add Goal" to get started.';
+                goalsListContainer.appendChild(emptyMessage);
+            } else {
+                // Group goals by category
+                const goalsByCategory = {};
+                appData.goals.forEach(goal => {
+                    if (!goalsByCategory[goal.categoryId]) {
+                        goalsByCategory[goal.categoryId] = [];
+                    }
+                    goalsByCategory[goal.categoryId].push(goal);
+                });
+                
+                // Display goals for each category
+                Object.keys(goalsByCategory).forEach(categoryId => {
+                    const category = appData.categories.find(c => c.id === categoryId);
+                    if (!category) return;
+                    
+                    const theme = colorThemes[category.color] || colorThemes.purple;
+                    
+                    // Category header
+                    const header = document.createElement('div');
+                    header.className = 'flex items-center mb-4';
+                    header.innerHTML = `
+                        <div class="${theme.bgLight} ${theme.text} p-3 rounded-lg mr-4">
+                            <i class="${category.icon} text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-800">${category.name}</h3>
+                    `;
+                    goalsListContainer.appendChild(header);
+                    
+                    // Goals list
+                    goalsByCategory[categoryId].forEach(goal => {
+                        const goalCard = document.createElement('div');
+                        const cardClasses = `mb-3 p-3 border rounded-lg ${goal.completed ? 'bg-gray-50 border-gray-200' : 'bg-white'} ${theme.border} border-2`;
+                        goalCard.className = cardClasses;
+                        
+                        goalCard.innerHTML = `
+                            <div class="flex justify-between">
+                                <h4 class="font-medium text-sm ${goal.completed ? 'text-gray-500 line-through' : 'text-gray-800'}">${goal.title}</h4>
+                                <div class="flex items-center space-x-2">
+                                    ${!goal.completed ? `<button class="edit-goal text-gray-400 hover:text-${category.color}-600" data-id="${goal.id}">
+                                        <i class="fas fa-edit text-sm"></i>
+                                    </button>` : ''}
+                                    <button class="toggle-goal text-${goal.completed ? 'gray-400' : category.color + '-600'}" data-id="${goal.id}">
+                                        <i class="fas fa-${goal.completed ? 'undo' : 'check'} text-sm"></i>
+                                    </button>
+                                    <button class="delete-goal text-gray-400 hover:text-red-600" data-id="${goal.id}">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            ${goal.dueDate ? `<p class="text-xs mt-1 text-gray-500"><i class="fas fa-calendar-alt mr-1"></i> Due: ${formatDate(goal.dueDate)}</p>` : ''}
+                        `;
+                        
+                        goalCard.addEventListener('click', (e) => {
+                            // If clicking directly on the card and not on a button, toggle completion
+                            if (!e.target.closest('button')) {
+                                toggleGoalCompletion(goal.id);
+                            }
+                        });
+
+                        // Add event listeners for buttons
+                        const editBtn = goalCard.querySelector('.edit-goal');
+                        if (editBtn) {
+                            editBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                editGoal(goal.id, categoryId);
+                            });
+                        }
+
+                        goalCard.querySelector('.toggle-goal').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            toggleGoalCompletion(goal.id);
+                        });
+
+                        goalCard.querySelector('.delete-goal').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            confirmDeleteGoal(goal.id);
+                        });
+                        
+                        goalsListContainer.appendChild(goalCard);
+                    });
+                    
+                    // Add divider between categories
+                    if (Object.keys(goalsByCategory).length > 1) {
+                        const divider = document.createElement('div');
+                        divider.className = 'border-t border-gray-200 my-4';
+                        goalsListContainer.appendChild(divider);
+                    }
+                });
+            }
+            
+            // Add "Add Goal" button at the bottom
+            const addGoalButton = document.createElement('button');
+            addGoalButton.className = `w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center`;
+            addGoalButton.innerHTML = `<i class="fas fa-plus mr-2"></i> Add Goal`;
+            addGoalButton.addEventListener('click', () => {
+                showAddGoalModal();
+                closeModal(viewGoalsModal);
+            });
+            
+            goalsListContainer.appendChild(addGoalButton);
+            
+            showModal(viewGoalsModal);
+        }
+
+        // Show modal to add a new category
+        function showAddCategoryModal() {
+            showModal(addCategoryModal);
+        }
+
+        // Show modal to add a new goal
+        function showAddGoalModal(preSelectedCategoryId = null) {
+            // Populate the category select
+            goalCategorySelect.innerHTML = '';
+            appData.categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                if (category.id === preSelectedCategoryId) {
+                    option.selected = true;
+                }
+                goalCategorySelect.appendChild(option);
+            });
+            
+            // Reset form
+            document.getElementById('goal-title').value = '';
+            document.getElementById('goal-description').value = '';
+            document.getElementById('goal-due-date').value = '';
+            
+            // Reset the form to add goal mode
+            addGoalForm.onsubmit = handleAddGoalSubmit;
+            
+            const submitBtn = addGoalForm.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Add Goal';
+            
+            showModal(addGoalModal);
+        }
+
+        // Add a new category
+        function addCategory(name, icon, color) {
+            const newCategory = {
+                id: 'cat' + Date.now(),
+                name,
+                icon,
+                color,
+                createdAt: new Date().toISOString()
+            };
+            
+            appData.categories.push(newCategory);
+            
+            // Add activity
+            addActivity(`Added new category: "${name}"`);
+            
+            saveData();
+            renderCategories();
+            updateProfileStats();
+            closeModal(addCategoryModal);
+        }
+
+        // Add a new goal
+        function addGoal(categoryId, title, description, dueDate) {
+            const newGoal = {
+                id: 'goal' + Date.now(),
+                categoryId,
+                title,
+                description,
+                dueDate: dueDate || null,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            appData.goals.push(newGoal);
+            
+            // Add activity
+            const category = appData.categories.find(c => c.id === categoryId);
+            addActivity(`Added new goal to "${category.name}": "${title}"`);
+            
+            saveData();
+            renderCategories();
+            updateBalanceChart();
+            updateProfileStats();
+            closeModal(addGoalModal);
+        }
+
+        // Edit an existing goal
+        function editGoal(goalId, categoryId = null) {
+            const goal = appData.goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            const category = appData.categories.find(c => c.id === (categoryId || goal.categoryId));
+            if (!category) return;
+            
+            // Populate the form
+            showAddGoalModal(goal.categoryId);
+            document.getElementById('goal-title').value = goal.title;
+            document.getElementById('goal-description').value = goal.description || '';
+            document.getElementById('goal-due-date').value = goal.dueDate || '';
+            
+            // Change the form to edit mode
+            addGoalForm.onsubmit = function(e) {
+                e.preventDefault();
+                updateGoal(goalId);
+            };
+            
+            const submitBtn = addGoalForm.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Update Goal';
+            
+            showModal(addGoalModal);
+        }
+
+        // Update an existing goal
+        function updateGoal(goalId) {
+            const goal = appData.goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            const oldTitle = goal.title;
+            
+            goal.title = document.getElementById('goal-title').value;
+            goal.description = document.getElementById('goal-description').value;
+            goal.dueDate = document.getElementById('goal-due-date').value || null;
+            
+            // Add activity if title changed
+            if (goal.title !== oldTitle) {
+                const category = appData.categories.find(c => c.id === goal.categoryId);
+                addActivity(`Updated goal in "${category.name}": "${oldTitle}" → "${goal.title}"`);
+            }
+            
+            saveData();
+            renderCategories();
+            updateProfileStats();
+            closeModal(addGoalModal);
+            
+            // Refresh the goals view if it's open
+            if (!viewGoalsModal.classList.contains('hidden')) {
+                const goalsListContainer = document.getElementById('goals-list-container');
+                const header = goalsListContainer.querySelector('h3');
+                if (header && header.textContent.includes('All Goals')) {
+                    showAllGoals();
+                } else {
+                    viewGoalsForCategory(goal.categoryId);
+                }
+            }
+        }
+
+        // Toggle goal completion status
+        function toggleGoalCompletion(goalId) {
+            const goal = appData.goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            goal.completed = !goal.completed;
+            
+            // Add activity
+            const category = appData.categories.find(c => c.id === goal.categoryId);
+            addActivity(`${goal.completed ? 'Completed' : 'Marked incomplete'} goal in "${category.name}": "${goal.title}"`);
+            
+            // Update completed tasks count
+            if (goal.completed) {
+                appData.completedTasks.push({
+                    goalId,
+                    completedAt: new Date().toISOString()
+                });
+            } else {
+                appData.completedTasks = appData.completedTasks.filter(t => t.goalId !== goalId);
+            }
+            
+            saveData();
+            renderCategories();
+            updateBalanceChart();
+            updateProfileStats();
+            
+            // Refresh the goals view if it's open
+            if (!viewGoalsModal.classList.contains('hidden')) {
+                const goalsListContainer = document.getElementById('goals-list-container');
+                const header = goalsListContainer.querySelector('h3');
+                if (header && header.textContent.includes('All Goals')) {
+                    showAllGoals();
+                } else {
+                    viewGoalsForCategory(goal.categoryId);
+                }
+            }
+        }
+
+        // Confirm deletion of a goal
+        function confirmDeleteGoal(goalId) {
+            const goal = appData.goals.find(g => g.id === goalId);
+            if (!goal) return;
+            
+            showModal(confirmModal);
+            confirmTitle.textContent = 'Delete Goal';
+            confirmMessage.textContent = `Are you sure you want to delete the goal "${goal.title}"? This action cannot be undone.`;
+            
+            confirmActionBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition';
+            confirmActionBtn.textContent = 'Delete';
+            
+            confirmActionBtn.onclick = function() {
+                deleteGoal(goalId);
+                closeModal(confirmModal);
+            };
+        }
+
+        // Delete a goal
+        function deleteGoal(goalId) {
+            const goalIndex = appData.goals.findIndex(g => g.id === goalId);
+            if (goalIndex === -1) return;
+            
+            const [deletedGoal] = appData.goals.splice(goalIndex, 1);
+            
+            // Remove from completed tasks
+            appData.completedTasks = appData.completedTasks.filter(t => t.goalId !== goalId);
+            
+            // Add activity
+            const category = appData.categories.find(c => c.id === deletedGoal.categoryId);
+            addActivity(`Deleted goal from "${category.name}": "${deletedGoal.title}"`);
+            
+            saveData();
+            renderCategories();
+            updateBalanceChart();
+            updateProfileStats();
+            
+            // Refresh the goals view if it's open
+            if (!viewGoalsModal.classList.contains('hidden')) {
+                const goalsListContainer = document.getElementById('goals-list-container');
+                const header = goalsListContainer.querySelector('h3');
+                if (header && header.textContent.includes('All Goals')) {
+                    showAllGoals();
+                } else {
+                    viewGoalsForCategory(deletedGoal.categoryId);
+                }
+            }
+        }
+
+        // Confirm reset all data
+        function confirmResetData() {
+            showModal(confirmModal);
+            confirmTitle.textContent = 'Reset All Data';
+            confirmMessage.textContent = 'Are you sure you want to reset all data? This will delete all your categories, goals, and activities. This action cannot be undone.';
+            
+            confirmActionBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition';
+            confirmActionBtn.textContent = 'Reset Data';
+            
+            confirmActionBtn.onclick = function() {
+                resetAllData();
+                closeModal(confirmModal);
+            };
+        }
+
+        // Reset all app data
+        function resetAllData() {
+            appData = {
+                categories: [],
+                goals: [],
+                completedTasks: [],
+                recentActivities: [],
+                settings: {
+                    username: "Life Planner User",
+                    createdAt: new Date().toISOString()
+                }
+            };
+            
+            // Add activity
+            addActivity('Reset all data');
+            
+            saveData();
+            renderCategories();
+            renderRecentActivities();
+            updateBalanceChart();
+            updateProfileStats();
+        }
+
+        // Add a recent activity
+        function addActivity(text) {
+            appData.recentActivities.unshift({
+                text,
+                date: new Date().toISOString()
+            });
+            
+            // Keep only the last 20 activities
+            if (appData.recentActivities.length > 20) {
+                appData.recentActivities.pop();
+            }
+            
+            saveData();
+            renderRecentActivities();
+        }
+
+        // Render recent activities
+        function renderRecentActivities() {
+            recentUpdatesList.innerHTML = '';
+            
+            if (appData.recentActivities.length === 0) {
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'text-gray-500 text-sm';
+                emptyMessage.textContent = 'No recent activities yet.';
+                recentUpdatesList.appendChild(emptyMessage);
+                return;
+            }
+            
+            appData.recentActivities.forEach(activity => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                
+                // Assign a random icon based on activity text
+                let icon = 'fa-bell';
+                let iconColor = 'text-gray-500';
+                
+                if (activity.text.includes('Added')) {
+                    icon = 'fa-plus-circle';
+                    iconColor = 'text-green-500';
+                } else if (activity.text.includes('Updated')) {
+                    icon = 'fa-edit';
+                    iconColor = 'text-blue-500';
+                } else if (activity.text.includes('Completed')) {
+                    icon = 'fa-check-circle';
+                    iconColor = 'text-purple-500';
+                } else if (activity.text.includes('Deleted')) {
+                    icon = 'fa-trash-alt';
+                    iconColor = 'text-red-500';
+                } else if (activity.text.includes('Reset')) {
+                    icon = 'fa-exclamation-triangle';
+                    iconColor = 'text-red-500';
+                }
+                
+                li.innerHTML = `
+                    <div class="${iconColor} p-1 rounded-lg mr-3 mt-1">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium">${activity.text}</p>
+                        <p class="text-xs text-gray-500">${formatTimeAgo(activity.date)}</p>
+                    </div>
+                `;
+                
+                recentUpdatesList.appendChild(li);
+            });
+        }
+
+        // Update the balance chart
+        function updateBalanceChart() {
+            if (appData.categories.length === 0) {
+                balancePercentage.textContent = '0%';
+                balanceChart.innerHTML = '';
+                balanceLegend.innerHTML = '';
+                return;
+            }
+            
+            // Calculate progress for each category
+            const categoryProgress = appData.categories.map(category => {
+                const goalsInCategory = appData.goals.filter(goal => goal.categoryId === category.id);
+                const completedGoals = goalsInCategory.filter(goal => goal.completed).length;
+                const progress = goalsInCategory.length > 0 ? (completedGoals / goalsInCategory.length) * 100 : 0;
+                
+                return {
+                    name: category.name,
+                    progress,
+                    color: category.color,
+                    icon: category.icon
+                };
+            });
+            
+            // Calculate overall balance (average progress)
+            const totalProgress = categoryProgress.reduce((sum, cat) => sum + cat.progress, 0);
+            const averageProgress = totalProgress / categoryProgress.length;
+            balancePercentage.textContent = `${Math.round(averageProgress)}%`;
+            
+            // Update the pie chart (simplified version)
+            balanceChart.innerHTML = '';
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", "0 0 100 100");
+            svg.classList.add('w-full', 'h-full');
+            
+            let cumulativePercent = 0;
+            categoryProgress.forEach((cat, index) => {
+                const percent = (cat.progress / 100) * 360; // Convert to degrees
+                if (percent <= 0) return;
+                
+                const startAngle = cumulativePercent;
+                cumulativePercent += percent;
+                const endAngle = cumulativePercent;
+                
+                // Create path for each segment
+                const start = polarToCartesian(50, 50, 45, startAngle);
+                const end = polarToCartesian(50, 50, 45, endAngle);
+                
+                const largeArcFlag = percent > 180 ? 1 : 0;
+                
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", `M 50 50 L ${start.x} ${start.y} A 45 45 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`);
+                path.setAttribute("fill", getComputedColor(cat.color));
+                path.setAttribute("stroke", "#fff");
+                path.setAttribute("stroke-width", "1");
+                
+                svg.appendChild(path);
+            });
+            
+            // Add white circle in the center
+            const centerCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            centerCircle.setAttribute("cx", "50");
+            centerCircle.setAttribute("cy", "50");
+            centerCircle.setAttribute("r", "20");
+            centerCircle.setAttribute("fill", "#fff");
+            svg.appendChild(centerCircle);
+            
+            balanceChart.appendChild(svg);
+            
+            // Update the legend
+            balanceLegend.innerHTML = '';
+            categoryProgress.forEach(cat => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'flex items-center text-xs';
+                
+                const colorSwatch = document.createElement('div');
+                colorSwatch.className = `w-3 h-3 rounded-full mr-2 bg-${cat.color}-600`;
+                
+                const progressText = document.createElement('span');
+                progressText.className = 'font-medium';
+                progressText.textContent = `${Math.round(cat.progress)}%`;
+                
+                legendItem.appendChild(colorSwatch);
+                legendItem.appendChild(document.createTextNode(cat.name + ' '));
+                legendItem.appendChild(progressText);
+                
+                balanceLegend.appendChild(legendItem);
+            });
+        }
+
+        // Helper function for pie chart
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+            
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
+        }
+
+        // Helper function to get computed color for SVG
+        function getComputedColor(colorName) {
+            const colors = {
+                purple: '#8b5cf6',
+                blue: '#3b82f6',
+                red: '#ef4444',
+                green: '#10b981',
+                yellow: '#f59e0b',
+                pink: '#ec4899',
+                indigo: '#6366f1',
+                teal: '#14b8a6'
+            };
+            
+            return colors[colorName] || '#8b5cf6';
+        }
+
+        // Update profile stats
+        function updateProfileStats() {
+            document.getElementById('profile-username').textContent = appData.settings.username;
+            document.getElementById('member-since').textContent = new Date(appData.settings.createdAt).getFullYear();
+            document.getElementById('categories-count').textContent = appData.categories.length;
+            document.getElementById('goals-count').textContent = appData.goals.length;
+            document.getElementById('tasks-completed').textContent = appData.completedTasks.length;
+        }
+
+        // Export data
+        function exportData() {
+            const dataStr = JSON.stringify(appData, null, 2);
+            exportDataTextarea.value = dataStr;
+            
+            // Show export tab by default
+            showExportTab();
+            
+            showModal(dataModal);
+        }
+
+        // Show export tab
+        function showExportTab() {
+            exportContent.classList.remove('hidden');
+            importContent.classList.add('hidden');
+            exportTab.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+            exportTab.classList.remove('text-gray-500');
+            importTab.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+            importTab.classList.add('text-gray-500');
+        }
+
+        // Show import tab
+        function showImportTab() {
+            importContent.classList.remove('hidden');
+            exportContent.classList.add('hidden');
+            importTab.classList.add('border-b-2', 'border-blue-600', 'text-blue-600');
+            importTab.classList.remove('text-gray-500');
+            exportTab.classList.remove('border-b-2', 'border-blue-600', 'text-blue-600');
+            exportTab.classList.add('text-gray-500');
+        }
+
+        // Download exported data
+        function downloadExport() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "life-planner-backup.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            
+            addActivity('Exported all data');
+        }
+
+        // Import data
+        function importData(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Basic validation
+                    if (!importedData.categories || !importedData.goals || !importedData.settings) {
+                        alert("Invalid data file. Please select a valid backup file.");
+                        return;
+                    }
+                    
+                    // Show confirmation
+                    showModal(confirmModal);
+                    confirmTitle.textContent = 'Import Data';
+                    confirmMessage.textContent = 'This will overwrite all your current data. Are you sure you want to continue?';
+                    
+                    confirmActionBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition';
+                    confirmActionBtn.textContent = 'Import';
+                    
+                    confirmActionBtn.onclick = function() {
+                        appData = importedData;
+                        saveData();
+                        
+                        addActivity('Imported all data from backup');
+                        
+                        initApp(); // Refresh the UI
+                        closeModal(confirmModal);
+                        closeModal(dataModal);
+                    };
+                } catch (err) {
+                    alert("Error reading the file. Please make sure it's a valid backup file.");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Format date for display
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // Format time ago for activities
+        function formatTimeAgo(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+            if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+            if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)} months ago`;
+            return `${Math.floor(diffInSeconds / 31536000)} years ago`;
+        }
+
+        // Show modal
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        // Close modal
+        function closeModal(modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Add category form handler
+        function handleAddCategorySubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('category-name').value.trim();
+            const icon = document.getElementById('category-icon').value;
+            const color = document.getElementById('category-color').value;
+            
+            if (!name) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            addCategory(name, icon, color);
+        }
+
+        // Add goal form handler
+        function handleAddGoalSubmit(e) {
+            e.preventDefault();
+            const categoryId = document.getElementById('goal-category').value;
+            const title = document.getElementById('goal-title').value.trim();
+            const description = document.getElementById('goal-description').value.trim();
+            const dueDate = document.getElementById('goal-due-date').value || null;
+            
+            if (!title) {
+                alert('Please enter a goal title');
+                return;
+            }
+            
+            addGoal(categoryId, title, description, dueDate);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the app
+            initApp();
+            
+            // Add form submit handlers
+            addCategoryForm.addEventListener('submit', handleAddCategorySubmit);
+            addGoalForm.addEventListener('submit', handleAddGoalSubmit);
+            
+            // Button click handlers
+            addCategoryBtn.addEventListener('click', showAddCategoryModal);
+            viewAllBtn.addEventListener('click', showAllGoals);
+            quickAddGoal.addEventListener('click', showAddGoalModal);
+            quickViewTasks.addEventListener('click', showAllGoals);
+            quickViewProgress.addEventListener('click', showAllGoals);
+            quickViewCalendar.addEventListener('click', showAllGoals);
+            profileBtn.addEventListener('click', function() {
+                updateProfileStats();
+                showModal(profileModal);
+            });
+            exportBtn.addEventListener('click', exportData);
+            importBtn.addEventListener('click', function() {
+                showModal(dataModal);
+                showImportTab();
+            });
+            fab.addEventListener('click', function() {
+                showAddGoalModal();
+            });
+            resetDataBtn.addEventListener('click', confirmResetData);
+            backupDataBtn.addEventListener('click', exportData);
+            
+            // Modal close buttons
+            document.getElementById('cancel-add-category').addEventListener('click', function() {
+                closeModal(addCategoryModal);
+            });
+            document.getElementById('cancel-add-goal').addEventListener('click', function() {
+                closeModal(addGoalModal);
+            });
+            document.getElementById('close-view-goals').addEventListener('click', function() {
+                closeModal(viewGoalsModal);
+            });
+            document.getElementById('close-profile').addEventListener('click', function() {
+                closeModal(profileModal);
+            });
+            document.getElementById('confirm-cancel').addEventListener('click', function() {
+                closeModal(confirmModal);
+            });
+            document.getElementById('cancel-import').addEventListener('click', function() {
+                closeModal(dataModal);
+            });
+            
+            // Data modal tabs
+            exportTab.addEventListener('click', showExportTab);
+            importTab.addEventListener('click', showImportTab);
+            
+            // Data modal buttons
+            document.getElementById('download-export').addEventListener('click', downloadExport);
+            document.getElementById('confirm-import').addEventListener('click', function() {
+                const file = importFileInput.files[0];
+                if (!file) {
+                    alert('Please select a file to import');
+                    return;
+                }
+                importData(file);
+            });
+        });
+    </script>
+</body>
+</html>
