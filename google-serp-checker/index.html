@@ -1,0 +1,684 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67ed0796173dfc47f40ddb6b"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google SERP Rank Checker with API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #4285F4 0%, #34A853 50%, #FBBC05 100%);
+        }
+        .result-card {
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .snippet-icon {
+            color: #1a73e8;
+            font-size: 0.9rem;
+            margin-right: 4px;
+        }
+        .ai-response {
+            background-color: #f8fafc;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .toggle-advanced {
+            transition: all 0.3s ease;
+        }
+        .toggle-advanced:hover {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="gradient-bg text-white py-12 px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl font-bold mb-4"><i class="fab fa-google mr-2"></i> Google SERP Rank Checker</h1>
+            <p class="text-xl opacity-90">Find your website's position in Google search results</p>
+            <div class="mt-6 bg-white/20 rounded-lg p-4 inline-block">
+                <p class="text-sm"><i class="fas fa-check-circle mr-2"></i>Currently using Google Custom Search JSON API</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-8 -mt-12">
+        <div class="bg-white rounded-xl shadow-lg p-6" id="searchForm">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="keyword" class="block text-sm font-medium text-gray-700 mb-1">Keyword*</label>
+                    <input type="text" id="keyword" placeholder="e.g. best running shoes" 
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex-1">
+                    <label for="website" class="block text-sm font-medium text-gray-700 mb-1">Website URL*</label>
+                    <input type="text" id="website" placeholder="e.g. example.com" 
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+            
+            <div id="apiSettings" class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="font-medium text-gray-800 mb-3"><i class="fas fa-key mr-2"></i>API Configuration</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="apiKey" class="block text-sm font-medium text-gray-700 mb-1">API Key*</label>
+                        <input type="password" id="apiKey" placeholder="Your Google API key" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="cx" class="block text-sm font-medium text-gray-700 mb-1">Search Engine ID*</label>
+                        <input type="text" id="cx" placeholder="Your Custom Search Engine ID" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <span class="text-xs text-gray-500">Need help? <a href="https://developers.google.com/custom-search/v1/overview" target="_blank" class="text-blue-600 hover:underline">View Google API documentation</a></span>
+                </div>
+
+                <!-- Advanced Options Toggle -->
+                <div class="mt-4 flex items-center text-blue-600 toggle-advanced" id="advancedToggle">
+                    <i class="fas fa-chevron-down mr-2 text-sm" id="advancedToggleIcon"></i>
+                    <span class="text-sm font-medium">Show Advanced Options</span>
+                </div>
+
+                <!-- Advanced Options Panel -->
+                <div class="mt-4 hidden" id="advancedOptions">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Search Location Settings</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="country" class="block text-xs font-medium text-gray-500 mb-1">Country</label>
+                            <select id="country" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Global (default)</option>
+                                <option value="countryUS">United States</option>
+                                <option value="countryUK">United Kingdom</option>
+                                <option value="countryCA">Canada</option>
+                                <option value="countryAU">Australia</option>
+                                <option value="countryIN">India</option>
+                                <option value="countryDE">Germany</option>
+                                <option value="countryFR">France</option>
+                                <option value="countryJP">Japan</option>
+                                <option value="countryBR">Brazil</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="lang" class="block text-xs font-medium text-gray-500 mb-1">Language</label>
+                            <select id="lang" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <option value="">Any language</option>
+                                <option value="lang_en">English</option>
+                                <option value="lang_es">Spanish</option>
+                                <option value="lang_fr">French</option>
+                                <option value="lang_de">German</option>
+                                <option value="lang_pt">Portuguese</option>
+                                <option value="lang_ru">Russian</option>
+                                <option value="lang_zh">Chinese</option>
+                                <option value="lang_ja">Japanese</option>
+                                <option value="lang_ar">Arabic</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label for="resultsNum" class="block text-xs font-medium text-gray-500 mb-1">Number of Results (1-10)</label>
+                        <input type="number" id="resultsNum" min="1" max="10" value="10" 
+                            class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                <button id="checkBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i> Check SERP Position
+                </button>
+                <button id="testBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-6 rounded-lg transition flex items-center justify-center">
+                    <i class="fas fa-vial mr-2"></i> Test API Connection
+                </button>
+            </div>
+
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 text-blue-800 text-sm">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle mt-1 mr-2"></i>
+                    <div>
+                        <p class="font-medium">Using Google Custom Search JSON API</p>
+                        <p class="mt-1">Note: To get accurate results, make sure your search engine is configured with the "Search the entire web" option enabled.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading" class="max-w-4xl mx-auto px-4 py-8 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div class="loading-spinner inline-block text-blue-500 text-4xl mb-4">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <h3 class="text-xl font-medium text-gray-800">Fetching Real Google Search Results</h3>
+            <p class="text-gray-600 mt-2">Querying the Google Custom Search API...</p>
+            <div class="mt-4 w-full bg-gray-200 rounded-full h-2.5">
+                <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">This may take 5-15 seconds depending on API response times</p>
+        </div>
+    </div>
+
+    <div id="connectionTest" class="max-w-4xl mx-auto px-4 py-8 hidden">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-800"><i class="fas fa-plug mr-2"></i>API Connection Test</h3>
+                <span id="connectionStatus" class="px-3 py-1 rounded-full text-sm font-medium pulse bg-yellow-100 text-yellow-800">Testing...</span>
+            </div>
+            <div id="testResults" class="mt-4">
+                <div class="space-y-4">
+                    <div class="flex items-center text-gray-600">
+                        <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                        <span>Connecting to Google API</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="results" class="max-w-4xl mx-auto px-4 py-8 hidden">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-800">SERP Ranking Results</h2>
+                <p id="resultsSummary" class="text-gray-600 mt-1"></p>
+                <p id="resultsLocation" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            
+            <div id="serpStats" class="px-6 py-4 bg-blue-50 border-b border-blue-100">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <div class="text-2xl font-bold text-blue-600" id="totalResults">0</div>
+                        <div class="text-sm text-gray-600">Total Results</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <div class="text-2xl font-bold text-green-600" id="organicResults">0</div>
+                        <div class="text-sm text-gray-600">Organic Listings</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <div class="text-2xl font-bold text-purple-600" id="websitePosition">N/A</div>
+                        <div class="text-sm text-gray-600">Your Position</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <div class="text-2xl font-bold text-yellow-600" id="searchTime">0s</div>
+                        <div class="text-sm text-gray-600">Search Time</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="rankingsContainer" class="divide-y divide-gray-200">
+                <!-- Results will be inserted here -->
+            </div>
+            
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="text-sm text-gray-600">
+                    <i class="fas fa-database mr-1"></i> Data fetched from Google Custom Search API
+                </div>
+                <div class="flex gap-3">
+                    <button id="exportBtn" class="text-blue-600 hover:text-blue-800 font-medium flex items-center px-4 py-2 border border-blue-200 rounded-lg bg-white hover:bg-blue-50">
+                        <i class="fas fa-download mr-2"></i> Export as JSON
+                    </button>
+                    <button id="checkAnotherBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                        New Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="apiHelp" class="max-w-4xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4"><i class="fas fa-question-circle mr-2"></i>API Setup Guide</h3>
+            <div class="space-y-4">
+                <div class="ai-response">
+                    <h4 class="font-medium mb-2">1. Enable Google Custom Search API</h4>
+                    <p>To get started, you need to create a project and enable the API:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                        <li>Go to the <a href="https://console.cloud.google.com/" target="_blank" class="text-blue-600 hover:underline">Google Cloud Console</a></li>
+                        <li>Create a new project or select an existing one</li>
+                        <li>Navigate to "APIs & Services" > "Library"</li>
+                        <li>Search for "Custom Search JSON API" and enable it</li>
+                        <li>Create API credentials (API keys)</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-response">
+                    <h4 class="font-medium mb-2">2. Create a Custom Search Engine</h4>
+                    <p>The search engine ID (cx) comes from creating a Custom Search Engine at:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                        <li>Visit <a href="https://programmablesearchengine.google.com/" target="_blank" class="text-blue-600 hover:underline">Programmable Search Engine</a></li>
+                        <li>Create new search engine (you can put any sites that you want in the "sites to search" but the most important part is to enable the option "Search the entire web" in the setup)</li>
+                        <li>After creating, note the "Search engine ID" found in the Control Panel</li>
+                    </ul>
+                </div>
+                
+                <div class="ai-response">
+                    <h4 class="font-medium mb-2">3. Quota and Limitations</h4>
+                    <p>Be aware of the API limitations:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                        <li>Free tier: 100 queries per day</li>
+                        <li>Max results per query: 10 (can be increased to 20 with pagination)</li>
+                        <li>For production use, you may need to set up billing and increase quotas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-100 py-8 mt-12">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="text-center text-gray-600">
+                <p>© 2023 SERP Rank Checker. Using Google Custom Search JSON API.</p>
+                <p class="mt-2 text-sm">Note: This tool provides actual Google search results through the API.</p>
+            </div>
+            <div class="mt-6 flex justify-center space-x-6">
+                <a href="https://developers.google.com/custom-search/v1/overview" target="_blank" class="text-gray-500 hover:text-gray-700"><i class="fas fa-book mr-1"></i> API Docs</a>
+                <a href="https://console.cloud.google.com/" target="_blank" class="text-gray-500 hover:text-gray-700"><i class="fas fa-project-diagram mr-1"></i> Google Cloud</a>
+                <a href="https://programmablesearchengine.google.com/" target="_blank" class="text-gray-500 hover:text-gray-700"><i class="fas fa-search mr-1"></i>Search Engine Setup</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const checkBtn = document.getElementById('checkBtn');
+            const testBtn = document.getElementById('testBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const connectionTest = document.getElementById('connectionTest');
+            const keywordInput = document.getElementById('keyword');
+            const websiteInput = document.getElementById('website');
+            const apiKeyInput = document.getElementById('apiKey');
+            const cxInput = document.getElementById('cx');
+            const rankingsContainer = document.getElementById('rankingsContainer');
+            const resultsSummary = document.getElementById('resultsSummary');
+            const resultsLocation = document.getElementById('resultsLocation');
+            const checkAnotherBtn = document.getElementById('checkAnotherBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const progressBar = document.getElementById('progressBar');
+            const connectionStatus = document.getElementById('connectionStatus');
+            const testResults = document.getElementById('testResults');
+            const searchForm = document.getElementById('searchForm');
+            const apiHelp = document.getElementById('apiHelp');
+            const advancedToggle = document.getElementById('advancedToggle');
+            const advancedOptions = document.getElementById('advancedOptions');
+            const advancedToggleIcon = document.getElementById('advancedToggleIcon');
+            const countrySelect = document.getElementById('country');
+            const langSelect = document.getElementById('lang');
+            const resultsNum = document.getElementById('resultsNum');
+
+            // Toggle advanced options
+            advancedToggle.addEventListener('click', function() {
+                advancedOptions.classList.toggle('hidden');
+                advancedToggleIcon.classList.toggle('fa-chevron-down');
+                advancedToggleIcon.classList.toggle('fa-chevron-up');
+                
+                if (advancedOptions.classList.contains('hidden')) {
+                    advancedToggle.innerHTML = '<i class="fas fa-chevron-down mr-2 text-sm" id="advancedToggleIcon"></i><span class="text-sm font-medium">Show Advanced Options</span>';
+                } else {
+                    advancedToggle.innerHTML = '<i class="fas fa-chevron-up mr-2 text-sm" id="advancedToggleIcon"></i><span class="text-sm font-medium">Hide Advanced Options</span>';
+                }
+            });
+
+            // Check if there are saved API credentials
+            if (localStorage.getItem('googleApiKey') && localStorage.getItem('googleCx')) {
+                apiKeyInput.value = localStorage.getItem('googleApiKey');
+                cxInput.value = localStorage.getItem('googleCx');
+            }
+
+            // Test API connection
+            testBtn.addEventListener('click', async function() {
+                const apiKey = apiKeyInput.value.trim();
+                const cx = cxInput.value.trim();
+                
+                if (!apiKey || !cx) {
+                    alert('Please enter both API Key and Search Engine ID');
+                    return;
+                }
+                
+                // Show connection test panel
+                connectionTest.classList.remove('hidden');
+                searchForm.classList.add('hidden');
+                apiHelp.classList.add('hidden');
+                
+                // Start connection test
+                const startTime = Date.now();
+                
+                try {
+                    // Simple test query
+                    const testQuery = "test";
+                    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(testQuery)}`;
+                    
+                    connectionStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i> Connecting...';
+                    
+                    testResults.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                                <span>Establishing connection to Google API</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Simulate progress animation
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    testResults.innerHTML += `
+                        <div class="border-t border-gray-200 my-3"></div>
+                        <div class="space-y-4">
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-circle-notch fa-spin mr-2"></i>
+                                <span>Sending test query: "${testQuery}"</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Make actual API call
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error.message);
+                    }
+                    
+                    // Success
+                    const endTime = Date.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
+                    connectionStatus.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Connected';
+                    connectionStatus.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+                    
+                    testResults.innerHTML += `
+                        <div class="border-t border-gray-200 my-3"></div>
+                        <div class="space-y-4">
+                            <div class="flex items-center text-green-600">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span class="font-medium">Successfully connected to Google Custom Search API</span>
+                            </div>
+                            <div class="text-gray-600 ml-7">
+                                <p class="text-sm">API Key: ${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}</p>
+                                <p class="text-sm mt-1">Search Engine ID: ${cx}</p>
+                                <p class="text-sm mt-1">Response time: ${duration} seconds</p>
+                                <p class="text-sm mt-1">Total results: ${data.searchInformation?.totalResults || 0}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Save successful credentials
+                    localStorage.setItem('googleApiKey', apiKey);
+                    localStorage.setItem('googleCx', cx);
+                    
+                    // Show continue button
+                    testResults.innerHTML += `
+                        <div class="mt-6">
+                            <button id="continueBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition">
+                                <i class="fas fa-arrow-right mr-2"></i> Continue to Search Tool
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('continueBtn').addEventListener('click', function() {
+                        connectionTest.classList.add('hidden');
+                        searchForm.classList.remove('hidden');
+                        apiHelp.classList.remove('hidden');
+                    });
+                    
+                } catch (error) {
+                    const endTime = Date.now();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    
+                    connectionStatus.innerHTML = '<i class="fas fa-times-circle mr-1"></i> Connection Failed';
+                    connectionStatus.className = 'px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800';
+                    
+                    testResults.innerHTML += `
+                        <div class="border-t border-gray-200 my-3"></div>
+                        <div class="space-y-4">
+                            <div class="flex items-center text-red-600">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <span class="font-medium">API Connection Error</span>
+                            </div>
+                            <div class="text-gray-600 ml-7">
+                                <p class="text-sm">${error.message || 'Unknown error occurred'}</p>
+                                <p class="text-sm mt-1">Response time: ${duration} seconds</p>
+                                <p class="text-sm mt-1">Check your API Key and Search Engine ID and try again.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Check ranking button
+            checkBtn.addEventListener('click', async function() {
+                const keyword = keywordInput.value.trim();
+                const website = websiteInput.value.trim();
+                const apiKey = apiKeyInput.value.trim();
+                const cx = cxInput.value.trim();
+                const country = countrySelect.value;
+                const lang = langSelect.value;
+                const num = resultsNum.value;
+                
+                if (!keyword || !website) {
+                    alert('Please enter both keyword and website URL');
+                    return;
+                }
+                
+                if (!apiKey || !cx) {
+                    alert('Please enter both API Key and Search Engine ID');
+                    return;
+                }
+                
+                // Show loading
+                loading.classList.remove('hidden');
+                results.classList.add('hidden');
+                searchForm.classList.add('hidden');
+                apiHelp.classList.add('hidden');
+                
+                // Simulate progress bar (real API calls will update this)
+                let progress = 0;
+                const progressInterval = setInterval(function() {
+                    progress += 5;
+                    if (progress > 90) progress = 90; // Don't go to 100% until API completes
+                    progressBar.style.width = `${progress}%`;
+                }, 300);
+                
+                try {
+                    const startTime = Date.now();
+                    
+                    // Make API call to Google Custom Search JSON API
+                    let searchUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(keyword)}&num=${num}`;
+                    
+                    // Add country/language parameters if selected
+                    if (country) searchUrl += `&cr=${country}`;
+                    if (lang) searchUrl += `&lr=${lang}`;
+                    
+                    const response = await fetch(searchUrl);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        throw new Error(data.error.message);
+                    }
+                    
+                    // API call complete - finish progress bar
+                    clearInterval(progressInterval);
+                    progressBar.style.width = '100%';
+                    
+                    // Process results
+                    processApiResults(data, keyword, website, country, lang);
+                    
+                    // Show results
+                    loading.classList.add('hidden');
+                    results.classList.remove('hidden');
+                    
+                    // Update search time
+                    const endTime = Date.now();
+                    const searchTime = ((endTime - startTime) / 1000).toFixed(2);
+                    document.getElementById('searchTime').textContent = `${searchTime}s`;
+                    
+                } catch (error) {
+                    clearInterval(progressInterval);
+                    loading.classList.add('hidden');
+                    
+                    alert(`Error fetching search results: ${error.message}`);
+                    
+                    // Show form again
+                    searchForm.classList.remove('hidden');
+                    apiHelp.classList.remove('hidden');
+                }
+            });
+
+            function processApiResults(apiData, keyword, website, countryCode, languageCode) {
+                // Clear previous results
+                rankingsContainer.innerHTML = '';
+                
+                // Extract domain from website input
+                let domain = website;
+                try {
+                    if (!website.startsWith('http')) {
+                        domain = 'https://' + website;
+                    }
+                    const urlObj = new URL(domain);
+                    domain = urlObj.hostname.replace('www.', '');
+                } catch (e) {
+                    domain = website.replace(/^https?:\/\//, '').replace('www.', '').split('/')[0];
+                }
+                
+                // Update stats
+                document.getElementById('totalResults').textContent = apiData.searchInformation?.formattedTotalResults || '0';
+                document.getElementById('organicResults').textContent = apiData.items?.length || '0';
+                
+                // Check if website appears in results
+                let websitePosition = -1;
+                let websiteItem = null;
+                
+                if (apiData.items) {
+                    for (let i = 0; i < apiData.items.length; i++) {
+                        const item = apiData.items[i];
+                        const itemDomain = item.displayLink;
+                        
+                        if (itemDomain.includes(domain) || 
+                            item.link.includes(domain)) {
+                            websitePosition = i + 1;
+                            websiteItem = item;
+                            break;
+                        }
+                    }
+                }
+                
+                // Update website position
+                if (websitePosition > 0) {
+                    document.getElementById('websitePosition').textContent = `#${websitePosition}`;
+                } else {
+                    document.getElementById('websitePosition').textContent = 'Not found';
+                }
+                
+                // Update summary
+                if (websitePosition > 0) {
+                    resultsSummary.textContent = `Your website (${domain}) was found at position #${websitePosition} for "${keyword}"`;
+                } else {
+                    resultsSummary.textContent = `Your website (${domain}) was not found in the top results for "${keyword}"`;
+                }
+
+                // Update location information
+                let locationText = 'Search location: Global';
+                if (countryCode) {
+                    const countryName = countrySelect.options[countrySelect.selectedIndex].text.split('(')[0].trim();
+                    locationText = `Search location: ${countryName}`;
+                }
+                if (languageCode) {
+                    const languageName = langSelect.options[langSelect.selectedIndex].text;
+                    locationText += languageCode ? ` | Language: ${languageName}` : '';
+                }
+                resultsLocation.textContent = locationText;
+                
+                // Display all results
+                if (apiData.items) {
+                    apiData.items.forEach((item, index) => {
+                        const isUserWebsite = item.displayLink.includes(domain) || item.link.includes(domain);
+                        const position = index + 1;
+                        
+                        const resultCard = document.createElement('div');
+                        resultCard.className = `result-card p-6 hover:bg-gray-50 ${isUserWebsite ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`;
+                        
+                        const html = `
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${isUserWebsite ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'} font-bold mr-4">
+                                    ${position}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-medium text-blue-600 truncate">${item.title}</h3>
+                                    <p class="text-sm text-green-700 truncate">${item.displayLink} <span class="text-gray-500">— ${new URL(item.link).pathname}</span></p>
+                                    <p class="mt-1 text-gray-600">${item.snippet}</p>
+                                    ${isUserWebsite ? '<span class="inline-block mt-2 px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">Your Website</span>' : ''}
+                                </div>
+                            </div>
+                        `;
+                        
+                        resultCard.innerHTML = html;
+                        rankingsContainer.appendChild(resultCard);
+                    });
+                } else {
+                    rankingsContainer.innerHTML = `
+                        <div class="p-8 text-center text-gray-500">
+                            <i class="fas fa-search fa-2x mb-3"></i>
+                            <p>No search results found for "${keyword}"</p>
+                            ${countryCode ? `<p class="mt-1">Country filter: ${countrySelect.options[countrySelect.selectedIndex].text}</p>` : ''}
+                        </div>
+                    `;
+                }
+                
+                // Save API response for export
+                resultData = apiData;
+            }
+
+            checkAnotherBtn.addEventListener('click', function() {
+                results.classList.add('hidden');
+                searchForm.classList.remove('hidden');
+                apiHelp.classList.remove('hidden');
+                keywordInput.focus();
+            });
+
+            // Export button
+            let resultData = null;
+            exportBtn.addEventListener('click', function() {
+                if (!resultData) {
+                    alert('No results to export');
+                    return;
+                }
+                
+                // Convert to JSON and download
+                const filename = `serp-results-${keywordInput.value.trim()}.json`;
+                const jsonStr = JSON.stringify(resultData, null, 2);
+                
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/json;charset=utf-8,' + encodeURIComponent(jsonStr));
+                element.setAttribute('download', filename);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            });
+        });
+    </script>
+</body>
+</html>
