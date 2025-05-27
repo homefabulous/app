@@ -1,0 +1,2061 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"648378ef206a4ce1bc3ddcba"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excalidraw Clone</title>
+    <style>
+        :root {
+            --color-primary: #6965db;
+            --color-primary-light: #e5e4ff;
+            --color-primary-dark: #4a48b9;
+            --color-black: #1e1e1e;
+            --color-white: #ffffff;
+            --color-gray: #e5e5e7;
+            --color-gray-dark: #2a2a2a;
+            --color-gray-light: #f5f5f7;
+            --color-red: #ff6b6b;
+            --color-green: #51cf66;
+            --color-blue: #339af0;
+            --color-yellow: #fcc419;
+            --color-orange: #ff922b;
+            --color-purple: #9c36b5;
+            --color-pink: #f06595;
+            --border-radius-md: 6px;
+            --border-radius-lg: 8px;
+            --box-shadow-md: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --box-shadow-lg: 0 5px 20px rgba(0, 0, 0, 0.15);
+            --transition-fast: 0.1s ease;
+            --transition-normal: 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--color-gray-light);
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* Header */
+        .header {
+            height: 60px;
+            background-color: var(--color-white);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: var(--box-shadow-md);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--color-black);
+            margin-right: 30px;
+        }
+
+        .logo-icon {
+            color: var(--color-primary);
+            font-size: 24px;
+        }
+
+        .menu {
+            display: flex;
+            gap: 10px;
+        }
+
+        .menu-item {
+            padding: 8px 12px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--color-gray-dark);
+            transition: var(--transition-fast);
+            user-select: none;
+        }
+
+        .menu-item:hover {
+            background-color: var(--color-gray);
+        }
+
+        .menu-item.active {
+            background-color: var(--color-primary-light);
+            color: var(--color-primary-dark);
+        }
+
+        .menu-separator {
+            width: 1px;
+            background-color: var(--color-gray);
+            margin: 0 10px;
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 60px);
+            position: relative;
+        }
+
+        /* Sidebar - Left (Tools) */
+        .sidebar-left {
+            width: 68px;
+            background-color: var(--color-white);
+            border-right: 1px solid var(--color-gray);
+            padding: 16px 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 1px 0 5px rgba(0, 0, 0, 0.05);
+            z-index: 5;
+        }
+
+        .tool-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tool-title {
+            font-size: 10px;
+            color: var(--color-gray-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-left: 4px;
+            margin-bottom: 4px;
+        }
+
+        .tool {
+            width: 56px;
+            height: 44px;
+            border-radius: var(--border-radius-md);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition-fast);
+            user-select: none;
+        }
+
+        .tool:hover {
+            background-color: var(--color-gray);
+        }
+
+        .tool.active {
+            background-color: var(--color-primary-light);
+        }
+
+        .tool-icon {
+            font-size: 20px;
+            color: var(--color-black);
+        }
+
+        .tool.active .tool-icon {
+            color: var(--color-primary-dark);
+        }
+
+        .tool-shortcut {
+            font-size: 10px;
+            color: var(--color-gray-dark);
+            margin-top: 2px;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 80px;
+            display: flex;
+            align-items: center;
+            background-color: var(--color-white);
+            border-radius: 20px;
+            box-shadow: var(--box-shadow-md);
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            color: var(--color-gray-dark);
+            border: none;
+            background: none;
+        }
+
+        .zoom-btn:hover {
+            background-color: var(--color-gray);
+            color: var(--color-black);
+        }
+
+        .zoom-value {
+            font-size: 12px;
+            padding: 0 8px;
+            min-width: 50px;
+            text-align: center;
+            color: var(--color-gray-dark);
+        }
+
+        /* Canvas */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--color-white);
+        }
+
+        .canvas-scroll {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            position: relative;
+        }
+
+        #canvas {
+            background-color: var(--color-white);
+            cursor: crosshair;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+        }
+
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, var(--color-gray) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--color-gray) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        /* Sidebar - Right (Properties) */
+        .sidebar-right {
+            width: 280px;
+            background-color: var(--color-white);
+            border-left: 1px solid var(--color-gray);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: -1px 0 5px rgba(0, 0, 0, 0.05);
+            z-index: 5;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-gray-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Color Picker */
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-white);
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--color-black);
+            box-shadow: var(--box-shadow-md);
+        }
+
+        .color-custom {
+            background-color: var(--color-white);
+            border: 2px dashed var(--color-gray-dark);
+            color: var(--color-gray-dark);
+        }
+
+        /* Stroke Width Picker */
+        .stroke-width-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stroke-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .stroke-option:hover {
+            background-color: var(--color-gray);
+        }
+
+        .stroke-option.active {
+            background-color: var(--color-primary-light);
+        }
+
+        .stroke-line {
+            background-color: var(--color-black);
+            width: 100%;
+        }
+
+        .stroke-1 .stroke-line { height: 1px; }
+        .stroke-2 .stroke-line { height: 2px; }
+        .stroke-3 .stroke-line { height: 4px; }
+        .stroke-4 .stroke-line { height: 6px; }
+        .stroke-5 .stroke-line { height: 8px; }
+
+        /* Shape Library */
+        .shape-library {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .shape-option {
+            padding: 8px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .shape-option:hover {
+            background-color: var(--color-gray);
+        }
+
+        .shape-preview {
+            width: 40px;
+            height: 40px;
+            border: 1px dashed var(--color-gray-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-gray-dark);
+            font-size: 20px;
+        }
+
+        .shape-label {
+            font-size: 10px;
+            color: var(--color-gray-dark);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 16px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: var(--transition-normal);
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-primary-dark);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-white);
+            color: var(--color-gray-dark);
+            border: 1px solid var(--color-gray);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-gray);
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background-color: var(--color-white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--box-shadow-lg);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            min-width: 180px;
+            padding: 6px;
+        }
+
+        .context-menu-item {
+            padding: 8px 12px;
+            border-radius: var(--border-radius-md);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition-fast);
+            user-select: none;
+        }
+
+        .context-menu-item:hover {
+            background-color: var(--color-gray);
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background-color: var(--color-gray);
+            margin: 4px 0;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--color-white);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--box-shadow-lg);
+            width: 400px;
+            max-width: 90%;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--color-gray-dark);
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .sidebar-right {
+                position: absolute;
+                right: -280px;
+                top: 0;
+                height: 100%;
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar-right.open {
+                transform: translateX(-280px);
+            }
+
+            .menu-item span {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-left {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                flex-direction: row;
+                padding: 8px;
+                justify-content: center;
+                border-top: 1px solid var(--color-gray);
+                border-right: none;
+            }
+
+            .tool-section {
+                flex-direction: row;
+                gap: 4px;
+            }
+
+            .tool-title {
+                display: none;
+            }
+
+            .tool {
+                width: 44px;
+                height: 44px;
+            }
+
+            .canvas-container {
+                height: calc(100vh - 120px);
+            }
+
+            .zoom-controls {
+                bottom: 70px;
+                left: 10px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-pen-fancy logo-icon"></i>
+            <span>Excalidraw Clone</span>
+        </div>
+        <div class="menu">
+            <div class="menu-item">
+                <i class="fas fa-file"></i>
+                <span>New</span>
+            </div>
+            <div class="menu-item">
+                <i class="fas fa-folder-open"></i>
+                <span>Open</span>
+            </div>
+            <div class="menu-item">
+                <i class="fas fa-save"></i>
+                <span>Save</span>
+            </div>
+            <div class="menu-separator"></div>
+            <div class="menu-item">
+                <i class="fas fa-undo"></i>
+                <span>Undo</span>
+            </div>
+            <div class="menu-item">
+                <i class="fas fa-redo"></i>
+                <span>Redo</span>
+            </div>
+            <div class="menu-separator"></div>
+            <div class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Collaborate</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Left Sidebar - Tools -->
+        <div class="sidebar-left">
+            <div class="tool-section">
+                <div class="tool-title">Tools</div>
+                <div class="tool active" data-tool="selection">
+                    <i class="fas fa-mouse-pointer tool-icon"></i>
+                    <span class="tool-shortcut">V</span>
+                </div>
+                <div class="tool" data-tool="rectangle">
+                    <i class="fas fa-square tool-icon"></i>
+                    <span class="tool-shortcut">R</span>
+                </div>
+                <div class="tool" data-tool="diamond">
+                    <i class="fas fa-gem tool-icon"></i>
+                    <span class="tool-shortcut">D</span>
+                </div>
+                <div class="tool" data-tool="ellipse">
+                    <i class="fas fa-circle tool-icon"></i>
+                    <span class="tool-shortcut">E</span>
+                </div>
+                <div class="tool" data-tool="arrow">
+                    <i class="fas fa-arrow-right tool-icon"></i>
+                    <span class="tool-shortcut">A</span>
+                </div>
+                <div class="tool" data-tool="line">
+                    <i class="fas fa-slash tool-icon"></i>
+                    <span class="tool-shortcut">L</span>
+                </div>
+                <div class="tool" data-tool="freedraw">
+                    <i class="fas fa-pencil-alt tool-icon"></i>
+                    <span class="tool-shortcut">P</span>
+                </div>
+                <div class="tool" data-tool="text">
+                    <i class="fas fa-font tool-icon"></i>
+                    <span class="tool-shortcut">T</span>
+                </div>
+            </div>
+
+            <div class="tool-section">
+                <div class="tool-title">Modifiers</div>
+                <div class="tool" data-tool="zoom">
+                    <i class="fas fa-search tool-icon"></i>
+                </div>
+                <div class="tool" data-tool="hand">
+                    <i class="fas fa-hand-paper tool-icon"></i>
+                    <span class="tool-shortcut">H</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="canvas-container">
+            <div class="canvas-scroll">
+                <canvas id="canvas"></canvas>
+                <div class="grid-pattern"></div>
+            </div>
+            <!-- Zoom Controls -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomOut">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <div class="zoom-value" id="zoomValue">100%</div>
+                <button class="zoom-btn" id="zoomIn">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Properties -->
+        <div class="sidebar-right" id="sidebarRight">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Stroke</div>
+                <div class="color-picker" id="strokeColorPicker">
+                    <div class="color-option selected" style="background-color: var(--color-black);" data-color="#1e1e1e">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-red);" data-color="#ff6b6b">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-green);" data-color="#51cf66">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-blue);" data-color="#339af0">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-yellow);" data-color="#fcc419">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-purple);" data-color="#9c36b5">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-orange);" data-color="#ff922b">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-pink);" data-color="#f06595">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-primary);" data-color="#6965db">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-gray-dark);" data-color="#2a2a2a">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-white); border: 1px solid var(--color-gray);" data-color="#ffffff">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option color-custom" data-color="custom">
+                        <i class="fas fa-eyedropper"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Stroke Width</div>
+                <div class="stroke-width-picker" id="strokeWidthPicker">
+                    <div class="stroke-option active" data-width="1">
+                        <div class="stroke-line stroke-1"></div>
+                        <span>1px</span>
+                    </div>
+                    <div class="stroke-option" data-width="2">
+                        <div class="stroke-line stroke-2"></div>
+                        <span>2px</span>
+                    </div>
+                    <div class="stroke-option" data-width="4">
+                        <div class="stroke-line stroke-3"></div>
+                        <span>4px</span>
+                    </div>
+                    <div class="stroke-option" data-width="6">
+                        <div class="stroke-line stroke-4"></div>
+                        <span>6px</span>
+                    </div>
+                    <div class="stroke-option" data-width="8">
+                        <div class="stroke-line stroke-5"></div>
+                        <span>8px</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Fill</div>
+                <div class="color-picker" id="fillColorPicker">
+                    <div class="color-option" style="background-color: transparent;" data-color="transparent">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-red); opacity: 0.2;" data-color="#ff6b6b20">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-green); opacity: 0.2;" data-color="#51cf6620">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-blue); opacity: 0.2;" data-color="#339af020">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-yellow); opacity: 0.2;" data-color="#fcc41920">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-purple); opacity: 0.2;" data-color="#9c36b520">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Shapes</div>
+                <div class="shape-library" id="shapeLibrary">
+                    <div class="shape-option" data-shape="rectangle">
+                        <div class="shape-preview">
+                            <i class="fas fa-square"></i>
+                        </div>
+                        <span class="shape-label">Rectangle</span>
+                    </div>
+                    <div class="shape-option" data-shape="rounded-rect">
+                        <div class="shape-preview">
+                            <i class="far fa-square"></i>
+                        </div>
+                        <span class="shape-label">Rounded</span>
+                    </div>
+                    <div class="shape-option" data-shape="diamond">
+                        <div class="shape-preview">
+                            <i class="fas fa-gem"></i>
+                        </div>
+                        <span class="shape-label">Diamond</span>
+                    </div>
+                    <div class="shape-option" data-shape="ellipse">
+                        <div class="shape-preview">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                        <span class="shape-label">Ellipse</span>
+                    </div>
+                    <div class="shape-option" data-shape="arrow">
+                        <div class="shape-preview">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <span class="shape-label">Arrow</span>
+                    </div>
+                    <div class="shape-option" data-shape="line">
+                        <div class="shape-preview">
+                            <i class="fas fa-minus"></i>
+                        </div>
+                        <span class="shape-label">Line</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Actions</div>
+                <button class="btn btn-primary" id="exportPNG">
+                    <i class="fas fa-image"></i>
+                    Export PNG
+                </button>
+                <button class="btn btn-secondary" id="exportJSON">
+                    <i class="fas fa-code"></i>
+                    Export JSON
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item">
+            <i class="fas fa-copy"></i>
+            <span>Copy</span>
+        </div>
+        <div class="context-menu-item">
+            <i class="fas fa-paste"></i>
+            <span>Paste</span>
+        </div>
+        <div class="context-menu-item">
+            <i class="fas fa-cut"></i>
+            <span>Cut</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item">
+            <i class="fas fa-arrow-up"></i>
+            <span>Bring Forward</span>
+        </div>
+        <div class="context-menu-item">
+            <i class="fas fa-arrow-down"></i>
+            <span>Send Backward</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item">
+            <i class="fas fa-trash"></i>
+            <span>Delete</span>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Export Drawing</h3>
+                <button class="modal-close" id="closeExportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Choose export options:</p>
+                <div class="color-picker">
+                    <div class="color-option" style="background-color: var(--color-white);" data-bg="white">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-gray-light);" data-bg="light">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: var(--color-black);" data-bg="black">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="color-option" style="background-color: transparent; border: 1px dashed var(--color-gray-dark);" data-bg="transparent">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelExport">Cancel</button>
+                <button class="btn btn-primary" id="confirmExport">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Canvas setup
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const canvasScroll = document.querySelector('.canvas-scroll');
+            
+            // UI Elements
+            const tools = document.querySelectorAll('.tool');
+            const zoomInBtn = document.getElementById('zoomIn');
+            const zoomOutBtn = document.getElementById('zoomOut');
+            const zoomValue = document.getElementById('zoomValue');
+            const exportPNGBtn = document.getElementById('exportPNG');
+            const exportJSONBtn = document.getElementById('exportJSON');
+            const strokeColorPicker = document.getElementById('strokeColorPicker');
+            const fillColorPicker = document.getElementById('fillColorPicker');
+            const strokeWidthPicker = document.getElementById('strokeWidthPicker');
+            const shapeLibrary = document.getElementById('shapeLibrary');
+            const contextMenu = document.getElementById('contextMenu');
+            const exportModal = document.getElementById('exportModal');
+            const closeExportModal = document.getElementById('closeExportModal');
+            const cancelExport = document.getElementById('cancelExport');
+            const confirmExport = document.getElementById('confirmExport');
+
+            // State
+            let currentTool = 'selection';
+            let isDrawing = false;
+            let startX, startY;
+            let currentStrokeColor = '#1e1e1e';
+            let currentFillColor = 'transparent';
+            let currentStrokeWidth = 1;
+            let scale = 1;
+            let elements = [];
+            let tempElement = null;
+            let selectedElement = null;
+            let isPanning = false;
+            let panStartX, panStartY;
+            let offsetX = 0, offsetY = 0;
+
+            // Hand-drawn effect variables
+            const roughness = 1;
+            const bowing = 1;
+
+            // Initialize canvas
+            function initCanvas() {
+                canvas.width = window.innerWidth * 0.7;
+                canvas.height = window.innerHeight - 60;
+                renderCanvas();
+            }
+
+            initCanvas();
+
+            // Resize canvas when window resizes
+            window.addEventListener('resize', () => {
+                initCanvas();
+            });
+
+            // Render all elements on canvas
+            function renderCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(offsetX, offsetY);
+                ctx.scale(scale, scale);
+
+                // Draw grid
+                drawGrid();
+
+                // Draw elements
+                elements.forEach(element => {
+                    drawElement(element);
+                });
+
+                // Draw temporary element (being drawn)
+                if (tempElement) {
+                    drawElement(tempElement);
+                }
+
+                // Draw selection highlight
+                if (selectedElement) {
+                    drawSelection(selectedElement);
+                }
+
+                ctx.restore();
+            }
+
+            // Draw grid background
+            function drawGrid() {
+                const gridSize = 20;
+                const gridOffsetX = offsetX % gridSize;
+                const gridOffsetY = offsetY % gridSize;
+
+                ctx.strokeStyle = '#e5e5e5';
+                ctx.lineWidth = 1;
+
+                // Vertical lines
+                for (let x = -gridOffsetX; x < canvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, -gridOffsetY);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+
+                // Horizontal lines
+                for (let y = -gridOffsetY; y < canvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(-gridOffsetX, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw a single element
+            function drawElement(element) {
+                const applyHandDrawnEffect = () => {
+                    const maxDeviation = 0.5 + Math.random() * roughness;
+                    const bow = bowing;
+                    
+                    // Apply random deviations to create hand-drawn appearance
+                    return (coord, index, total) => {
+                        if (index === 0 || index === total - 1) return coord;
+                        return coord + (Math.random() * maxDeviation * 2 - maxDeviation) + 
+                               (bow * Math.sin((index / total) * Math.PI));
+                    };
+                };
+
+                ctx.strokeStyle = element.strokeColor || currentStrokeColor;
+                ctx.fillStyle = element.fillColor || currentFillColor;
+                ctx.lineWidth = element.strokeWidth || currentStrokeWidth;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+
+                const handDrawnEffect = applyHandDrawnEffect();
+
+                switch (element.type) {
+                    case 'rectangle':
+                        if (element.fillColor !== 'transparent') {
+                            ctx.fillRect(element.x, element.y, element.width, element.height);
+                        }
+                        ctx.strokeRect(element.x, element.y, element.width, element.height);
+                        break;
+
+                    case 'rounded-rect':
+                        const cornerRadius = Math.min(10, Math.min(element.width, element.height) / 4);
+                        ctx.beginPath();
+                        ctx.moveTo(element.x + cornerRadius, element.y);
+                        ctx.lineTo(element.x + element.width - cornerRadius, element.y);
+                        ctx.quadraticCurveTo(element.x + element.width, element.y, element.x + element.width, element.y + cornerRadius);
+                        ctx.lineTo(element.x + element.width, element.y + element.height - cornerRadius);
+                        ctx.quadraticCurveTo(element.x + element.width, element.y + element.height, element.x + element.width - cornerRadius, element.y + element.height);
+                        ctx.lineTo(element.x + cornerRadius, element.y + element.height);
+                        ctx.quadraticCurveTo(element.x, element.y + element.height, element.x, element.y + element.height - cornerRadius);
+                        ctx.lineTo(element.x, element.y + cornerRadius);
+                        ctx.quadraticCurveTo(element.x, element.y, element.x + cornerRadius, element.y);
+                        ctx.closePath();
+                        if (element.fillColor !== 'transparent') {
+                            ctx.fill();
+                        }
+                        ctx.stroke();
+                        break;
+
+                    case 'diamond':
+                        ctx.beginPath();
+                        ctx.moveTo(element.x + element.width / 2, element.y);
+                        ctx.lineTo(element.x + element.width, element.y + element.height / 2);
+                        ctx.lineTo(element.x + element.width / 2, element.y + element.height);
+                        ctx.lineTo(element.x, element.y + element.height / 2);
+                        ctx.closePath();
+                        if (element.fillColor !== 'transparent') {
+                            ctx.fill();
+                        }
+                        ctx.stroke();
+                        break;
+
+                    case 'ellipse':
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            element.x + element.width / 2,
+                            element.y + element.height / 2,
+                            element.width / 2,
+                            element.height / 2,
+                            0, 0, Math.PI * 2
+                        );
+                        if (element.fillColor !== 'transparent') {
+                            ctx.fill();
+                        }
+                        ctx.stroke();
+                        break;
+
+                    case 'arrow':
+                        drawArrow(
+                            element.x, element.y,
+                            element.x2, element.y2,
+                            element.strokeWidth,
+                            element.strokeColor
+                        );
+                        break;
+
+                    case 'line':
+                        ctx.beginPath();
+                        ctx.moveTo(element.x, element.y);
+                        ctx.lineTo(element.x2, element.y2);
+                        ctx.stroke();
+                        break;
+
+                    case 'freedraw':
+                        if (element.points.length < 2) return;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(element.points[0].x, element.points[0].y);
+                        
+                        for (let i = 1; i < element.points.length; i++) {
+                            const point = element.points[i];
+                            const prevPoint = element.points[i - 1];
+                            
+                            // Add some randomness for hand-drawn effect
+                            const cp1x = prevPoint.x + (point.x - prevPoint.x) * 0.3;
+                            const cp1y = prevPoint.y + (point.y - prevPoint.y) * 0.3;
+                            const cp2x = prevPoint.x + (point.x - prevPoint.x) * 0.7;
+                            const cp2y = prevPoint.y + (point.y - prevPoint.y) * 0.7;
+                            
+                            ctx.bezierCurveTo(
+                                cp1x + (Math.random() - 0.5) * roughness * 5,
+                                cp1y + (Math.random() - 0.5) * roughness * 5,
+                                cp2x + (Math.random() - 0.5) * roughness * 5,
+                                cp2y + (Math.random() - 0.5) * roughness * 5,
+                                point.x, point.y
+                            );
+                        }
+                        
+                        ctx.stroke();
+                        break;
+
+                    case 'text':
+                        ctx.font = `${element.fontSize}px Virgil, Segoe UI Emoji`;
+                        ctx.fillStyle = element.strokeColor;
+                        ctx.fillText(element.text, element.x, element.y);
+                        break;
+                }
+            }
+
+            // Draw an arrow
+            function drawArrow(fromX, fromY, toX, toY, width, color) {
+                const headLength = Math.max(10, width * 3);
+                const angle = Math.atan2(toY - fromY, toX - fromX);
+
+                ctx.beginPath();
+                ctx.moveTo(fromX, fromY);
+                ctx.lineTo(toX, toY);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.stroke();
+
+                // Arrow head
+                ctx.beginPath();
+                ctx.moveTo(toX, toY);
+                ctx.lineTo(
+                    toX - headLength * Math.cos(angle - Math.PI / 6),
+                    toY - headLength * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.moveTo(toX, toY);
+                ctx.lineTo(
+                    toX - headLength * Math.cos(angle + Math.PI / 6),
+                    toY - headLength * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.stroke();
+            }
+
+            // Draw selection highlight
+            function drawSelection(element) {
+                const padding = 4;
+                const borderWidth = 2;
+                ctx.strokeStyle = '#3d9df6';
+                ctx.lineWidth = borderWidth;
+                ctx.setLineDash([5, 5]);
+
+                switch (element.type) {
+                    case 'rectangle':
+                    case 'rounded-rect':
+                        ctx.strokeRect(
+                            element.x - padding,
+                            element.y - padding,
+                            element.width + 2 * padding,
+                            element.height + 2 * padding
+                        );
+                        break;
+
+                    case 'diamond':
+                        const diamondCenterX = element.x + element.width / 2;
+                        const diamondCenterY = element.y + element.height / 2;
+                        const diamondWidth = element.width + 2 * padding;
+                        const diamondHeight = element.height + 2 * padding;
+
+                        ctx.beginPath();
+                        ctx.moveTo(diamondCenterX, element.y - padding);
+                        ctx.lineTo(element.x + element.width + padding, diamondCenterY);
+                        ctx.lineTo(diamondCenterX, element.y + element.height + padding);
+                        ctx.lineTo(element.x - padding, diamondCenterY);
+                        ctx.closePath();
+                        ctx.stroke();
+                        break;
+
+                    case 'ellipse':
+                        const ellipseRadiusX = element.width / 2 + padding;
+                        const ellipseRadiusY = element.height / 2 + padding;
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            element.x + element.width / 2,
+                            element.y + element.height / 2,
+                            ellipseRadiusX,
+                            ellipseRadiusY,
+                            0, 0, Math.PI * 2
+                        );
+                        ctx.stroke();
+                        break;
+
+                    case 'arrow':
+                    case 'line':
+                        // Simple rectangle selection for lines/arrows
+                        const minX = Math.min(element.x, element.x2);
+                        const minY = Math.min(element.y, element.y2);
+                        const width = Math.abs(element.x2 - element.x);
+                        const height = Math.abs(element.y2 - element.y);
+                        ctx.strokeRect(
+                            minX - padding,
+                            minY - padding,
+                            width + 2 * padding,
+                            height + 2 * padding
+                        );
+                        break;
+
+                    case 'freedraw':
+                        // Calculate bounds
+                        let bounds = {
+                            minX: Infinity,
+                            minY: Infinity,
+                            maxX: -Infinity,
+                            maxY: -Infinity
+                        };
+
+                        element.points.forEach(point => {
+                            bounds.minX = Math.min(bounds.minX, point.x);
+                            bounds.minY = Math.min(bounds.minY, point.y);
+                            bounds.maxX = Math.max(bounds.maxX, point.x);
+                            bounds.maxY = Math.max(bounds.maxY, point.y);
+                        });
+
+                        ctx.strokeRect(
+                            bounds.minX - padding,
+                            bounds.minY - padding,
+                            bounds.maxX - bounds.minX + 2 * padding,
+                            bounds.maxY - bounds.minY + 2 * padding
+                        );
+                        break;
+
+                    case 'text':
+                        ctx.font = `${element.fontSize}px Virgil, Segoe UI Emoji`;
+                        const metrics = ctx.measureText(element.text);
+                        ctx.strokeRect(
+                            element.x - padding,
+                            element.y - element.fontSize - padding,
+                            metrics.width + 2 * padding,
+                            element.fontSize + 2 * padding
+                        );
+                        break;
+                }
+
+                ctx.setLineDash([]);
+            }
+
+            // Get canvas coordinates from event
+            function getCanvasCoordinates(event) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: (event.clientX - rect.left - offsetX) / scale,
+                    y: (event.clientY - rect.top - offsetY) / scale
+                };
+            }
+
+            // Get element at position
+            function getElementAtPosition(x, y) {
+                // Check elements in reverse order (top to bottom in z-index)
+                for (let i = elements.length - 1; i >= 0; i--) {
+                    const element = elements[i];
+
+                    switch (element.type) {
+                        case 'rectangle':
+                            if (x >= element.x && x <= element.x + element.width &&
+                                y >= element.y && y <= element.y + element.height) {
+                                return element;
+                            }
+                            break;
+
+                        case 'rounded-rect':
+                            // Approximate click detection for rounded rectangle
+                            if (x >= element.x && x <= element.x + element.width &&
+                                y >= element.y && y <= element.y + element.height) {
+                                return element;
+                            }
+                            break;
+
+                        case 'diamond':
+                            const diamondCenterX = element.x + element.width / 2;
+                            const diamondCenterY = element.y + element.height / 2;
+                            const normalizedX = (x - diamondCenterX) / (element.width / 2);
+                            const normalizedY = (y - diamondCenterY) / (element.height / 2);
+
+                            // Diamond equation: |x| + |y| <= 1
+                            if (Math.abs(normalizedX) + Math.abs(normalizedY) <= 1) {
+                                return element;
+                            }
+                            break;
+
+                        case 'ellipse':
+                            const ellipseCenterX = element.x + element.width / 2;
+                            const ellipseCenterY = element.y + element.height / 2;
+                            const ellipseX = (x - ellipseCenterX) / (element.width / 2);
+                            const ellipseY = (y - ellipseCenterY) / (element.height / 2);
+
+                            // Ellipse equation: x²/a² + y²/b² <= 1
+                            if (ellipseX * ellipseX + ellipseY * ellipseY <= 1) {
+                                return element;
+                            }
+                            break;
+
+                        case 'arrow':
+                        case 'line':
+                            if (isPointOnLine(x, y, element.x, element.y, element.x2, element.y2, 10)) {
+                                return element;
+                            }
+                            break;
+
+                        case 'freedraw':
+                            if (isPointNearPath(x, y, element.points, 10)) {
+                                return element;
+                            }
+                            break;
+
+                        case 'text':
+                            ctx.font = `${element.fontSize}px Virgil, Segoe UI Emoji`;
+                            const metrics = ctx.measureText(element.text);
+                            if (x >= element.x && x <= element.x + metrics.width &&
+                                y <= element.y && y >= element.y - element.fontSize) {
+                                return element;
+                            }
+                            break;
+                    }
+                }
+
+                return null;
+            }
+
+            // Check if point is on/near a line
+            function isPointOnLine(px, py, x1, y1, x2, y2, threshold) {
+                // Line equation: (x-x1)(y2-y1) = (y-y1)(x2-x1)
+                const lineDist = Math.abs((px - x1) * (y2 - y1) - (py - y1) * (x2 - x1));
+                const lineLength = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                const dist = lineDist / lineLength;
+
+                // Check if point is within line segment bounds
+                const withinBounds = 
+                    px >= Math.min(x1, x2) - threshold &&
+                    px <= Math.max(x1, x2) + threshold &&
+                    py >= Math.min(y1, y2) - threshold &&
+                    py <= Math.max(y1, y2) + threshold;
+
+                return dist <= threshold && withinBounds;
+            }
+
+            // Check if point is near a free draw path
+            function isPointNearPath(px, py, points, threshold) {
+                for (let i = 0; i < points.length - 1; i++) {
+                    const x1 = points[i].x;
+                    const y1 = points[i].y;
+                    const x2 = points[i + 1].x;
+                    const y2 = points[i + 1].y;
+
+                    if (isPointOnLine(px, py, x1, y1, x2, y2, threshold)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Event Handlers
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseUp);
+            canvas.addEventListener('contextmenu', handleContextMenu);
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+
+            // Touch events
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd);
+
+            function handleMouseDown(e) {
+                e.preventDefault();
+                const { x, y } = getCanvasCoordinates(e);
+
+                if (e.button === 1 || (e.button === 0 && e.ctrlKey)) { // Middle mouse or Ctrl+Left for panning
+                    isPanning = true;
+                    panStartX = e.clientX;
+                    panStartY = e.clientY;
+                    canvas.style.cursor = 'grabbing';
+                    return;
+                }
+
+                if (e.button !== 0) return; // Only left click for drawing
+
+                startX = x;
+                startY = y;
+
+                if (currentTool === 'selection') {
+                    selectedElement = getElementAtPosition(x, y);
+                    if (selectedElement) {
+                        tempElement = JSON.parse(JSON.stringify(selectedElement));
+                    }
+                } else if (currentTool === 'freedraw') {
+                    tempElement = {
+                        type: 'freedraw',
+                        points: [{ x, y }],
+                        strokeColor: currentStrokeColor,
+                        strokeWidth: currentStrokeWidth
+                    };
+                } else if (currentTool === 'text') {
+                    const text = prompt('Enter text:', 'Double click to edit');
+                    if (text) {
+                        const element = {
+                            type: 'text',
+                            x,
+                            y,
+                            text,
+                            strokeColor: currentStrokeColor,
+                            fontSize: 20
+                        };
+                        elements.push(element);
+                        selectedElement = element;
+                        renderCanvas();
+                    }
+                } else {
+                    // Start creating a new element
+                    tempElement = {
+                        type: currentTool,
+                        x: startX,
+                        y: startY,
+                        strokeColor: currentStrokeColor,
+                        strokeWidth: currentStrokeWidth
+                    };
+
+                    if (['rectangle', 'rounded-rect', 'diamond', 'ellipse'].includes(currentTool)) {
+                        tempElement.width = 0;
+                        tempElement.height = 0;
+                        tempElement.fillColor = currentFillColor;
+                    } else if (['arrow', 'line'].includes(currentTool)) {
+                        tempElement.x2 = x;
+                        tempElement.y2 = y;
+                    }
+
+                    // For selection/moving, immediately start drawing
+                    isDrawing = true;
+                }
+
+                renderCanvas();
+            }
+
+            function handleMouseMove(e) {
+                e.preventDefault();
+                const { x, y } = getCanvasCoordinates(e);
+
+                if (isPanning) {
+                    offsetX += e.clientX - panStartX;
+                    offsetY += e.clientY - panStartY;
+                    panStartX = e.clientX;
+                    panStartY = e.clientY;
+                    renderCanvas();
+                    return;
+                }
+
+                if (!isDrawing) {
+                    // Update cursor based on hover state
+                    const hoverElement = getElementAtPosition(x, y);
+                    if (hoverElement) {
+                        canvas.style.cursor = 'move';
+                    } else {
+                        canvas.style.cursor = 'crosshair';
+                    }
+                    return;
+                }
+
+                if (currentTool === 'selection' && selectedElement && tempElement) {
+                    // Move the selected element
+                    const deltaX = x - startX;
+                    const deltaY = y - startY;
+
+                    if (selectedElement.type === 'rectangle' || selectedElement.type === 'rounded-rect' || 
+                        selectedElement.type === 'diamond' || selectedElement.type === 'ellipse') {
+                        selectedElement.x = tempElement.x + deltaX;
+                        selectedElement.y = tempElement.y + deltaY;
+                    } else if (selectedElement.type === 'arrow' || selectedElement.type === 'line') {
+                        selectedElement.x = tempElement.x + deltaX;
+                        selectedElement.y = tempElement.y + deltaY;
+                        selectedElement.x2 = tempElement.x2 + deltaX;
+                        selectedElement.y2 = tempElement.y2 + deltaY;
+                    } else if (selectedElement.type === 'freedraw') {
+                        selectedElement.points = tempElement.points.map(point => ({
+                            x: point.x + deltaX,
+                            y: point.y + deltaY
+                        }));
+                    } else if (selectedElement.type === 'text') {
+                        selectedElement.x = tempElement.x + deltaX;
+                        selectedElement.y = tempElement.y + deltaY;
+                    }
+                } else if (currentTool === 'freedraw') {
+                    tempElement.points.push({ x, y });
+                } else if (tempElement) {
+                    // Update the temporary element being drawn
+                    if (['rectangle', 'rounded-rect', 'diamond', 'ellipse'].includes(tempElement.type)) {
+                        tempElement.width = x - startX;
+                        tempElement.height = y - startY;
+                    } else if (['arrow', 'line'].includes(tempElement.type)) {
+                        tempElement.x2 = x;
+                        tempElement.y2 = y;
+                    }
+                }
+
+                renderCanvas();
+            }
+
+            function handleMouseUp(e) {
+                e.preventDefault();
+                
+                if (isPanning) {
+                    isPanning = false;
+                    canvas.style.cursor = 'crosshair';
+                    return;
+                }
+
+                if (!isDrawing) return;
+                isDrawing = false;
+
+                // Add the temporary element to the elements array if it's valid
+                if (tempElement && currentTool !== 'selection') {
+                    if (Math.abs(tempElement.width) > 5 || Math.abs(tempElement.height) > 5 || 
+                        tempElement.type === 'freedraw' || tempElement.type === 'arrow' || 
+                        tempElement.type === 'line') {
+                        elements.push(tempElement);
+                        selectedElement = tempElement;
+                    }
+                }
+
+                tempElement = null;
+                renderCanvas();
+            }
+
+            function handleContextMenu(e) {
+                e.preventDefault();
+                const { x, y } = getCanvasCoordinates(e);
+                
+                selectedElement = getElementAtPosition(x, y);
+                if (selectedElement) {
+                    contextMenu.style.display = 'flex';
+                    contextMenu.style.left = `${e.clientX}px`;
+                    contextMenu.style.top = `${e.clientY}px`;
+                }
+            }
+
+            function handleKeyDown(e) {
+                // Delete selected element
+                if (e.key === 'Delete' && selectedElement) {
+                    elements = elements.filter(el => el !== selectedElement);
+                    selectedElement = null;
+                    renderCanvas();
+                }
+                
+                // Pan tool with space
+                if (e.code === 'Space') {
+                    canvas.style.cursor = 'grab';
+                }
+                
+                // Tool shortcuts
+                const toolShortcuts = {
+                    'KeyV': 'selection',
+                    'KeyR': 'rectangle',
+                    'KeyD': 'diamond',
+                    'KeyE': 'ellipse',
+                    'KeyA': 'arrow',
+                    'KeyL': 'line',
+                    'KeyP': 'freedraw',
+                    'KeyT': 'text',
+                    'KeyH': 'hand'
+                };
+                
+                if (toolShortcuts[e.code]) {
+                    const tool = document.querySelector(`.tool[data-tool="${toolShortcuts[e.code]}"]`);
+                    if (tool) tool.click();
+                }
+                
+                // Undo/Redo (Ctrl+Z/Ctrl+Y)
+                if (e.ctrlKey && e.key === 'z') {
+                    if (elements.length > 0) {
+                        elements.pop();
+                        selectedElement = null;
+                        renderCanvas();
+                    }
+                }
+            }
+
+            function handleKeyUp(e) {
+                if (e.code === 'Space') {
+                    canvas.style.cursor = 'crosshair';
+                }
+            }
+
+            // Touch event handlers
+            function handleTouchStart(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+
+            function handleTouchMove(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+
+            function handleTouchEnd(e) {
+                e.preventDefault();
+                const mouseEvent = new MouseEvent('mouseup', {});
+                canvas.dispatchEvent(mouseEvent);
+            }
+
+            // Tool selection
+            tools.forEach(tool => {
+                tool.addEventListener('click', () => {
+                    const toolName = tool.dataset.tool;
+                    
+                    // Update active tool
+                    tools.forEach(t => t.classList.remove('active'));
+                    tool.classList.add('active');
+                    currentTool = toolName;
+                    
+                    // Update cursor
+                    if (toolName === 'selection') {
+                        canvas.style.cursor = 'default';
+                    } else if (toolName === 'hand') {
+                        canvas.style.cursor = 'grab';
+                    } else {
+                        canvas.style.cursor = 'crosshair';
+                    }
+                });
+            });
+
+            // Color selection
+            strokeColorPicker.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    strokeColorPicker.querySelectorAll('.color-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    option.classList.add('selected');
+                    
+                    if (option.dataset.color === 'custom') {
+                        // Implement custom color picker
+                        const color = prompt('Enter hex color:', currentStrokeColor);
+                        if (color) {
+                            currentStrokeColor = color;
+                        }
+                    } else {
+                        currentStrokeColor = option.dataset.color;
+                    }
+                    
+                    // Update selected element if exists
+                    if (selectedElement) {
+                        selectedElement.strokeColor = currentStrokeColor;
+                        renderCanvas();
+                    }
+                });
+            });
+
+            fillColorPicker.querySelectorAll('.color-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    fillColorPicker.querySelectorAll('.color-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    option.classList.add('selected');
+                    currentFillColor = option.dataset.color;
+                    
+                    // Update selected element if exists
+                    if (selectedElement && ['rectangle', 'rounded-rect', 'diamond', 'ellipse'].includes(selectedElement.type)) {
+                        selectedElement.fillColor = currentFillColor;
+                        renderCanvas();
+                    }
+                });
+            });
+
+            // Stroke width selection
+            strokeWidthPicker.querySelectorAll('.stroke-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    strokeWidthPicker.querySelectorAll('.stroke-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    option.classList.add('active');
+                    currentStrokeWidth = parseInt(option.dataset.width);
+                    
+                    // Update selected element if exists
+                    if (selectedElement && selectedElement.type !== 'text') {
+                        selectedElement.strokeWidth = currentStrokeWidth;
+                        renderCanvas();
+                    }
+                });
+            });
+
+            // Shape library click
+            shapeLibrary.querySelectorAll('.shape-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const shape = option.dataset.shape;
+                    
+                    // Find corresponding tool and click it
+                    const tool = document.querySelector(`.tool[data-tool="${shape}"]`);
+                    if (tool) {
+                        tool.click();
+                    }
+                });
+            });
+
+            // Close context menu when clicking elsewhere
+            document.addEventListener('click', (e) => {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.style.display = 'none';
+                }
+            });
+
+            // Context menu actions
+            contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const action = item.querySelector('span').textContent.toLowerCase();
+                    
+                    switch (action) {
+                        case 'delete':
+                            if (selectedElement) {
+                                elements = elements.filter(el => el !== selectedElement);
+                                selectedElement = null;
+                            }
+                            break;
+                            
+                        case 'copy':
+                            // Implement copy functionality
+                            break;
+                            
+                        case 'paste':
+                            // Implement paste functionality
+                            break;
+                            
+                        case 'cut':
+                            // Implement cut functionality
+                            break;
+                            
+                        case 'bring forward':
+                            if (selectedElement) {
+                                const index = elements.indexOf(selectedElement);
+                                if (index < elements.length - 1) {
+                                    elements.splice(index, 1);
+                                    elements.push(selectedElement);
+                                }
+                            }
+                            break;
+                            
+                        case 'send backward':
+                            if (selectedElement) {
+                                const index = elements.indexOf(selectedElement);
+                                if (index > 0) {
+                                    elements.splice(index, 1);
+                                    elements.unshift(selectedElement);
+                                }
+                            }
+                            break;
+                    }
+                    
+                    contextMenu.style.display = 'none';
+                    renderCanvas();
+                });
+            });
+
+            // Zoom controls
+            zoomInBtn.addEventListener('click', () => {
+                scale = Math.min(scale + 0.1, 2);
+                updateZoom();
+            });
+
+            zoomOutBtn.addEventListener('click', () => {
+                scale = Math.max(scale - 0.1, 0.5);
+                updateZoom();
+            });
+
+            function updateZoom() {
+                zoomValue.textContent = `${Math.round(scale * 100)}%`;
+                renderCanvas();
+            }
+
+            // Export functionality
+            exportPNGBtn.addEventListener('click', () => {
+                exportModal.style.display = 'flex';
+            });
+
+            exportJSONBtn.addEventListener('click', () => {
+                const dataStr = JSON.stringify(elements, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = 'drawing.json';
+                link.href = url;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            });
+
+            closeExportModal.addEventListener('click', () => {
+                exportModal.style.display = 'none';
+            });
+
+            cancelExport.addEventListener('click', () => {
+                exportModal.style.display = 'none';
+            });
+
+            confirmExport.addEventListener('click', () => {
+                const bgColor = exportModal.querySelector('.color-option.selected').dataset.bg;
+                let backgroundColor = '#ffffff';
+                
+                if (bgColor === 'light') backgroundColor = '#f5f5f7';
+                if (bgColor === 'black') backgroundColor = '#1e1e1e';
+                if (bgColor === 'transparent') backgroundColor = 'transparent';
+                
+                // Create a temporary canvas for export
+                const exportCanvas = document.createElement('canvas');
+                const exportCtx = exportCanvas.getContext('2d');
+                
+                // Calculate bounds of all elements
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                
+                elements.forEach(element => {
+                    if (element.type === 'rectangle' || element.type === 'rounded-rect' || 
+                        element.type === 'diamond' || element.type === 'ellipse') {
+                        minX = Math.min(minX, element.x);
+                        minY = Math.min(minY, element.y);
+                        maxX = Math.max(maxX, element.x + element.width);
+                        maxY = Math.max(maxY, element.y + element.height);
+                    } else if (element.type === 'arrow' || element.type === 'line') {
+                        minX = Math.min(minX, element.x, element.x2);
+                        minY = Math.min(minY, element.y, element.y2);
+                        maxX = Math.max(maxX, element.x, element.x2);
+                        maxY = Math.max(maxY, element.y, element.y2);
+                    } else if (element.type === 'freedraw') {
+                        element.points.forEach(point => {
+                            minX = Math.min(minX, point.x);
+                            minY = Math.min(minY, point.y);
+                            maxX = Math.max(maxX, point.x);
+                            maxY = Math.max(maxY, point.y);
+                        });
+                    } else if (element.type === 'text') {
+                        minX = Math.min(minX, element.x);
+                        minY = Math.min(minY, element.y - element.fontSize);
+                        maxX = Math.max(maxX, element.x + ctx.measureText(element.text).width);
+                        maxY = Math.max(maxY, element.y);
+                    }
+                });
+                
+                // Add padding
+                const padding = 20;
+                minX -= padding;
+                minY -= padding;
+                maxX += padding;
+                maxY += padding;
+                
+                const width = maxX - minX;
+                const height = maxY - minY;
+                
+                exportCanvas.width = width;
+                exportCanvas.height = height;
+                
+                // Fill background
+                if (backgroundColor !== 'transparent') {
+                    exportCtx.fillStyle = backgroundColor;
+                    exportCtx.fillRect(0, 0, width, height);
+                }
+                
+                // Draw all elements centered on the new canvas
+                elements.forEach(element => {
+                    exportCtx.save();
+                    exportCtx.translate(-minX, -minY);
+                    
+                    // Clone element to avoid modifying the original
+                    const clonedElement = JSON.parse(JSON.stringify(element));
+                    
+                    // Adjust text element coordinates
+                    if (clonedElement.type === 'text') {
+                        clonedElement.y += clonedElement.fontSize;
+                    }
+                    
+                    // Draw the element
+                    drawElementOnContext(exportCtx, clonedElement);
+                    
+                    exportCtx.restore();
+                });
+                
+                // Export as PNG
+                const dataURL = exportCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = 'drawing.png';
+                link.href = dataURL;
+                link.click();
+                
+                exportModal.style.display = 'none';
+            });
+
+            // Helper function to draw element on any context
+            function drawElementOnContext(context, element) {
+                context.strokeStyle = element.strokeColor || currentStrokeColor;
+                context.fillStyle = element.fillColor || currentFillColor;
+                context.lineWidth = element.strokeWidth || currentStrokeWidth;
+                context.lineJoin = 'round';
+                context.lineCap = 'round';
+
+                switch (element.type) {
+                    case 'rectangle':
+                        if (element.fillColor !== 'transparent') {
+                            context.fillRect(element.x, element.y, element.width, element.height);
+                        }
+                        context.strokeRect(element.x, element.y, element.width, element.height);
+                        break;
+
+                    case 'rounded-rect':
+                        const cornerRadius = Math.min(10, Math.min(element.width, element.height) / 4);
+                        context.beginPath();
+                        context.moveTo(element.x + cornerRadius, element.y);
+                        context.lineTo(element.x + element.width - cornerRadius, element.y);
+                        context.quadraticCurveTo(element.x + element.width, element.y, element.x + element.width, element.y + cornerRadius);
+                        context.lineTo(element.x + element.width, element.y + element.height - cornerRadius);
+                        context.quadraticCurveTo(element.x + element.width, element.y + element.height, element.x + element.width - cornerRadius, element.y + element.height);
+                        context.lineTo(element.x + cornerRadius, element.y + element.height);
+                        context.quadraticCurveTo(element.x, element.y + element.height, element.x, element.y + element.height - cornerRadius);
+                        context.lineTo(element.x, element.y + cornerRadius);
+                        context.quadraticCurveTo(element.x, element.y, element.x + cornerRadius, element.y);
+                        context.closePath();
+                        if (element.fillColor !== 'transparent') {
+                            context.fill();
+                        }
+                        context.stroke();
+                        break;
+
+                    case 'diamond':
+                        context.beginPath();
+                        context.moveTo(element.x + element.width / 2, element.y);
+                        context.lineTo(element.x + element.width, element.y + element.height / 2);
+                        context.lineTo(element.x + element.width / 2, element.y + element.height);
+                        context.lineTo(element.x, element.y + element.height / 2);
+                        context.closePath();
+                        if (element.fillColor !== 'transparent') {
+                            context.fill();
+                        }
+                        context.stroke();
+                        break;
+
+                    case 'ellipse':
+                        context.beginPath();
+                        context.ellipse(
+                            element.x + element.width / 2,
+                            element.y + element.height / 2,
+                            element.width / 2,
+                            element.height / 2,
+                            0, 0, Math.PI * 2
+                        );
+                        if (element.fillColor !== 'transparent') {
+                            context.fill();
+                        }
+                        context.stroke();
+                        break;
+
+                    case 'arrow':
+                        drawArrowOnContext(
+                            context,
+                            element.x, element.y,
+                            element.x2, element.y2,
+                            element.strokeWidth || currentStrokeWidth,
+                            element.strokeColor || currentStrokeColor
+                        );
+                        break;
+
+                    case 'line':
+                        context.beginPath();
+                        context.moveTo(element.x, element.y);
+                        context.lineTo(element.x2, element.y2);
+                        context.stroke();
+                        break;
+
+                    case 'freedraw':
+                        if (element.points.length < 2) return;
+                        
+                        context.beginPath();
+                        context.moveTo(element.points[0].x, element.points[0].y);
+                        
+                        for (let i = 1; i < element.points.length; i++) {
+                            const point = element.points[i];
+                            const prevPoint = element.points[i - 1];
+                            
+                            const cp1x = prevPoint.x + (point.x - prevPoint.x) * 0.3;
+                            const cp1y = prevPoint.y + (point.y - prevPoint.y) * 0.3;
+                            const cp2x = prevPoint.x + (point.x - prevPoint.x) * 0.7;
+                            const cp2y = prevPoint.y + (point.y - prevPoint.y) * 0.7;
+                            
+                            context.bezierCurveTo(
+                                cp1x + (Math.random() - 0.5) * roughness * 5,
+                                cp1y + (Math.random() - 0.5) * roughness * 5,
+                                cp2x + (Math.random() - 0.5) * roughness * 5,
+                                cp2y + (Math.random() - 0.5) * roughness * 5,
+                                point.x, point.y
+                            );
+                        }
+                        
+                        context.stroke();
+                        break;
+
+                    case 'text':
+                        context.font = `${element.fontSize}px Virgil, Segoe UI Emoji`;
+                        context.fillStyle = element.strokeColor || currentStrokeColor;
+                        context.fillText(element.text, element.x, element.y);
+                        break;
+                }
+            }
+
+            // Draw arrow on any context
+            function drawArrowOnContext(context, fromX, fromY, toX, toY, width, color) {
+                const headLength = Math.max(10, width * 3);
+                const angle = Math.atan2(toY - fromY, toX - fromX);
+
+                context.beginPath();
+                context.moveTo(fromX, fromY);
+                context.lineTo(toX, toY);
+                context.strokeStyle = color;
+                context.lineWidth = width;
+                context.stroke();
+
+                // Arrow head
+                context.beginPath();
+                context.moveTo(toX, toY);
+                context.lineTo(
+                    toX - headLength * Math.cos(angle - Math.PI / 6),
+                    toY - headLength * Math.sin(angle - Math.PI / 6)
+                );
+                context.moveTo(toX, toY);
+                context.lineTo(
+                    toX - headLength * Math.cos(angle + Math.PI / 6),
+                    toY - headLength * Math.sin(angle + Math.PI / 6)
+                );
+                context.strokeStyle = color;
+                context.lineWidth = width;
+                context.stroke();
+            }
+        });
+    </script>
+</body>
+</html>
