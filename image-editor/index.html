@@ -1,0 +1,1082 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67ec9dc0771cc9fc0581e236"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelFlow - Editor de Imagens Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        secondary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dropzone {
+            border: 2px dashed #94a3b8;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .dropzone.active {
+            border-color: #0ea5e9;
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+        .canvas-container {
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .tool-btn {
+            transition: all 0.2s ease;
+        }
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .tool-btn.active {
+            background-color: #0ea5e9 !important;
+            color: white !important;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            cursor: pointer;
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            cursor: pointer;
+        }
+        .dark .dropzone {
+            border-color: #475569;
+        }
+        .dark .dropzone.active {
+            border-color: #38bdf8;
+            background-color: rgba(56, 189, 248, 0.1);
+        }
+        @media (max-width: 768px) {
+            .mobile-collapse {
+                display: none;
+            }
+            .mobile-expand {
+                display: block;
+            }
+        }
+        #editor-canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            display: block;
+        }
+        .filter-preview {
+            width: 100%;
+            height: 60px;
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm py-4 px-6 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-teal-400 flex items-center justify-center">
+                    <i class="fas fa-paint-brush text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold">PixelFlow</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+                <button class="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-full md:w-16 lg:w-64 bg-white dark:bg-gray-800 shadow-sm p-2 md:p-4 flex flex-row md:flex-col overflow-x-auto md:overflow-x-hidden overflow-y-hidden md:overflow-y-auto">
+                <div class="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+                    <!-- File Actions -->
+                    <div class="tool-group">
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 hidden md:block">Arquivo</h3>
+                        <div class="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+                            <button id="open-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-folder-open text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Abrir</span>
+                            </button>
+                            <button id="save-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-save text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Salvar</span>
+                            </button>
+                            <button id="export-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-upload text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Exportar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Edit Tools -->
+                    <div class="tool-group">
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 hidden md:block">Editar</h3>
+                        <div class="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+                            <button id="undo-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-undo text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Desfazer</span>
+                            </button>
+                            <button id="redo-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-redo text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Refazer</span>
+                            </button>
+                            <button id="crop-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-crop text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Cortar</span>
+                            </button>
+                            <button id="resize-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-expand text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Redimensionar</span>
+                            </button>
+                            <button id="rotate-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-sync-alt text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Girar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Tools -->
+                    <div class="tool-group">
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 hidden md:block">IA</h3>
+                        <div class="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+                            <button id="remove-bg-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600">
+                                <i class="fas fa-magic text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Remover Fundo</span>
+                            </button>
+                            <button id="upscale-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
+                                <i class="fas fa-search-plus text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Upscale 4K</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Drawing Tools -->
+                    <div class="tool-group">
+                        <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 hidden md:block">Desenho</h3>
+                        <div class="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2">
+                            <button id="brush-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-pencil-alt text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Pincel</span>
+                            </button>
+                            <button id="eraser-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-eraser text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Borracha</span>
+                            </button>
+                            <button id="text-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-font text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Texto</span>
+                            </button>
+                            <button id="layers-btn" class="tool-btn w-12 h-12 flex flex-col items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <i class="fas fa-layer-group text-lg"></i>
+                                <span class="text-xs mt-1 hidden md:block">Camadas</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Canvas Area -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- Toolbar -->
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-2 flex items-center justify-between">
+                    <div class="flex items-center space-x-2 overflow-x-auto">
+                        <button id="adjustments-btn" class="tool-btn px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                            <i class="fas fa-sliders-h mr-2"></i>
+                            <span>Ajustes</span>
+                        </button>
+                        <button id="filters-btn" class="tool-btn px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                            <i class="fas fa-filter mr-2"></i>
+                            <span>Filtros</span>
+                        </button>
+                        <button id="colors-btn" class="tool-btn px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                            <i class="fas fa-palette mr-2"></i>
+                            <span>Cores</span>
+                        </button>
+                        <button id="measure-btn" class="tool-btn px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                            <i class="fas fa-ruler-combined mr-2"></i>
+                            <span>Medidas</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="help-btn" class="tool-btn w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center">
+                            <i class="fas fa-question"></i>
+                        </button>
+                        <button id="settings-btn" class="tool-btn w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-center">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Canvas and Properties Panel -->
+                <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    <!-- Canvas -->
+                    <div class="flex-1 p-4 overflow-auto flex items-center justify-center">
+                        <div id="dropzone" class="dropzone w-full h-full max-w-4xl max-h-[70vh] flex items-center justify-center">
+                            <div id="canvas-container" class="canvas-container relative bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                <canvas id="editor-canvas" class="max-w-full max-h-[60vh]"></canvas>
+                                <div id="drop-message" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center pointer-events-none">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                                    <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-300">Arraste e solte sua imagem aqui</h3>
+                                    <p class="text-gray-500 dark:text-gray-400 mt-2">Ou clique para selecionar um arquivo</p>
+                                    <button id="upload-btn" class="pointer-events-auto mt-4 px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors">
+                                        <i class="fas fa-folder-open mr-2"></i>Selecionar Imagem
+                                    </button>
+                                    <input type="file" id="file-input" accept="image/*" class="hidden">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Properties Panel -->
+                    <div id="properties-panel" class="w-full md:w-64 lg:w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+                        <h2 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                            <span>Propriedades</span>
+                            <button id="close-properties" class="md:hidden text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </h2>
+                        
+                        <!-- Adjustments Section -->
+                        <div id="adjustments-section" class="mb-6">
+                            <h3 class="text-sm font-medium mb-3 flex items-center">
+                                <i class="fas fa-sliders-h mr-2 text-primary-500"></i>
+                                Ajustes
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="flex justify-between items-center mb-1">
+                                        <span class="text-sm">Brilho</span>
+                                        <span id="brightness-value" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">0%</span>
+                                    </label>
+                                    <input id="brightness-slider" type="range" min="-100" max="100" value="0" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <div>
+                                    <label class="flex justify-between items-center mb-1">
+                                        <span class="text-sm">Contraste</span>
+                                        <span id="contrast-value" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">0%</span>
+                                    </label>
+                                    <input id="contrast-slider" type="range" min="-100" max="100" value="0" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <div>
+                                    <label class="flex justify-between items-center mb-1">
+                                        <span class="text-sm">Saturação</span>
+                                        <span id="saturation-value" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">100%</span>
+                                    </label>
+                                    <input id="saturation-slider" type="range" min="0" max="200" value="100" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <div>
+                                    <label class="flex justify-between items-center mb-1">
+                                        <span class="text-sm">Exposição</span>
+                                        <span id="exposure-value" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">0%</span>
+                                    </label>
+                                    <input id="exposure-slider" type="range" min="-100" max="100" value="0" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <div>
+                                    <label class="flex justify-between items-center mb-1">
+                                        <span class="text-sm">Nitidez</span>
+                                        <span id="sharpness-value" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">0%</span>
+                                    </label>
+                                    <input id="sharpness-slider" type="range" min="0" max="100" value="0" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <button id="reset-adjustments" class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors">
+                                    Redefinir Ajustes
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filters Section -->
+                        <div id="filters-section" class="mb-6">
+                            <h3 class="text-sm font-medium mb-3 flex items-center">
+                                <i class="fas fa-filter mr-2 text-primary-500"></i>
+                                Filtros
+                            </h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button data-filter="none" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-gray-100 dark:bg-gray-700 rounded mb-1" style="background-image: url('')"></div>
+                                    <span class="text-xs">Original</span>
+                                </button>
+                                <button data-filter="bw" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-gray-300 rounded mb-1" style="filter: grayscale(100%)"></div>
+                                    <span class="text-xs">Preto e Branco</span>
+                                </button>
+                                <button data-filter="cool" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-blue-100 rounded mb-1"></div>
+                                    <span class="text-xs">Frio</span>
+                                </button>
+                                <button data-filter="warm" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-red-100 rounded mb-1"></div>
+                                    <span class="text-xs">Quente</span>
+                                </button>
+                                <button data-filter="vintage" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-yellow-100 rounded mb-1"></div>
+                                    <span class="text-xs">Vintage</span>
+                                </button>
+                                <button data-filter="dramatic" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-purple-100 rounded mb-1"></div>
+                                    <span class="text-xs">Dramático</span>
+                                </button>
+                                <button data-filter="invert" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-gray-800 rounded mb-1" style="filter: invert(100%)"></div>
+                                    <span class="text-xs">Inverter</span>
+                                </button>
+                                <button data-filter="sepia" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-amber-200 rounded mb-1" style="filter: sepia(100%)"></div>
+                                    <span class="text-xs">Sépia</span>
+                                </button>
+                                <button data-filter="blur" class="filter-btn p-2 rounded border border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-400">
+                                    <div class="filter-preview w-full h-12 bg-blue-50 rounded mb-1" style="filter: blur(1px)"></div>
+                                    <span class="text-xs">Desfoque</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Color Tools Section -->
+                        <div id="colors-section" class="mb-6 hidden">
+                            <h3 class="text-sm font-medium mb-3 flex items-center">
+                                <i class="fas fa-palette mr-2 text-primary-500"></i>
+                                Cores
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Seletor de Cor</label>
+                                    <input id="color-picker" type="color" value="#000000" class="w-full h-10 cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="flex justify-between items-center mb-1">
+                                        <span class="text-sm">Tonalidade</span>
+                                        <span id="hue-value" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">0°</span>
+                                    </label>
+                                    <input id="hue-slider" type="range" min="0" max="360" value="0" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Cor de Fundo</label>
+                                    <input id="bg-color-picker" type="color" value="#ffffff" class="w-full h-10 cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Export Options -->
+                        <div id="export-section">
+                            <h3 class="text-sm font-medium mb-3 flex items-center">
+                                <i class="fas fa-file-export mr-2 text-primary-500"></i>
+                                Exportar
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Formato</label>
+                                    <select id="export-format" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm">
+                                        <option value="png">PNG</option>
+                                        <option value="jpeg">JPG</option>
+                                        <option value="webp">WEBP</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Qualidade</label>
+                                    <input id="quality-slider" type="range" min="1" max="100" value="90" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb">
+                                </div>
+                                <button id="export-image-btn" class="w-full px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center">
+                                    <i class="fas fa-download mr-2"></i>Exportar Imagem
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 text-sm flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span id="status-message" class="text-gray-500 dark:text-gray-400">Pronto</span>
+                <span id="zoom-level" class="text-gray-500 dark:text-gray-400 hidden md:inline">100%</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="image-dimensions" class="text-gray-500 dark:text-gray-400">0 × 0 px</span>
+                <span id="image-size" class="text-gray-500 dark:text-gray-400 hidden md:inline">0 KB</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        // Check for saved theme preference
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+        } else {
+            html.classList.remove('dark');
+        }
+
+        // Canvas and Image Handling
+        const canvas = document.getElementById('editor-canvas');
+        const ctx = canvas.getContext('2d');
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const dropMessage = document.getElementById('drop-message');
+        
+        // Status bar elements
+        const statusMessage = document.getElementById('status-message');
+        const imageDimensions = document.getElementById('image-dimensions');
+        const imageSize = document.getElementById('image-size');
+        const zoomLevel = document.getElementById('zoom-level');
+        
+        // Properties panel sections
+        const adjustmentsSection = document.getElementById('adjustments-section');
+        const filtersSection = document.getElementById('filters-section');
+        const colorsSection = document.getElementById('colors-section');
+        
+        // Tool buttons
+        const adjustmentsBtn = document.getElementById('adjustments-btn');
+        const filtersBtn = document.getElementById('filters-btn');
+        const colorsBtn = document.getElementById('colors-btn');
+        
+        // Image adjustment sliders
+        const brightnessSlider = document.getElementById('brightness-slider');
+        const contrastSlider = document.getElementById('contrast-slider');
+        const saturationSlider = document.getElementById('saturation-slider');
+        const exposureSlider = document.getElementById('exposure-slider');
+        const sharpnessSlider = document.getElementById('sharpness-slider');
+        const hueSlider = document.getElementById('hue-slider');
+        
+        // Image adjustment values
+        const brightnessValue = document.getElementById('brightness-value');
+        const contrastValue = document.getElementById('contrast-value');
+        const saturationValue = document.getElementById('saturation-value');
+        const exposureValue = document.getElementById('exposure-value');
+        const sharpnessValue = document.getElementById('sharpness-value');
+        const hueValue = document.getElementById('hue-value');
+        
+        // Color pickers
+        const colorPicker = document.getElementById('color-picker');
+        const bgColorPicker = document.getElementById('bg-color-picker');
+        
+        // Export elements
+        const exportFormat = document.getElementById('export-format');
+        const qualitySlider = document.getElementById('quality-slider');
+        const exportImageBtn = document.getElementById('export-image-btn');
+        
+        // State variables
+        let currentImage = null;
+        let originalImageData = null;
+        let historyStack = [];
+        let futureStack = [];
+        let currentTool = null;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentFilter = 'none';
+        let zoom = 1;
+        
+        // Initialize properties panel sections
+        function showSection(section) {
+            adjustmentsSection.classList.add('hidden');
+            filtersSection.classList.add('hidden');
+            colorsSection.classList.add('hidden');
+            
+            if (section === 'adjustments') {
+                adjustmentsSection.classList.remove('hidden');
+                adjustmentsBtn.classList.add('active');
+                filtersBtn.classList.remove('active');
+                colorsBtn.classList.remove('active');
+            } else if (section === 'filters') {
+                filtersSection.classList.remove('hidden');
+                adjustmentsBtn.classList.remove('active');
+                filtersBtn.classList.add('active');
+                colorsBtn.classList.remove('active');
+            } else if (section === 'colors') {
+                colorsSection.classList.remove('hidden');
+                adjustmentsBtn.classList.remove('active');
+                filtersBtn.classList.remove('active');
+                colorsBtn.classList.add('active');
+            }
+        }
+        
+        // Handle drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropzone.classList.add('active');
+        }
+
+        function unhighlight() {
+            dropzone.classList.remove('active');
+        }
+
+        dropzone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        uploadBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFiles(fileInput.files);
+            }
+        });
+
+        function handleFiles(files) {
+            const file = files[0];
+            if (!file.type.match('image.*')) {
+                statusMessage.textContent = 'Por favor, selecione um arquivo de imagem válido';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Save original image data
+                    currentImage = img;
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Reset adjustments and filters
+                    resetAdjustments();
+                    currentFilter = 'none';
+                    
+                    // Draw image on canvas
+                    ctx.drawImage(img, 0, 0);
+                    saveToHistory();
+                    
+                    // Hide drop message
+                    dropMessage.classList.add('hidden');
+                    
+                    // Update status bar
+                    updateStatusBar(img.width, img.height, file.size);
+                    statusMessage.textContent = 'Imagem carregada';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateStatusBar(width, height, size) {
+            imageDimensions.textContent = `${width} × ${height} px`;
+            
+            if (size) {
+                const sizeKB = Math.round(size / 1024);
+                imageSize.textContent = `${sizeKB} KB`;
+            }
+        }
+
+        // Save canvas state to history
+        function saveToHistory() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            historyStack.push(imageData);
+            futureStack = []; // Clear redo stack
+        }
+
+        // Undo action
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (historyStack.length > 1) { // Keep at least the original image
+                futureStack.push(historyStack.pop());
+                const prevState = historyStack[historyStack.length - 1];
+                ctx.putImageData(prevState, 0, 0);
+                statusMessage.textContent = 'Ação desfeita';
+            } else {
+                statusMessage.textContent = 'Nada para desfazer';
+            }
+        });
+
+        // Redo action
+        document.getElementById('redo-btn').addEventListener('click', () => {
+            if (futureStack.length > 0) {
+                const nextState = futureStack.pop();
+                historyStack.push(nextState);
+                ctx.putImageData(nextState, 0, 0);
+                statusMessage.textContent = 'Ação refeita';
+            } else {
+                statusMessage.textContent = 'Nada para refazer';
+            }
+        });
+
+        // Apply image adjustments
+        function applyAdjustments() {
+            if (!currentImage) return;
+            
+            ctx.filter = getCurrentFilter();
+            ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+            
+            saveToHistory();
+            statusMessage.textContent = 'Ajustes aplicados';
+        }
+
+        function getCurrentFilter() {
+            const brightness = brightnessSlider.value;
+            const contrast = contrastSlider.value;
+            const saturation = saturationSlider.value / 100;
+            const exposure = exposureSlider.value;
+            const sharpness = sharpnessSlider.value;
+            const hue = hueSlider.value;
+            
+            let filter = '';
+            
+            if (brightness !== '0') filter += `brightness(${100 + parseInt(brightness)}%) `;
+            if (contrast !== '0') filter += `contrast(${100 + parseInt(contrast)}%) `;
+            if (saturation !== 1) filter += `saturate(${saturation}) `;
+            if (exposure !== '0') filter += `opacity(${1 + exposure/100}) `;
+            if (hue !== '0') filter += `hue-rotate(${hue}deg) `;
+            
+            return filter.trim();
+        }
+
+        function resetAdjustments() {
+            brightnessSlider.value = 0;
+            contrastSlider.value = 0;
+            saturationSlider.value = 100;
+            exposureSlider.value = 0;
+            sharpnessSlider.value = 0;
+            hueSlider.value = 0;
+            
+            brightnessValue.textContent = '0%';
+            contrastValue.textContent = '0%';
+            saturationValue.textContent = '100%';
+            exposureValue.textContent = '0%';
+            sharpnessValue.textContent = '0%';
+            hueValue.textContent = '0°';
+            
+            if (currentImage) {
+                ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+                saveToHistory();
+                statusMessage.textContent = 'Ajustes redefinidos';
+            }
+        }
+
+        // Update slider value displays
+        brightnessSlider.addEventListener('input', () => {
+            brightnessValue.textContent = `${brightnessSlider.value}%`;
+            applyAdjustments();
+        });
+
+        contrastSlider.addEventListener('input', () => {
+            contrastValue.textContent = `${contrastSlider.value}%`;
+            applyAdjustments();
+        });
+
+        saturationSlider.addEventListener('input', () => {
+            saturationValue.textContent = `${saturationSlider.value}%`;
+            applyAdjustments();
+        });
+
+        exposureSlider.addEventListener('input', () => {
+            exposureValue.textContent = `${exposureSlider.value}%`;
+            applyAdjustments();
+        });
+
+        sharpnessSlider.addEventListener('input', () => {
+            sharpnessValue.textContent = `${sharpnessSlider.value}%`;
+            applyAdjustments();
+        });
+
+        hueSlider.addEventListener('input', () => {
+            hueValue.textContent = `${hueSlider.value}°`;
+            applyAdjustments();
+        });
+
+        // Reset adjustments button
+        document.getElementById('reset-adjustments').addEventListener('click', resetAdjustments);
+
+        // Apply filters
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilter = btn.getAttribute('data-filter');
+                
+                // Remove active class from all filter buttons
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                
+                // Add active class to clicked button
+                btn.classList.add('active');
+                
+                // Apply the selected filter
+                applyFilter(currentFilter);
+            });
+        });
+
+        function applyFilter(filterName) {
+            if (!currentImage) return;
+            
+            let filterValue = '';
+            
+            switch(filterName) {
+                case 'bw':
+                    filterValue = 'grayscale(100%)';
+                    break;
+                case 'cool':
+                    filterValue = 'sepia(50%) hue-rotate(180deg) saturate(2)';
+                    break;
+                case 'warm':
+                    filterValue = 'sepia(50%) hue-rotate(-20deg) saturate(2)';
+                    break;
+                case 'vintage':
+                    filterValue = 'sepia(100%) contrast(0.8) brightness(0.9)';
+                    break;
+                case 'dramatic':
+                    filterValue = 'contrast(1.4) brightness(0.8) saturate(1.5)';
+                    break;
+                case 'invert':
+                    filterValue = 'invert(100%)';
+                    break;
+                case 'sepia':
+                    filterValue = 'sepia(100%)';
+                    break;
+                case 'blur':
+                    filterValue = 'blur(1px)';
+                    break;
+                default:
+                    filterValue = 'none';
+            }
+            
+            ctx.filter = filterValue;
+            ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+            
+            saveToHistory();
+            statusMessage.textContent = `Filtro ${filterName === 'none' ? 'removido' : 'aplicado'}`;
+        }
+
+        // Tool buttons functionality
+        document.getElementById('crop-btn').addEventListener('click', () => {
+            currentTool = 'crop';
+            activateTool('crop-btn');
+            statusMessage.textContent = 'Modo corte: selecione uma área na imagem';
+        });
+
+        document.getElementById('resize-btn').addEventListener('click', () => {
+            const width = prompt('Nova largura (em pixels):', canvas.width);
+            if (width && !isNaN(width)) {
+                const height = prompt('Nova altura (em pixels):', canvas.height);
+                if (height && !isNaN(height)) {
+                    resizeCanvas(parseInt(width), parseInt(height));
+                    statusMessage.textContent = `Imagem redimensionada para ${width} × ${height} px`;
+                }
+            }
+            currentTool = null;
+            deactivateTools();
+        });
+
+        document.getElementById('rotate-btn').addEventListener('click', () => {
+            rotateImage(90);
+            statusMessage.textContent = 'Imagem girada 90°';
+        });
+
+        document.getElementById('brush-btn').addEventListener('click', () => {
+            currentTool = 'brush';
+            activateTool('brush-btn');
+            statusMessage.textContent = 'Modo pincel: clique e arraste para desenhar';
+        });
+
+        document.getElementById('eraser-btn').addEventListener('click', () => {
+            currentTool = 'eraser';
+            activateTool('eraser-btn');
+            statusMessage.textContent = 'Modo borracha: clique e arraste para apagar';
+        });
+
+        document.getElementById('text-btn').addEventListener('click', () => {
+            currentTool = 'text';
+            activateTool('text-btn');
+            const text = prompt('Digite o texto:');
+            if (text) {
+                statusMessage.textContent = 'Clique na imagem para posicionar o texto';
+                canvas.addEventListener('click', addTextOnce);
+            } else {
+                currentTool = null;
+                deactivateTools();
+            }
+        });
+
+        function addTextOnce(e) {
+            if (currentTool === 'text') {
+                const text = prompt('Digite o texto:', '');
+                if (text) {
+                    const size = prompt('Tamanho da fonte (em pixels):', '24');
+                    const x = e.offsetX;
+                    const y = e.offsetY;
+                    
+                    ctx.font = `${size}px Arial`;
+                    ctx.fillStyle = colorPicker.value;
+                    ctx.fillText(text, x, y);
+                    
+                    saveToHistory();
+                    statusMessage.textContent = 'Texto adicionado';
+                }
+                
+                canvas.removeEventListener('click', addTextOnce);
+                currentTool = null;
+                deactivateTools();
+            }
+        }
+
+        // Activate/deactivate tools
+        function activateTool(toolId) {
+            deactivateTools();
+            document.getElementById(toolId).classList.add('active');
+            
+            if (['brush', 'eraser'].includes(currentTool)) {
+                canvas.style.cursor = 'crosshair';
+                setupDrawing();
+            } else {
+                canvas.style.cursor = 'default';
+            }
+        }
+
+        function deactivateTools() {
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            canvas.style.cursor = 'default';
+            
+            // Remove drawing event listeners
+            canvas.removeEventListener('mousedown', startDrawing);
+            canvas.removeEventListener('mousemove', draw);
+            canvas.removeEventListener('mouseup', stopDrawing);
+            canvas.removeEventListener('mouseout', stopDrawing);
+        }
+
+        function setupDrawing() {
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            if (['brush', 'eraser'].includes(currentTool)) {
+                isDrawing = true;
+                [lastX, lastY] = [e.offsetX, e.offsetY];
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            
+            if (currentTool === 'brush') {
+                ctx.strokeStyle = colorPicker.value;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            } else if (currentTool === 'eraser') {
+                ctx.strokeStyle = bgColorPicker.value;
+                ctx.lineWidth = 20;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+            
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            if (['brush', 'eraser'].includes(currentTool)) {
+                saveToHistory();
+            }
+        }
+
+        // Image manipulation functions
+        function resizeCanvas(newWidth, newHeight) {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCanvas.width = newWidth;
+            tempCanvas.height = newHeight;
+            
+            // Draw current canvas content to temp canvas
+            tempCtx.drawImage(canvas, 0, 0, newWidth, newHeight);
+            
+            // Resize main canvas
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            // Draw resized image back to main canvas
+            ctx.drawImage(tempCanvas, 0, 0);
+            
+            // Update current image
+            currentImage.width = newWidth;
+            currentImage.height = newHeight;
+            
+            updateStatusBar(newWidth, newHeight);
+            saveToHistory();
+        }
+
+        function rotateImage(degrees) {
+            const radians = degrees * Math.PI / 180;
+            const sin = Math.abs(Math.sin(radians));
+            const cos = Math.abs(Math.cos(radians));
+            
+            const newWidth = Math.floor(canvas.width * cos + canvas.height * sin);
+            const newHeight = Math.floor(canvas.width * sin + canvas.height * cos);
+            
+            ctx.save();
+            
+            // Move to center of new canvas
+            ctx.translate(newWidth / 2, newHeight / 2);
+            
+            // Rotate
+            ctx.rotate(radians);
+            
+            // Draw image centered
+            ctx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+            
+            ctx.restore();
+            
+            // Resize canvas
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            // Redraw rotated image
+            ctx.save();
+            ctx.translate(newWidth / 2, newHeight / 2);
+            ctx.rotate(radians);
+            ctx.drawImage(currentImage, -currentImage.width / 2, -currentImage.height / 2);
+            ctx.restore();
+            
+            updateStatusBar(newWidth, newHeight);
+            saveToHistory();
+        }
+
+        // Zoom functionality
+        function setZoom(newZoom) {
+            const container = document.getElementById('canvas-container');
+            zoom = Math.max(0.1, Math.min(5, newZoom)); // Limit zoom between 10% and 500%
+            
+            container.style.transform = `scale(${zoom})`;
+            container.style.transformOrigin = 'center center';
+            zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+        }
+
+        // Export image
+        exportImageBtn.addEventListener('click', () => {
+            if (!currentImage) {
+                statusMessage.textContent = 'Nenhuma imagem para exportar';
+                return;
+            }
+            
+            const format = exportFormat.value;
+            const quality = qualitySlider.value / 100;
+            
+            let mimeType;
+            switch(format) {
+                case 'png': mimeType = 'image/png'; break;
+                case 'jpeg': mimeType = 'image/jpeg'; break;
+                case 'webp': mimeType = 'image/webp'; break;
+                default: mimeType = 'image/png';
+            }
+            
+            const dataUrl = canvas.toDataURL(mimeType, quality);
+            const link = document.createElement('a');
+            link.download = `pixelflow-edit.${format}`;
+            link.href = dataUrl;
+            link.click();
+            
+            statusMessage.textContent = 'Imagem exportada';
+        });
+
+        // Panel navigation
+        adjustmentsBtn.addEventListener('click', () => showSection('adjustments'));
+        filtersBtn.addEventListener('click', () => showSection('filters'));
+        colorsBtn.addEventListener('click', () => showSection('colors'));
+        
+        // Close properties panel on mobile
+        document.getElementById('close-properties').addEventListener('click', () => {
+            document.getElementById('properties-panel').classList.add('hidden');
+        });
+
+        // Initialize with adjustments panel open
+        showSection('adjustments');
+        
+        // Set initial zoom
+        setZoom(1);
+
+        // Show help dialog
+        document.getElementById('help-btn').addEventListener('click', () => {
+            alert('PixelFlow Editor\n\n1. Arraste e solte uma imagem ou clique em "Selecionar Imagem"\n2. Use as ferramentas para editar sua imagem\n3. Exporte sua imagem quando terminar\n\nTodos os controles estão funcionais neste editor!');
+        });
+    </script>
+</body>
+</html>
