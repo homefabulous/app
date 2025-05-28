@@ -1,0 +1,290 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .qr-container {
+            transition: all 0.3s ease;
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .qr-code-placeholder {
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            color: #9ca3af;
+            font-size: 0.875rem;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(167, 119, 227, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(167, 119, 227, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(167, 119, 227, 0);
+            }
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(167, 119, 227, 0.5);
+            border-color: #a777e3;
+        }
+    </style>
+</head>
+<body>
+    <div class="qr-container p-6 m-4 w-full max-w-md">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-qrcode mr-2 text-purple-600"></i> 
+                QR Code Generator
+            </h1>
+            <div class="flex space-x-2">
+                <button id="colorBtn" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+                    <i class="fas fa-palette"></i>
+                </button>
+                <button id="infoBtn" class="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label for="qrText" class="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <i class="fas fa-link mr-2 text-purple-600"></i> Enter text or URL
+            </label>
+            <div class="flex">
+                <input type="text" id="qrText" placeholder="https://example.com" 
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:border-purple-500">
+                <button id="generateBtn" class="px-4 py-2 bg-purple-600 text-white rounded-r-lg hover:bg-purple-700 transition">
+                    Generate
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center mb-6">
+            <div id="qrCode" class="qr-code-placeholder mb-4">
+                Your QR code will appear here
+            </div>
+            
+            <div id="colorControls" class="flex space-x-4 mb-4 hidden">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Foreground</label>
+                    <input type="color" id="fgColor" value="#000000" class="w-8 h-8 border border-gray-300 rounded cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Background</label>
+                    <input type="color" id="bgColor" value="#ffffff" class="w-8 h-8 border border-gray-300 rounded cursor-pointer">
+                </div>
+            </div>
+            
+            <button id="downloadBtn" class="hidden px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition pulse">
+                <i class="fas fa-download mr-2"></i> Download QR Code
+            </button>
+        </div>
+
+        <div class="text-sm text-gray-600 flex items-start">
+            <i class="fas fa-lightbulb mr-2 text-yellow-500 mt-1"></i>
+            <p>Tip: You can generate QR codes for URLs, text, contact info, and more!</p>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal">
+        <div class="bg-white rounded-lg p-6 max-w-md mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-info-circle text-purple-600 mr-2"></i> 
+                    About QR Codes
+                </h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-gray-700">
+                <p class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mr-2 mt-1"></i>
+                    <span>QR codes can store up to 4,296 alphanumeric characters.</span>
+                </p>
+                <p class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mr-2 mt-1"></i>
+                    <span>They can be scanned by any smartphone camera.</span>
+                </p>
+                <p class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mr-2 mt-1"></i>
+                    <span>Common uses include URLs, contact info, WiFi credentials, and more.</span>
+                </p>
+                <p class="flex items-start">
+                    <i class="fas fa-check-circle text-green-500 mr-2 mt-1"></i>
+                    <span>Darker colors on light backgrounds work best for scanning.</span>
+                </p>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <p class="text-sm text-gray-500 flex items-center">
+                    <i class="fas fa-code mr-2"></i> Made with QRious.js
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const qrText = document.getElementById('qrText');
+            const generateBtn = document.getElementById('generateBtn');
+            const qrCodeContainer = document.getElementById('qrCode');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const colorBtn = document.getElementById('colorBtn');
+            const colorControls = document.getElementById('colorControls');
+            const fgColor = document.getElementById('fgColor');
+            const bgColor = document.getElementById('bgColor');
+            const infoBtn = document.getElementById('infoBtn');
+            const infoModal = document.getElementById('infoModal');
+            const closeModal = document.getElementById('closeModal');
+            
+            let qr = null;
+            let showColorControls = false;
+            
+            // Initialize with a sample QR code
+            qrText.value = 'https://example.com';
+            
+            // Generate QR code
+            function generateQR() {
+                const text = qrText.value.trim();
+                
+                if (!text) {
+                    alert('Please enter some text or URL');
+                    return;
+                }
+                
+                // Clear previous QR code
+                qrCodeContainer.innerHTML = '';
+                
+                // Create canvas for QR code
+                const canvas = document.createElement('canvas');
+                qrCodeContainer.appendChild(canvas);
+                
+                // Generate new QR code
+                qr = new QRious({
+                    element: canvas,
+                    value: text,
+                    size: 200,
+                    background: bgColor.value,
+                    foreground: fgColor.value,
+                    level: 'H'
+                });
+                
+                // Show download button
+                downloadBtn.classList.remove('hidden');
+                
+                // Show success message
+                console.log('QR code generated successfully!');
+            }
+            
+            // Download QR code
+            function downloadQR() {
+                if (!qr) {
+                    alert('Please generate a QR code first');
+                    return;
+                }
+                
+                const canvas = qrCodeContainer.querySelector('canvas');
+                const link = document.createElement('a');
+                link.download = 'qr-code.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+            
+            // Toggle color controls
+            function toggleColorControls() {
+                showColorControls = !showColorControls;
+                if (showColorControls) {
+                    colorControls.classList.remove('hidden');
+                    colorBtn.innerHTML = '<i class="fas fa-palette text-purple-600"></i>';
+                } else {
+                    colorControls.classList.add('hidden');
+                    colorBtn.innerHTML = '<i class="fas fa-palette"></i>';
+                }
+            }
+            
+            // Update QR code colors
+            function updateColors() {
+                if (qr) {
+                    qr.background = bgColor.value;
+                    qr.foreground = fgColor.value;
+                }
+            }
+            
+            // Event listeners
+            generateBtn.addEventListener('click', generateQR);
+            downloadBtn.addEventListener('click', downloadQR);
+            colorBtn.addEventListener('click', toggleColorControls);
+            fgColor.addEventListener('input', updateColors);
+            bgColor.addEventListener('input', updateColors);
+            infoBtn.addEventListener('click', () => infoModal.classList.add('active'));
+            closeModal.addEventListener('click', () => infoModal.classList.remove('active'));
+            
+            // Generate QR code when Enter is pressed
+            qrText.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateQR();
+                }
+            });
+            
+            // Generate initial QR code
+            setTimeout(() => {
+                generateQR();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
