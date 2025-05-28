@@ -1,0 +1,708 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67b17e8c40503f7c5bd4fcb4"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Recovery & Wellness Journal</title>
+    <script src="https://cdn.tailwindcss.com">
+        function clearJournal() {
+            const textareas = document.querySelectorAll("textarea");
+            textareas.forEach(area => area.value = "");
+
+            const ratings = document.querySelectorAll(".rating-btn");
+            ratings.forEach(btn => btn.classList.remove("selected", "bg-blue-100"));
+
+            const radios = document.querySelectorAll("input[type='radio']");
+            radios.forEach(r => r.checked = false);
+
+            const selects = document.querySelectorAll("select");
+            selects.forEach(s => s.value = "");
+
+            const checkboxes = document.querySelectorAll(".tag-checkbox");
+            checkboxes.forEach(c => c.checked = false);
+        }
+
+</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .rating-btn {
+            transition: all 0.2s ease;
+        }
+        .rating-btn:hover {
+            transform: scale(1.1);
+        }
+        .rating-btn.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6;
+        }
+        .section-container {
+            transition: all 0.3s ease;
+        }
+        .section-container.collapsed {
+            max-height: 60px;
+            overflow: hidden;
+        }
+        .tag-checkbox:checked + .tag-label {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+    </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+        function clearJournal() {
+            const textareas = document.querySelectorAll("textarea");
+            textareas.forEach(area => area.value = "");
+
+            const ratings = document.querySelectorAll(".rating-btn");
+            ratings.forEach(btn => btn.classList.remove("selected", "bg-blue-100"));
+
+            const radios = document.querySelectorAll("input[type='radio']");
+            radios.forEach(r => r.checked = false);
+
+            const selects = document.querySelectorAll("select");
+            selects.forEach(s => s.value = "");
+
+            const checkboxes = document.querySelectorAll(".tag-checkbox");
+            checkboxes.forEach(c => c.checked = false);
+        }
+
+</script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-600 mb-2">Daily Recovery & Wellness Journal</h1>
+            <p class="text-gray-600">Built for self-awareness, reflection, and wellness tracking
+              🧡 Stay well 🙏</p>
+            <p class="text-sm text-gray-600 mt-2 max-w-2xl mx-auto">
+
+            </p>
+
+            <div class="mt-4">
+                <input type="date" id="journal-date" class="px-4 py-2 border rounded-lg text-center font-medium bg-white shadow-sm">
+            </div>
+        </header>
+
+        <main class="space-y-6">
+            <!-- Morning Check-In -->
+            <div class="section-container bg-white rounded-xl shadow-md overflow-hidden fade-in">
+                <div class="flex justify-between items-center p-4 bg-blue-50 cursor-pointer" onclick="toggleSection('morning')">
+                    <h2 class="text-xl font-semibold text-blue-700 flex items-center">
+                        <i class="fas fa-sun mr-2"></i> Morning Check-In
+                    </h2>
+                    <i class="fas fa-chevron-down text-blue-500 transition-transform duration-300" id="morning-arrow"></i>
+                </div>
+                <div class="p-6" id="morning-content">
+                    <div class="space-y-6">
+                        <!-- Sleep Quality -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sleep Quality (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'sleep-quality')">10</button>
+                            </div>
+                        </div>
+
+                        <!-- Energy on Waking -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Energy on Waking (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-energy')">10</button>
+                            </div>
+                        </div>
+
+                        <!-- Mood -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mood (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'morning-mood')">10</button>
+                            </div>
+                        </div>
+
+                        <!-- Dream Recall -->
+                        <div>
+                            <label for="dream-recall" class="block text-sm font-medium text-gray-700 mb-2">Dream Recall / Night Disturbances</label>
+                            <textarea id="dream-recall" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Any dreams or disturbances during the night?"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Midday Snapshot -->
+            <div class="section-container bg-white rounded-xl shadow-md overflow-hidden fade-in" style="animation-delay: 0.1s">
+                <div class="flex justify-between items-center p-4 bg-green-50 cursor-pointer" onclick="toggleSection('midday')">
+                    <h2 class="text-xl font-semibold text-green-700 flex items-center">
+                        <i class="fas fa-clock mr-2"></i> Midday Snapshot <span class="text-sm font-normal text-green-600 ml-2">(Optional)</span>
+                    </h2>
+                    <i class="fas fa-chevron-down text-green-500 transition-transform duration-300" id="midday-arrow"></i>
+                </div>
+                <div class="p-6" id="midday-content">
+                    <div class="space-y-6">
+                        <!-- Mental Focus -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mental Focus (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-focus')">10</button>
+                            </div>
+                        </div>
+
+                        <!-- Physical Energy -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Physical Energy (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-energy')">10</button>
+                            </div>
+                        </div>
+
+                        <!-- Stress Level -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Stress Level (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'midday-stress')">10</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evening Reflection -->
+            <div class="section-container bg-white rounded-xl shadow-md overflow-hidden fade-in" style="animation-delay: 0.2s">
+                <div class="flex justify-between items-center p-4 bg-purple-50 cursor-pointer" onclick="toggleSection('evening')">
+                    <h2 class="text-xl font-semibold text-purple-700 flex items-center">
+                        <i class="fas fa-moon mr-2"></i> Evening Reflection
+                    </h2>
+                    <i class="fas fa-chevron-down text-purple-500 transition-transform duration-300" id="evening-arrow"></i>
+                </div>
+                <div class="p-6" id="evening-content">
+                    <div class="space-y-6">
+                        <!-- Biggest Win -->
+                        <div>
+                            <label for="biggest-win" class="block text-sm font-medium text-gray-700 mb-2">Biggest Win Today</label>
+                            <textarea id="biggest-win" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="What was your biggest accomplishment today?"></textarea>
+                        </div>
+
+                        <!-- Challenges -->
+                        <div>
+                            <label for="challenges" class="block text-sm font-medium text-gray-700 mb-2">Challenges or Stressors</label>
+                            <textarea id="challenges" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="What challenges did you face today?"></textarea>
+                        </div>
+
+                        <!-- Nutrition Notes -->
+                        <div>
+                            <label for="nutrition" class="block text-sm font-medium text-gray-700 mb-2">Nutrition Notes</label>
+                            <textarea id="nutrition" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Any notes about your nutrition today?"></textarea>
+                        </div>
+
+                        <!-- Screen Time -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Screen Time After 8pm</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="screen-time" value="yes" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2">Yes</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="screen-time" value="no" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2">No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="device-type" class="block text-sm font-medium text-gray-700 mb-2">Type of Device</label>
+                                <select id="device-type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select device</option>
+                                    <option value="phone">Phone</option>
+                                    <option value="tablet">Tablet</option>
+                                    <option value="computer">Computer</option>
+                                    <option value="tv">TV</option>
+                                    <option value="multiple">Multiple</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Pre-Bed Routine -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pre-Bed Routine Score (1-10)</label>
+                            <div class="flex justify-between space-x-2">
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">1</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">2</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">3</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">4</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">5</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">6</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">7</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">8</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">9</button>
+                                <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'bed-routine')">10</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="section-container bg-white rounded-xl shadow-md overflow-hidden fade-in" style="animation-delay: 0.3s">
+                <div class="flex justify-between items-center p-4 bg-yellow-50 cursor-pointer" onclick="toggleSection('tags')">
+                    <h2 class="text-xl font-semibold text-yellow-700 flex items-center">
+                        <i class="fas fa-tags mr-2"></i> Tags
+                    </h2>
+                    <i class="fas fa-chevron-down text-yellow-500 transition-transform duration-300" id="tags-arrow"></i>
+                </div>
+                <div class="p-6" id="tags-content">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <div>
+                            <input type="checkbox" id="late-meal" class="hidden tag-checkbox">
+                            <label for="late-meal" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-utensils mr-2"></i> Late meal
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="alcohol" class="hidden tag-checkbox">
+                            <label for="alcohol" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-wine-glass-alt mr-2"></i> Alcohol
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="screen-before-bed" class="hidden tag-checkbox">
+                            <label for="screen-before-bed" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-mobile-alt mr-2"></i> Screen use before bed
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="blue-light" class="hidden tag-checkbox">
+                            <label for="blue-light" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-lightbulb mr-2"></i> Blue light filter
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="meditated" class="hidden tag-checkbox">
+                            <label for="meditated" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-spa mr-2"></i> Meditated
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="cold-exposure" class="hidden tag-checkbox">
+                            <label for="cold-exposure" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-snowflake mr-2"></i> Cold exposure
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="caffeine-after-2pm" class="hidden tag-checkbox">
+                            <label for="caffeine-after-2pm" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-coffee mr-2"></i> Caffeine after 2pm
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="woke-up-at-night" class="hidden tag-checkbox">
+                            <label for="woke-up-at-night" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-bed mr-2"></i> Woke up at night
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="exercise-today" class="hidden tag-checkbox">
+                            <label for="exercise-today" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-running mr-2"></i> Exercise today
+                            </label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="social-interaction" class="hidden tag-checkbox">
+                            <label for="social-interaction" class="tag-label inline-flex items-center px-3 py-2 rounded-full border border-gray-300 bg-white text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                                <i class="fas fa-users mr-2"></i> Social interaction
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recovery Readiness -->
+            <div class="section-container bg-white rounded-xl shadow-md overflow-hidden fade-in" style="animation-delay: 0.4s">
+                <div class="flex justify-between items-center p-4 bg-indigo-50 cursor-pointer" onclick="toggleSection('recovery')">
+                    <h2 class="text-xl font-semibold text-indigo-700 flex items-center">
+                        <i class="fas fa-heartbeat mr-2"></i> Recovery Readiness Guess <span class="text-sm font-normal text-indigo-600 ml-2">(Optional)</span>
+                    </h2>
+                    <i class="fas fa-chevron-down text-indigo-500 transition-transform duration-300" id="recovery-arrow"></i>
+                </div>
+                <div class="p-6" id="recovery-content">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">How ready do you feel for tomorrow? (1-10)</label>
+                        <div class="flex justify-between space-x-2">
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">1</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">2</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">3</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">4</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">5</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">6</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">7</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">8</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">9</button>
+                            <button class="rating-btn w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center" onclick="selectRating(this, 'recovery-readiness')">10</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-8 text-center">
+            <button onclick="clearJournal()" class="mr-4 px-6 py-3 bg-gray-300 text-gray-800 font-medium rounded-lg shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition-colors">Clear</button>
+            <button onclick="saveJournal()" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors">
+                <i class="fas fa-save mr-2"></i> Save Today's Journal
+            </button>
+            <div id="save-message" class="mt-4 text-sm text-green-600 hidden">
+                <i class="fas fa-check-circle mr-1"></i> Journal saved successfully!
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('journal-date').value = dateStr;
+            
+            // Collapse all sections except the first one initially
+            toggleSection('morning', false);
+            toggleSection('midday');
+            toggleSection('evening');
+            toggleSection('tags');
+            toggleSection('recovery');
+        });
+
+        // Toggle section visibility
+        function toggleSection(sectionId, animate = true) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const arrow = document.getElementById(`${sectionId}-arrow`);
+            const container = content.parentElement;
+            
+            if (container.classList.contains('collapsed')) {
+                container.classList.remove('collapsed');
+                arrow.classList.remove('fa-chevron-down');
+                arrow.classList.add('fa-chevron-up');
+                if (animate) {
+                    content.classList.add('fade-in');
+                }
+            } else {
+                container.classList.add('collapsed');
+                arrow.classList.remove('fa-chevron-up');
+                arrow.classList.add('fa-chevron-down');
+                content.classList.remove('fade-in');
+            }
+        }
+
+        // Rating selection
+        function selectRating(button, category) {
+            // Remove selected class from all buttons in this category's parent
+            const parent = button.parentElement;
+            const buttons = parent.querySelectorAll('.rating-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('selected');
+                btn.classList.remove('bg-blue-100');
+                btn.classList.add('bg-gray-100');
+            });
+            
+            // Add selected class to clicked button
+            button.classList.add('selected', 'bg-blue-100');
+            button.classList.remove('bg-gray-100');
+        }
+
+        // Save journal function
+        
+    async function saveJournal() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const date = document.getElementById('journal-date').value;
+        const getRating = (category) => {
+            const selected = document.querySelector(`.rating-btn.selected[onclick*="${category}"]`);
+            return selected ? selected.textContent.trim() : 'N/A';
+        };
+        
+        const getValue = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return 'N/A';
+            return el.value
+                .replace(/[^ -~а-яА-ЯёЁ.,:;!?()\-\s]/g, '')  // sanitize non-printable
+                .trim();
+        };
+    
+        const getRadioValue = (name) => {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? el.value : 'N/A';
+        };
+        const getTags = () => {
+            const checkedTags = document.querySelectorAll('.tag-checkbox:checked');
+            return Array.from(checkedTags).map(tag => tag.id.replace(/-/g, ' ')).join(', ') || 'None';
+        };
+
+        doc.setFontSize(16);
+        doc.text("Daily Recovery & Wellness Journal", 20, 20);
+        doc.setFontSize(12);
+        doc.text(`Report Date: ${date}`, 20, 30);
+
+        doc.setFont(undefined, 'bold');
+        doc.setFontSize(14);
+        doc.text("Using Your Journal", 20, 40);
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(11);
+
+        const introNote = [
+            "You can save your daily journal reports and upload them to tools like ChatGPT,",
+            "Perplexity, or Gemini to get deeper insights, summaries, or personalized",
+            "recommendations based on your entries.",
+            "",
+            "If you find this wellness tracker helpful and would like to show appreciation,",
+            "you’re welcome to buy Vassiliy a coffee via a small donation:",
+            "https://paypal.me/vaskenzy",
+            "",
+            "Thank you for your support!"
+        ];
+
+        let yIntro = 55;
+        for (const line of introNote) {
+            doc.text(line, 20, yIntro);
+            yIntro += 8;
+        }
+
+        y = yIntro + 10;
+
+        const addSection = (title, items) => {
+            doc.setFont(undefined, 'bold');
+            doc.text(title, 20, y);
+            y += 8;
+            doc.setFont(undefined, 'normal');
+            for (const [label, value] of items) {
+                doc.text(`• ${label}: ${value}`, 25, y);
+                y += 8;
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                }
+            }
+            y += 4;
+        };
+
+        addSection("Morning Check-In", [
+            ["Sleep Quality", getRating('sleep-quality')],
+            ["Energy on Waking", getRating('morning-energy')],
+            ["Mood", getRating('morning-mood')],
+            ["Dream Recall", getValue('dream-recall')],
+        ]);
+
+        addSection("Midday Snapshot", [
+            ["Focus", getRating('midday-focus')],
+            ["Energy", getRating('midday-energy')],
+            ["Stress", getRating('midday-stress')],
+        ]);
+
+        addSection("Evening Reflection", [
+            ["Biggest Win", getValue('biggest-win')],
+            ["Challenges", getValue('challenges')],
+            ["Nutrition", getValue('nutrition')],
+            ["Screen Time After 8pm", getRadioValue('screen-time')],
+            ["Device Type", getValue('device-type')],
+            ["Pre-Bed Routine", getRating('bed-routine')],
+        ]);
+
+        addSection("Tags", [
+            ["Selected Tags", getTags()],
+        ]);
+
+        addSection("Recovery Readiness", [
+            ["Guess Score", getRating('recovery-readiness')],
+        ]);
+
+        
+        // Generate simple insights based on inputs
+        let insights = [];
+
+        const sleep = parseInt(getRating('sleep-quality'));
+        const stress = parseInt(getRating('midday-stress'));
+        const routine = parseInt(getRating('bed-routine'));
+
+        if (sleep && sleep < 5) {
+            insights.push("• Your sleep quality is low. Try to wind down with a calming bedtime routine.");
+        }
+
+        if (stress && stress >= 7) {
+            insights.push("• High stress levels detected. Consider relaxation techniques or taking short breaks during the day.");
+        }
+
+        if (routine && routine < 5) {
+            insights.push("• Pre-bed routine score is low. Reduce screen time and stimulants before sleep.");
+        }
+
+        const tags = getTags().toLowerCase();
+
+        if (tags.includes("caffeine after 2pm")) {
+            insights.push("• Caffeine after 2pm might be affecting your sleep quality.");
+        }
+        if (tags.includes("alcohol")) {
+            insights.push("• Alcohol consumption can disrupt deep sleep cycles.");
+        }
+        if (tags.includes("screen-before-bed")) {
+            insights.push("• Try to avoid screens before bed to improve sleep.");
+        }
+
+        if (tags.includes("meditated")) {
+            insights.push("✓ Good job meditating! It helps reduce stress and improve focus.");
+        }
+        if (tags.includes("exercise today")) {
+            insights.push("✓ Exercise helps with overall wellness and recovery.");
+        }
+        if (tags.includes("social interaction")) {
+            insights.push("✓ Positive social interactions support emotional health.");
+        }
+
+        if (insights.length > 0) {
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text("Insights", 20, 20);
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(11);
+
+            let yInsight = 30;
+            for (const line of insights) {
+                doc.text(line, 20, yInsight);
+                yInsight += 8;
+                if (yInsight > 270) {
+                    doc.addPage();
+                    yInsight = 20;
+                }
+            }
+        }
+
+        
+        // Add footer to each page
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(9);
+            doc.setTextColor(150);
+            doc.text(`© ${new Date().getFullYear()} Vassiliy Lakhonin — All rights reserved.`, 20, 285);
+        }
+
+        doc.save(`Journal-${date}.pdf`);
+
+        const saveMessage = document.getElementById('save-message');
+        saveMessage.classList.remove('hidden');
+        setTimeout(() => saveMessage.classList.add('hidden'), 3000);
+    }
+
+        // Tag selection (handled by CSS)
+    
+        function clearJournal() {
+            const textareas = document.querySelectorAll("textarea");
+            textareas.forEach(area => area.value = "");
+
+            const ratings = document.querySelectorAll(".rating-btn");
+            ratings.forEach(btn => btn.classList.remove("selected", "bg-blue-100"));
+
+            const radios = document.querySelectorAll("input[type='radio']");
+            radios.forEach(r => r.checked = false);
+
+            const selects = document.querySelectorAll("select");
+            selects.forEach(s => s.value = "");
+
+            const checkboxes = document.querySelectorAll(".tag-checkbox");
+            checkboxes.forEach(c => c.checked = false);
+        }
+
+</script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=vasilvasilich/daily-recovery-and-wellness-journal" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p>
+<footer class="text-center text-gray-500 text-sm mt-12 mb-6">
+    <hr class="my-6 border-gray-300">
+    <p>&copy; <span id="year"></span> Vassiliy Lakhonin. All rights reserved.</p>
+    <p>Built for self-awareness and daily recovery tracking.</p>
+</footer>
+
+<script>
+    // Автоматическая подстановка текущего года
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('year').textContent = new Date().getFullYear();
+    });
+
+        function clearJournal() {
+            const textareas = document.querySelectorAll("textarea");
+            textareas.forEach(area => area.value = "");
+
+            const ratings = document.querySelectorAll(".rating-btn");
+            ratings.forEach(btn => btn.classList.remove("selected", "bg-blue-100"));
+
+            const radios = document.querySelectorAll("input[type='radio']");
+            radios.forEach(r => r.checked = false);
+
+            const selects = document.querySelectorAll("select");
+            selects.forEach(s => s.value = "");
+
+            const checkboxes = document.querySelectorAll(".tag-checkbox");
+            checkboxes.forEach(c => c.checked = false);
+        }
+
+</script>
+
+</body>
+</html>
