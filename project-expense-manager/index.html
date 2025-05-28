@@ -1,0 +1,571 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project budget Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            'from': { opacity: '0', transform: 'translateY(10px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            input[type="number"]::-webkit-inner-spin-button,
+            input[type="number"]::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+        }
+        @layer components {
+            .currency-selector {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+                background-position: right 0.5rem center;
+                background-repeat: no-repeat;
+                background-size: 1.5em 1.5em;
+                padding-right: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <div class="text-center mb-6 sm:mb-10">
+            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-1 sm:mb-2">Project Budget Manager</h1>
+            <p class="text-sm sm:text-base text-gray-600">Manage multiple projects, track expenses, and stay on budget</p>
+        </div>
+
+        <!-- Project Selector -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex-1 min-w-0">
+                <label class="block text-gray-700 text-sm mb-1">Select Project</label>
+                <select id="projectSelector" class="w-full border-b-2 border-gray-300 py-1 sm:py-2 px-1 focus:border-indigo-500 focus:outline-none text-base sm:text-lg bg-no-repeat">
+                    <!-- Project options will be loaded dynamically -->
+                </select>
+            </div>
+            <button id="addProjectBtn" class="bg-indigo-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-md sm:rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-sm sm:text-base ml-0 sm:ml-4 mt-2 sm:mt-0">
+                <i class="fas fa-plus mr-1"></i> Add Project
+            </button>
+        </div>
+        
+        <!-- Project Edit/Delete Buttons -->
+        <div class="flex gap-2 mb-4">
+            <button id="editProjectBtn" class="text-indigo-500 hover:text-indigo-700 text-sm"><i class="fas fa-edit"></i> Edit Project</button>
+            <button id="deleteProjectBtn" class="text-red-500 hover:text-red-700 text-sm"><i class="fas fa-trash"></i> Delete Project</button>
+        </div>
+
+        <!-- Project Add/Edit Modal -->
+        <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 w-full max-w-md">
+                <h3 id="projectModalTitle" class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Add Project</h3>
+                <div class="mb-3 sm:mb-4">
+                    <label class="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Project Name</label>
+                    <input type="text" id="projectNameInput" class="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-1 sm:py-2 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                </div>
+                <div class="flex justify-end space-x-2 sm:space-x-3">
+                    <button id="cancelProjectBtn" class="px-3 sm:px-4 py-1 sm:py-2 text-gray-600 hover:text-gray-800 text-sm sm:text-base">Cancel</button>
+                    <button id="saveProjectBtn" class="px-3 sm:px-4 py-1 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm sm:text-base">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salary Input Section -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Contract price</h2>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
+                <div class="flex-1 min-w-0">
+                    <select id="currencyPicker" class="currency-selector w-full border-b-2 border-gray-300 py-1 sm:py-2 px-1 focus:border-indigo-500 focus:outline-none text-base sm:text-lg bg-no-repeat">
+                        <option value="$">USD ($)</option>
+                        <option value="€">EUR (€)</option>
+                        <option value="£">GBP (£)</option>
+                        <option value="₤">EGP (₤)</option>
+                        <option value="₹">INR (₹)</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-0 flex items-center">
+                    <span id="currencySymbol" class="mr-2 text-gray-700 text-base sm:text-lg">$</span>
+                    <input type="number" id="salaryInput" placeholder="Enter contract price" 
+                           class="w-full border-b-2 border-gray-300 py-1 sm:py-2 px-1 focus:border-indigo-500 focus:outline-none text-base sm:text-lg">
+                </div>
+                <button id="setSalaryBtn" class="bg-indigo-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-md sm:rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-sm sm:text-base">
+                    Set contract price
+                </button>
+            </div>
+        </div>
+
+        <!-- Budget Summary -->
+        <div id="summarySection" class="hidden bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+                <div class="bg-indigo-50 p-2 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-indigo-600 font-medium">Contract price</p>
+                    <p id="totalSalary" class="text-xl sm:text-2xl font-bold text-indigo-800 truncate">$0</p>
+                </div>
+                <div class="bg-red-50 p-2 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-red-600 font-medium">Total Expenses</p>
+                    <p id="totalExpenses" class="text-xl sm:text-2xl font-bold text-red-800 truncate">$0</p>
+                </div>
+                <div class="bg-green-50 p-2 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-green-600 font-medium">Remaining</p>
+                    <p id="remainingSalary" class="text-xl sm:text-2xl font-bold text-green-800 truncate">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Categories -->
+        <div id="expensesSection" class="hidden bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <div class="flex justify-between items-center mb-3 sm:mb-4">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Your Expenses</h2>
+                <button id="addCategoryBtn" class="text-indigo-600 hover:text-indigo-800 flex items-center text-sm sm:text-base">
+                    <i class="fas fa-plus-circle mr-1 text-xs sm:text-sm"></i> Add
+                </button>
+            </div>
+            <div id="expensesList" class="space-y-3 sm:space-y-4">
+                <!-- Items will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- Add Custom Category Modal -->
+        <div id="addCategoryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 w-full max-w-md">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Add New expense</h3>
+                <div class="mb-3 sm:mb-4">
+                    <label class="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Expense's Name</label>
+                    <input type="text" id="newCategoryName" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-1 sm:py-2 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                </div>
+                <div class="mb-4 sm:mb-5">
+                    <label class="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Icon</label>
+                    <select id="newCategoryIcon" class="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-1 sm:py-2 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                        <option value="fa-shopping-bag">Material</option>
+                        <option value="fa-car">Fuel</option>
+                        <option value="fa-home">Equipment</option>
+                        <option value="fa-heart">Payroll</option>
+                        <option value="fa-graduation-cap">Insurance</option>
+                        <option value="fa-film">Marketing/advertising</option>
+                        <option value="fa-tshirt">Losses</option>
+                        <option value="fa-wifi">Utilities</option>
+                        <option value="fa-gift">Gifts</option>
+                        <option value="fa-plane">Travel</option>
+                        <option value="fa-pills">Vitamins</option>
+                        <option value="fa-dumbbell">Sports</option>
+                        <option value="fa-utensils">Food</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 sm:space-x-3">
+                    <button id="cancelAddCategory" class="px-3 sm:px-4 py-1 sm:py-2 text-gray-600 hover:text-gray-800 text-sm sm:text-base">Cancel</button>
+                    <button id="confirmAddCategory" class="px-3 sm:px-4 py-1 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm sm:text-base">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const salaryInput = document.getElementById('salaryInput');
+            const setSalaryBtn = document.getElementById('setSalaryBtn');
+            const summarySection = document.getElementById('summarySection');
+            const expensesSection = document.getElementById('expensesSection');
+            const totalSalaryDisplay = document.getElementById('totalSalary');
+            const totalExpensesDisplay = document.getElementById('totalExpenses');
+            const remainingSalaryDisplay = document.getElementById('remainingSalary');
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const addCategoryModal = document.getElementById('addCategoryModal');
+            const cancelAddCategory = document.getElementById('cancelAddCategory');
+            const confirmAddCategory = document.getElementById('confirmAddCategory');
+            const newCategoryName = document.getElementById('newCategoryName');
+            const newCategoryIcon = document.getElementById('newCategoryIcon');
+            const expensesList = document.getElementById('expensesList');
+            const currencyPicker = document.getElementById('currencyPicker');
+            const currencySymbol = document.getElementById('currencySymbol');
+
+            // Project management elements
+            const projectSelector = document.getElementById('projectSelector');
+            const addProjectBtn = document.getElementById('addProjectBtn');
+            const editProjectBtn = document.getElementById('editProjectBtn');
+            const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+            const projectModal = document.getElementById('projectModal');
+            const projectModalTitle = document.getElementById('projectModalTitle');
+            const projectNameInput = document.getElementById('projectNameInput');
+            const cancelProjectBtn = document.getElementById('cancelProjectBtn');
+            const saveProjectBtn = document.getElementById('saveProjectBtn');
+
+            // Data structure for multiple projects
+            let projects = JSON.parse(localStorage.getItem('projects')) || [];
+            let currentProjectId = localStorage.getItem('currentProjectId') || null;
+            let isEditProject = false;
+
+            function generateId() {
+                return '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            // Project CRUD
+            function renderProjectSelector() {
+                projectSelector.innerHTML = '';
+                projects.forEach(project => {
+                    const opt = document.createElement('option');
+                    opt.value = project.id;
+                    opt.textContent = project.name;
+                    projectSelector.appendChild(opt);
+                });
+                if (projects.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = "";
+                    opt.textContent = "-- No projects, create one --";
+                    projectSelector.appendChild(opt);
+                }
+            }
+
+            function saveProjects() {
+                localStorage.setItem('projects', JSON.stringify(projects));
+            }
+
+            function setCurrentProject(id) {
+                currentProjectId = id;
+                localStorage.setItem('currentProjectId', id);
+            }
+
+            function getCurrentProject() {
+                return projects.find(p => p.id === currentProjectId);
+            }
+
+            function updateProjectDataInStorage(project) {
+                let idx = projects.findIndex(p => p.id === project.id);
+                if (idx !== -1) {
+                    projects[idx] = project;
+                    saveProjects();
+                }
+            }
+
+            // UI update for project change
+            function loadCurrentProjectData() {
+                const project = getCurrentProject();
+                if (!project) {
+                    summarySection.classList.add('hidden');
+                    expensesSection.classList.add('hidden');
+                    salaryInput.value = '';
+                    expensesList.innerHTML = '';
+                    currencyPicker.value = '$';
+                    currencySymbol.textContent = '$';
+                    return;
+                }
+                salaryInput.value = project.salary || '';
+                currencyPicker.value = project.currency || '$';
+                currencySymbol.textContent = project.currency || '$';
+                // salary and expenses
+                summarySection.classList.remove('hidden');
+                expensesSection.classList.remove('hidden');
+                renderExpenses(project.expenses || []);
+                updateSummaryDisplay();
+                calculateRemaining();
+            }
+
+            // Add/Edit Project Modal
+            addProjectBtn.addEventListener('click', function() {
+                isEditProject = false;
+                projectModalTitle.textContent = "Add Project";
+                projectNameInput.value = '';
+                projectModal.classList.remove('hidden');
+                projectNameInput.focus();
+            });
+
+            editProjectBtn.addEventListener('click', function() {
+                const project = getCurrentProject();
+                if (!project) return;
+                isEditProject = true;
+                projectModalTitle.textContent = "Edit Project";
+                projectNameInput.value = project.name;
+                projectModal.classList.remove('hidden');
+                projectNameInput.focus();
+            });
+
+            cancelProjectBtn.addEventListener('click', function() {
+                projectModal.classList.add('hidden');
+            });
+
+            saveProjectBtn.addEventListener('click', function() {
+                const name = projectNameInput.value.trim();
+                if (!name) {
+                    alert('Project name required');
+                    return;
+                }
+                if (isEditProject) {
+                    const project = getCurrentProject();
+                    if (project) {
+                        project.name = name;
+                        updateProjectDataInStorage(project);
+                        saveProjects();
+                        renderProjectSelector();
+                        setCurrentProject(project.id);
+                        projectSelector.value = project.id;
+                        loadCurrentProjectData();
+                    }
+                } else {
+                    const id = generateId();
+                    const newProject = {
+                        id,
+                        name,
+                        salary: 0,
+                        currency: '$',
+                        expenses: []
+                    };
+                    projects.push(newProject);
+                    saveProjects();
+                    renderProjectSelector();
+                    setCurrentProject(id);
+                    projectSelector.value = id;
+                    loadCurrentProjectData();
+                }
+                projectModal.classList.add('hidden');
+            });
+
+            deleteProjectBtn.addEventListener('click', function() {
+                if (!currentProjectId) return;
+                if (!confirm('Are you sure you want to delete this project?')) return;
+                projects = projects.filter(p => p.id !== currentProjectId);
+                saveProjects();
+                if (projects.length > 0) {
+                    setCurrentProject(projects[0].id);
+                } else {
+                    setCurrentProject(null);
+                }
+                renderProjectSelector();
+                loadCurrentProjectData();
+            });
+
+            projectSelector.addEventListener('change', function() {
+                setCurrentProject(this.value);
+                loadCurrentProjectData();
+            });
+
+            // Expense logic for per-project data
+            function renderExpenses(expenses = []) {
+                expensesList.innerHTML = '';
+                if (!expenses.length) {
+                    addDefaultCategories();
+                } else {
+                    expenses.forEach(expense => {
+                        addExpenseItem(expense.name, expense.amount, expense.icon, expense.color);
+                    });
+                }
+            }
+
+            function getProjectExpenses() {
+                const project = getCurrentProject();
+                return project ? project.expenses || [] : [];
+            }
+
+            function setProjectExpenses(expenses) {
+                const project = getCurrentProject();
+                if (!project) return;
+                project.expenses = expenses;
+                updateProjectDataInStorage(project);
+            }
+
+            function addDefaultCategories() {
+                const defaultCategories = [
+                    { name: 'Vitamins', icon: 'fa-pills', color: 'purple', amount: 0 },
+                    { name: 'Sports', icon: 'fa-dumbbell', color: 'blue', amount: 0 },
+                    { name: 'Food', icon: 'fa-utensils', color: 'orange', amount: 0 }
+                ];
+                setProjectExpenses(defaultCategories);
+                renderExpenses(defaultCategories);
+            }
+
+            // Add an expense item to the DOM
+            function addExpenseItem(name, amount, icon, color = 'indigo') {
+                const newItem = document.createElement('div');
+                newItem.className = 'expense-item animate-fade-in';
+                newItem.innerHTML = `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+                        <div class="flex items-center sm:w-2/5">
+                            <i class="fas ${icon} text-${color}-500 mr-2 text-sm sm:text-base"></i>
+                            <span class="text-gray-700 text-sm sm:text-base">${name}</span>
+                        </div>
+                        <div class="flex items-center sm:w-3/5">
+                            <span class="expense-currency mr-2 text-gray-700 text-sm sm:text-base">${currencyPicker.value}</span>
+                            <input type="number" placeholder="Amount" value="${amount || ''}" 
+                                   class="expense-input flex-1 border-b-2 border-gray-300 py-1 px-1 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                            <button class="delete-btn ml-2 sm:ml-3 text-red-500 hover:text-red-700 text-sm sm:text-base">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                expensesList.appendChild(newItem);
+                newItem.querySelector('.expense-input').addEventListener('input', function() {
+                    updateExpensesFromDOM();
+                    calculateRemaining();
+                });
+            }
+
+            // Update currency symbols
+            function updateCurrencySymbols() {
+                currencySymbol.textContent = currencyPicker.value;
+
+                document.querySelectorAll('.expense-currency').forEach(el => {
+                    el.textContent = currencyPicker.value;
+                });
+
+                updateSummaryDisplay();
+            }
+
+            // Load currency and salary for project
+            currencyPicker.addEventListener('change', function() {
+                const project = getCurrentProject();
+                if (project) {
+                    project.currency = currencyPicker.value;
+                    updateProjectDataInStorage(project);
+                }
+                updateCurrencySymbols();
+            });
+
+            setSalaryBtn.addEventListener('click', function() {
+                const value = parseFloat(salaryInput.value);
+                if (!isNaN(value) && value > 0) {
+                    const project = getCurrentProject();
+                    if (project) {
+                        project.salary = value;
+                        updateProjectDataInStorage(project);
+                        updateSummaryDisplay();
+                        summarySection.classList.remove('hidden');
+                        expensesSection.classList.remove('hidden');
+                        calculateRemaining();
+                        updateCurrencySymbols();
+                    }
+                } else {
+                    alert('Please enter a valid salary amount');
+                }
+            });
+
+            // Delete expense item
+            expensesList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
+                    const item = e.target.closest('.expense-item');
+                    item.classList.add('hidden');
+                    setTimeout(() => {
+                        item.remove();
+                        updateExpensesFromDOM();
+                        calculateRemaining();
+                    }, 300);
+                }
+            });
+
+            // Show add category modal
+            addCategoryBtn.addEventListener('click', function() {
+                addCategoryModal.classList.remove('hidden');
+                newCategoryName.value = '';
+                newCategoryName.focus();
+            });
+
+            // Hide add category modal
+            cancelAddCategory.addEventListener('click', function() {
+                addCategoryModal.classList.add('hidden');
+                newCategoryName.value = '';
+            });
+
+            // Add new category
+            confirmAddCategory.addEventListener('click', function() {
+                const name = newCategoryName.value.trim();
+                const icon = newCategoryIcon.value;
+                if (name) {
+                    const expenses = getProjectExpenses();
+                    expenses.push({ name, amount: 0, icon });
+                    setProjectExpenses(expenses);
+                    renderExpenses(expenses);
+                    addCategoryModal.classList.add('hidden');
+                    newCategoryName.value = '';
+                } else {
+                    alert('Please enter a category name');
+                }
+            });
+
+            // Update summary display with current currency
+            function updateSummaryDisplay() {
+                const project = getCurrentProject();
+                if (!project) return;
+                totalSalaryDisplay.textContent = `${project.currency || '$'}${(project.salary || 0).toFixed(2)}`;
+                calculateRemaining();
+            }
+
+            // Calculate remaining salary
+            function calculateRemaining() {
+                const project = getCurrentProject();
+                if (!project) return;
+                let totalExpenses = 0;
+                document.querySelectorAll('.expense-input').forEach(input => {
+                    const value = parseFloat(input.value);
+                    if (!isNaN(value) && value > 0) {
+                        totalExpenses += value;
+                    }
+                });
+
+                totalExpensesDisplay.textContent = `${project.currency || '$'}${totalExpenses.toFixed(2)}`;
+
+                const remaining = (project.salary || 0) - totalExpenses;
+                remainingSalaryDisplay.textContent = `${project.currency || '$'}${remaining.toFixed(2)}`;
+
+                // Change color based on remaining amount
+                if (remaining < 0) {
+                    remainingSalaryDisplay.classList.remove('text-green-800', 'text-yellow-600');
+                    remainingSalaryDisplay.classList.add('text-red-800');
+                } else if (remaining < (project.salary || 0) * 0.2) {
+                    remainingSalaryDisplay.classList.remove('text-green-800', 'text-red-800');
+                    remainingSalaryDisplay.classList.add('text-yellow-600');
+                } else {
+                    remainingSalaryDisplay.classList.remove('text-red-800', 'text-yellow-600');
+                    remainingSalaryDisplay.classList.add('text-green-800');
+                }
+            }
+
+            // Save changes to project expenses (from DOM)
+            function updateExpensesFromDOM() {
+                const newExpenses = [];
+                document.querySelectorAll('.expense-item').forEach(item => {
+                    const name = item.querySelector('span').textContent;
+                    const icon = item.querySelector('i').className.match(/fa-[a-z-]+/)[0];
+                    const amount = parseFloat(item.querySelector('.expense-input').value) || 0;
+                    newExpenses.push({
+                        name: name,
+                        amount: amount,
+                        icon: icon
+                    });
+                });
+                setProjectExpenses(newExpenses);
+            }
+
+            // Initialize the app
+            function initApp() {
+                renderProjectSelector();
+                // Select current project if exists
+                if (!currentProjectId && projects.length) {
+                    setCurrentProject(projects[0].id);
+                }
+                if (currentProjectId && projects.find(p => p.id === currentProjectId)) {
+                    projectSelector.value = currentProjectId;
+                }
+                loadCurrentProjectData();
+            }
+
+            initApp();
+        });
+    </script>
+</body>
+</body>
+</html>
