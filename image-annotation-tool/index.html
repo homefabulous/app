@@ -1,0 +1,408 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"6168218a4ed0b975c18f82a8"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Annotation Tool for AI Dataset</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dropzone {
+            border: 2px dashed #9ca3af;
+            transition: all 0.3s;
+        }
+        .dropzone.active {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        .preview-image {
+            max-height: 60vh;
+            object-fit: contain;
+        }
+        .saved-item:hover .saved-item-actions {
+            opacity: 1;
+        }
+        .saved-item-thumbnail {
+            height: 80px;
+            width: 80px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-indigo-700 mb-2">Image Annotation Tool</h1>
+            <p class="text-gray-600">
+                Create a dataset for AI image generation by annotating images with descriptive prompts
+            </p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Annotation Section -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-image-upload mr-2 text-indigo-500"></i>
+                    Upload & Annotate
+                </h2>
+                
+                <!-- Image Dropzone -->
+                <div 
+                    id="dropzone" 
+                    class="dropzone rounded-lg p-8 text-center mb-6 cursor-pointer hover:bg-gray-50"
+                >
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                    <div id="dropzoneContent" class="space-y-2">
+                        <div class="text-indigo-500 text-4xl mb-2">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                        </div>
+                        <p class="text-gray-700 font-medium">Drag & drop an image here</p>
+                        <p class="text-gray-500 text-sm">or click to browse files (JPEG, PNG, WEBP)</p>
+                    </div>
+                    <div id="imagePreview" class="hidden">
+                        <img id="previewImage" src="#" alt="Preview" class="preview-image mx-auto mb-4">
+                        <button 
+                            id="changeImageBtn" 
+                            class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                        >
+                            <i class="fas fa-sync-alt mr-1"></i> Change Image
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Prompt Input -->
+                <div class="mb-6">
+                    <label for="prompt" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-comment-dots mr-1 text-indigo-500"></i>
+                        Descriptive Prompt
+                    </label>
+                    <div class="relative">
+                        <textarea 
+                            id="prompt" 
+                            rows="4" 
+                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none" 
+                            placeholder="Write a detailed description of the image that could be used to generate a similar image with AI..."
+                        ></textarea>
+                        <div class="absolute bottom-2 right-2 text-xs text-gray-500">
+                            <span id="charCount">0</span>/500
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Metadata -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-tags mr-1 text-indigo-500"></i>
+                            Tags
+                        </label>
+                        <input 
+                            type="text" 
+                            id="tags" 
+                            class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                            placeholder="tag1, tag2, tag3"
+                        >
+                    </div>
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-folder-open mr-1 text-indigo-500"></i>
+                            Category
+                        </label>
+                        <select 
+                            id="category" 
+                            class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            <option value="">Select a category</option>
+                            <option value="nature">Nature</option>
+                            <option value="portrait">Portrait</option>
+                            <option value="architecture">Architecture</option>
+                            <option value="art">Art</option>
+                            <option value="product">Product</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Save Button -->
+                <button 
+                    id="saveBtn" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    <i class="fas fa-save mr-2"></i> Save Annotation
+                </button>
+            </div>
+            
+            <!-- Saved Annotations Section -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-database mr-2 text-indigo-500"></i>
+                        Your Dataset
+                    </h2>
+                    <button 
+                        id="exportBtn" 
+                        class="text-sm bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium py-2 px-3 rounded-lg transition duration-200"
+                    >
+                        <i class="fas fa-file-export mr-1"></i> Export JSON
+                    </button>
+                </div>
+                
+                <div id="savedItems" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                    <div class="text-center py-10 text-gray-400">
+                        <i class="fas fa-box-open text-3xl mb-2"></i>
+                        <p>Your saved annotations will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-sm text-gray-500 flex justify-between items-center">
+                    <div>
+                        <span id="itemCount">0</span> annotations
+                    </div>
+                    <div>
+                        <span id="dataSize">0 KB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg hidden max-w-xs transition-all duration-300 transform translate-x-32">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 pt-0.5">
+                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <p class="font-medium">Annotation saved!</p>
+                <p id="toastMessage" class="text-sm">Your image and prompt have been added to the dataset.</p>
+            </div>
+            <button id="closeToast" class="ml-4 text-green-700 hover:text-green-900 focus:outline-none">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const dropzone = document.getElementById('dropzone');
+        const dropzoneContent = document.getElementById('dropzoneContent');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+        const changeImageBtn = document.getElementById('changeImageBtn');
+        const prompt = document.getElementById('prompt');
+        const tags = document.getElementById('tags');
+        const category = document.getElementById('category');
+        const charCount = document.getElementById('charCount');
+        const saveBtn = document.getElementById('saveBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const savedItems = document.getElementById('savedItems');
+        const itemCount = document.getElementById('itemCount');
+        const dataSize = document.getElementById('dataSize');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const closeToast = document.getElementById('closeToast');
+
+        // Dataset array to store all annotations
+        let dataset = [];
+
+        // Event Listeners
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('active');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('active');
+        });
+        dropzone.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        changeImageBtn.addEventListener('click', () => fileInput.click());
+        prompt.addEventListener('input', updateSaveButtonState);
+        prompt.addEventListener('input', updateCharCount);
+        saveBtn.addEventListener('click', saveAnnotation);
+        exportBtn.addEventListener('click', exportDataset);
+        closeToast.addEventListener('click', () => toast.classList.add('hidden'));
+
+        // Functions
+        function handleDrop(e) {
+            e.preventDefault();
+            dropzone.classList.remove('active');
+            
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        }
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file || !file.type.match('image.*')) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                dropzoneContent.classList.add('hidden');
+                imagePreview.classList.remove('hidden');
+                updateSaveButtonState();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateCharCount() {
+            const count = prompt.value.length;
+            charCount.textContent = count;
+            
+            if (count > 500) {
+                charCount.classList.add('text-red-500');
+            } else {
+                charCount.classList.remove('text-red-500');
+            }
+        }
+
+        function updateSaveButtonState() {
+            saveBtn.disabled = !(previewImage.src !== '#' && prompt.value.trim().length > 0);
+        }
+
+        function saveAnnotation() {
+            if (previewImage.src === '#' || !prompt.value.trim()) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                
+                const annotation = {
+                    id: Date.now().toString(),
+                    image: base64Image,
+                    prompt: prompt.value.trim(),
+                    tags: tags.value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                    category: category.value,
+                    createdAt: new Date().toISOString()
+                };
+                
+                dataset.unshift(annotation);
+                updateDatasetDisplay();
+                
+                // Reset form
+                fileInput.value = '';
+                previewImage.src = '#';
+                prompt.value = '';
+                tags.value = '';
+                category.value = '';
+                dropzoneContent.classList.remove('hidden');
+                imagePreview.classList.add('hidden');
+                updateCharCount();
+                updateSaveButtonState();
+                
+                // Show success toast
+                toastMessage.textContent = `"${annotation.prompt.substring(0, 20)}${annotation.prompt.length > 20 ? '...' : ''}" added to dataset.`;
+                toast.classList.remove('hidden');
+                
+                // Auto hide toast
+                setTimeout(() => toast.classList.add('hidden'), 3000);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+
+        function updateDatasetDisplay() {
+            if (dataset.length === 0) {
+                savedItems.innerHTML = `
+                    <div class="text-center py-10 text-gray-400">
+                        <i class="fas fa-box-open text-3xl mb-2"></i>
+                        <p>Your saved annotations will appear here</p>
+                    </div>
+                `;
+                itemCount.textContent = '0';
+                dataSize.textContent = '0 KB';
+                return;
+            }
+            
+            // Calculate data size
+            const jsonString = JSON.stringify(dataset);
+            const sizeInKB = Math.round(new Blob([jsonString]).size / 1024);
+            dataSize.textContent = `${sizeInKB} KB`;
+            itemCount.textContent = dataset.length;
+            
+            savedItems.innerHTML = dataset.map(item => `
+                <div class="saved-item group bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition duration-200 relative">
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0">
+                            <img src="${item.image}" alt="Thumbnail" class="saved-item-thumbnail rounded">
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-gray-800 truncate">${item.prompt.substring(0, 80)}${item.prompt.length > 80 ? '...' : ''}</p>
+                            <div class="flex items-center text-xs text-gray-500 mt-1">
+                                ${item.category ? `<span class="mr-2"><i class="fas fa-folder-open mr-1"></i>${item.category}</span>` : ''}
+                                ${item.tags.length ? `<span><i class="fas fa-tags mr-1"></i>${item.tags.slice(0, 2).join(', ')}${item.tags.length > 2 ? '...' : ''}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="saved-item-actions opacity-0 group-hover:opacity-100 absolute right-3 top-3 transition duration-200">
+                        <button class="delete-btn text-red-500 hover:text-red-700 p-1" data-id="${item.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    dataset = dataset.filter(item => item.id !== id);
+                    updateDatasetDisplay();
+                    
+                    // Show deletion toast
+                    toastMessage.textContent = 'Annotation removed from dataset.';
+                    toast.classList.remove('hidden');
+                    toast.classList.remove('bg-green-100', 'border-green-500', 'text-green-700');
+                    toast.classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+                    
+                    // Auto hide toast
+                    setTimeout(() => {
+                        toast.classList.add('hidden');
+                        toast.classList.remove('bg-red-100', 'border-red-500', 'text-red-700');
+                        toast.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                    }, 3000);
+                });
+            });
+        }
+
+        function exportDataset() {
+            if (dataset.length === 0) {
+                toastMessage.textContent = 'No annotations to export. Please add some first.';
+                toast.classList.remove('hidden');
+                toast.classList.remove('bg-green-100', 'border-green-500', 'text-green-700');
+                toast.classList.add('bg-yellow-100', 'border-yellow-500', 'text-yellow-700');
+                
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    toast.classList.remove('bg-yellow-100', 'border-yellow-500', 'text-yellow-700');
+                    toast.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                }, 3000);
+                return;
+            }
+            
+            const jsonString = JSON.stringify(dataset, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `image-dataset-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            toastMessage.textContent = `Dataset exported with ${dataset.length} annotations.`;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
