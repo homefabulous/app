@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); }
+        .category-badge { font-size: 13px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">Link Manager</h1>
+            <p class="text-gray-600">Organize links in categories</p>
+        </header>
+        
+        <!-- Actions -->
+        <div class="flex justify-center mb-8 gap-3">
+            <button id="addLinkBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full shadow-md transition-all flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add Link
+            </button>
+            <button id="manageCategoriesBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-3 rounded-full shadow-md transition-all flex items-center">
+                <i class="fas fa-folder mr-2"></i> Manage folders
+            </button>
+        </div>
+        
+        <!-- Category Filter -->
+        <div id="categoryFilters" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+        
+        <!-- Links Container -->
+        <div id="linksContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 hidden">
+            <i class="fas fa-link text-gray-300 text-5xl mb-4"></i>
+            <h3 class="text-xl text-gray-500 mb-2">Nenhum link adicionado</h3>
+            <p class="text-gray-400">Clique no botão "Adicionar Link" para começar</p>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Link Modal -->
+    <div id="linkModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 z-10 fade-in">
+            <div class="p-6">
+                <h2 id="modalTitle" class="text-xl font-bold text-gray-800 mb-4">Add New Link</h2>
+                <form id="linkForm" autocomplete="off">
+                    <input type="hidden" id="linkId">
+                    <div class="mb-4">
+                        <label for="linkTitle" class="block text-gray-700 mb-2">Title</label>
+                        <input type="text" id="linkTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    </div>
+                    <div class="mb-4">
+                        <label for="linkUrl" class="block text-gray-700 mb-2">URL</label>
+                        <input type="url" id="linkUrl" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="https://" required>
+                        <div id="metaLoading" class="text-xs text-blue-500 mt-1 hidden"><i class="fas fa-spinner fa-spin"></i> Fetching metadata...</div>
+                        <div id="linkPreview" class="mt-3"></div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="linkCategory" class="block text-gray-700 mb-2">Category</label>
+                        <select id="linkCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required></select>
+                    </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-all">Cancel</button>
+                        <button type="submit" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 z-10 fade-in">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Confirm deletion</h2>
+                <p class="text-gray-600 mb-6">You are about to delete this bookmark and the changes can not be undone. Are you sure you want to delete this?</p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="cancelDeleteBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-all">Cancel</button>
+                    <button type="button" id="confirmDeleteBtn" class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all">Yes, delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Manage Categories Modal -->
+    <div id="categoriesModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 z-10 fade-in">
+            <div class="p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><i class="fas fa-folder"></i> Folder manager</h2>
+                <form id="addCategoryForm" class="flex gap-2 mb-4">
+                    <input type="text" id="newCategoryName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Add a new folder" required>
+                    <button type="submit" class="bg-blue-500 text-white px-4 rounded-lg hover:bg-blue-600 transition-all"><i class="fas fa-plus"></i></button>
+                </form>
+                <ul id="categoriesList" class="mb-4"></ul>
+                <div class="flex justify-end">
+                    <button type="button" id="closeCategoriesBtn" class="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition-all">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Elements
+        const linksContainer = document.getElementById('linksContainer');
+        const emptyState = document.getElementById('emptyState');
+        const addLinkBtn = document.getElementById('addLinkBtn');
+        const linkModal = document.getElementById('linkModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const linkForm = document.getElementById('linkForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const categoryFilters = document.getElementById('categoryFilters');
+        const linkCategorySelect = document.getElementById('linkCategory');
+        const metaLoading = document.getElementById('metaLoading');
+        // Categories modal
+        const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
+        const categoriesModal = document.getElementById('categoriesModal');
+        const closeCategoriesBtn = document.getElementById('closeCategoriesBtn');
+        const addCategoryForm = document.getElementById('addCategoryForm');
+        const newCategoryName = document.getElementById('newCategoryName');
+        const categoriesList = document.getElementById('categoriesList');
+        // --- State
+        let links = JSON.parse(localStorage.getItem('links')) || [];
+        let categories = JSON.parse(localStorage.getItem('categories')) || [
+            { id: 'housing', name: 'Habitação', color: 'blue' },
+            { id: 'commercial', name: 'Comercial', color: 'green' },
+            { id: 'social', name: 'Social', color: 'yellow' }
+        ];
+        let currentFilter = 'all';
+        let linkToDelete = null;
+        // --- Initialize
+        renderCategoriesUI();
+        renderCategoryFilters();
+        renderLinks();
+        updateEmptyState();
+        // --- Event Listeners
+        addLinkBtn.addEventListener('click', () => openModal());
+        cancelBtn.addEventListener('click', () => closeModal());
+        cancelDeleteBtn.addEventListener('click', () => closeDeleteModal());
+        confirmDeleteBtn.addEventListener('click', confirmDelete);
+        manageCategoriesBtn.addEventListener('click', openCategoriesModal);
+        closeCategoriesBtn.addEventListener('click', closeCategoriesModal);
+        addCategoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = newCategoryName.value.trim();
+            if (name && !categories.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+                const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/gi, '');
+                categories.push({id, name, color: randomColor()});
+                saveCategories();
+                renderCategoriesUI();
+                renderCategoryFilters();
+                newCategoryName.value = '';
+            }
+        });
+        linkForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveLink();
+        });
+        // --- Functions
+        function openModal(link = null) {
+            if (link) {
+                // Edit
+                modalTitle.textContent = 'Editar Link';
+                document.getElementById('linkId').value = link.id;
+                document.getElementById('linkTitle').value = link.title;
+                document.getElementById('linkUrl').value = link.url;
+                document.getElementById('linkCategory').value = link.category;
+            } else {
+                // Add
+                modalTitle.textContent = 'Adicionar Novo Link';
+                linkForm.reset();
+                document.getElementById('linkId').value = '';
+            }
+            renderCategoryOptions();
+            linkModal.classList.remove('hidden');
+        }
+        function closeModal() { linkModal.classList.add('hidden'); }
+        function openDeleteModal(linkId) {
+            linkToDelete = linkId;
+            deleteModal.classList.remove('hidden');
+        }
+        function closeDeleteModal() {
+            deleteModal.classList.add('hidden');
+            linkToDelete = null;
+        }
+        function confirmDelete() {
+            if (linkToDelete) {
+                links = links.filter(link => link.id !== linkToDelete);
+                saveLinks();
+                renderLinks();
+                updateEmptyState();
+                closeDeleteModal();
+            }
+        }
+       async function saveLink() {
+    const id = document.getElementById('linkId').value;
+    let title = document.getElementById('linkTitle').value.trim();
+    const urlInput = document.getElementById('linkUrl').value.trim();
+    const category = document.getElementById('linkCategory').value;
+    let formattedUrl = urlInput;
+    if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+        formattedUrl = 'https://' + formattedUrl;
+    }
+
+    // Always fetch meta and save it to the link
+    metaLoading.classList.remove('hidden');
+    let meta = {};
+    try {
+        meta = await fetchMicrolink(formattedUrl);
+        // Autofill title if empty
+        if (!title && meta.title) title = meta.title;
+    } catch (e) {
+        meta = {};
+    }
+    metaLoading.classList.add('hidden');
+
+    if (id) {
+        // Update existing link
+        const index = links.findIndex(link => link.id === id);
+        if (index !== -1) {
+            links[index] = { id, title, url: formattedUrl, category, meta };
+        }
+    } else {
+        // Add new link
+        const newLink = {
+            id: Date.now().toString(),
+            title,
+            url: formattedUrl,
+            category,
+            meta
+        };
+        links.unshift(newLink);
+    }
+    saveLinks();
+    renderLinks();
+    updateEmptyState();
+    closeModal();
+}
+        function renderLinks() {
+    linksContainer.innerHTML = '';
+    const filteredLinks = currentFilter === 'all'
+        ? links
+        : links.filter(link => link.category === currentFilter);
+    if (filteredLinks.length === 0) {
+   
+                if (currentFilter === 'all') emptyState.classList.remove('hidden');
+                else {
+                    linksContainer.innerHTML = `<div class="col-span-full text-center py-12">
+                        <i class="fas fa-folder-open text-gray-300 text-5xl mb-4"></i>
+                        <h3 class="text-xl text-gray-500 mb-2">No links in the ${getCategoryName(currentFilter)} folder</h3>
+                        <p class="text-gray-400">Add a new link or select another folder</p>
+                    </div>`;
+                }
+              
+      
+      
+      
+      
+        return;
+    }
+    emptyState.classList.add('hidden');
+    filteredLinks.forEach(link => {
+        const cat = categories.find(c => c.id === link.category) || {};
+        const badge = `bg-${cat.color || 'gray'}-100 text-${cat.color || 'gray'}-800`;
+        const meta = link.meta || {};
+        // Use meta for preview style
+        const previewHTML = `
+            <div class="p-5">
+                <div class="flex gap-3 items-center mb-2">
+                    ${meta.image?.url ? `<img src="${meta.image.url}" alt="" class="rounded w-16 h-16 object-cover flex-shrink-0">` : ''}
+                    <div>
+                        <div class="font-semibold text-gray-800">${meta.title || link.title}</div>
+                        <div class="text-gray-600 text-sm">${meta.description || ''}</div>
+                        <a href="${link.url}" target="_blank" class="text-blue-500 text-xs">${meta.url || link.url}</a>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-3">
+                    <span class="category-badge px-2 py-1 rounded-full ${badge}">${cat.name || ''}</span>
+                    <div class="flex gap-2">
+                        <button class="edit-btn px-3 py-1 text-blue-500 hover:text-blue-700 transition-all" data-id="${link.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-btn px-3 py-1 text-red-500 hover:text-red-700 transition-all" data-id="${link.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <a href="${link.url}" target="_blank" class="px-3 py-1 text-green-500 hover:text-green-700 transition-all">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        const linkElement = document.createElement('div');
+        linkElement.className = `bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all border-l-4 border-${cat.color || 'gray'}-400`;
+        linkElement.innerHTML = previewHTML;
+        linksContainer.appendChild(linkElement);
+    });
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const linkId = btn.dataset.id;
+                    const link = links.find(l => l.id === linkId);
+                    if (link) openModal(link);
+                });
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const linkId = btn.dataset.id;
+                    openDeleteModal(linkId);
+                });
+            });
+        }
+        function updateEmptyState() {
+            emptyState.classList.toggle('hidden', links.length > 0);
+        }
+        function renderCategoryOptions() {
+            linkCategorySelect.innerHTML = `<option value="">Select a category</option>`;
+            categories.forEach(cat => {
+                linkCategorySelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        }
+        function renderCategoryFilters() {
+            categoryFilters.innerHTML = '';
+            const allBtn = document.createElement('button');
+            allBtn.dataset.category = 'all';
+            allBtn.className = `category-filter-btn bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-full transition-all${currentFilter==='all'?' active':''}`;
+            allBtn.innerText = 'All';
+            allBtn.addEventListener('click', function() {
+                document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = 'all';
+                renderLinks();
+            });
+            categoryFilters.appendChild(allBtn);
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.dataset.category = cat.id;
+                btn.className = `category-filter-btn bg-${cat.color}-100 hover:bg-${cat.color}-200 text-${cat.color}-800 px-4 py-2 rounded-full transition-all${currentFilter===cat.id?' active':''}`;
+                btn.innerHTML = `<i class="fas fa-folder mr-2"></i> ${cat.name}`;
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.category-filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = cat.id;
+                    renderLinks();
+                });
+                categoryFilters.appendChild(btn);
+            });
+        }
+        function renderCategoriesUI() {
+            categoriesList.innerHTML = '';
+            categories.forEach((cat, i) => {
+                categoriesList.innerHTML += `
+                <li class="flex items-center justify-between border-b py-2">
+                    <span class="flex items-center gap-2">
+                        <span class="inline-block w-3 h-3 rounded-full bg-${cat.color}-500"></span>
+                        <span contenteditable="true" data-idx="${i}" class="category-edit-name">${cat.name}</span>
+                    </span>
+                    <button class="delete-category-btn text-red-500 hover:text-red-700" data-idx="${i}" title="Excluir"><i class="fas fa-trash"></i></button>
+                </li>`;
+            });
+            // Edit on blur
+            categoriesList.querySelectorAll('.category-edit-name').forEach(span => {
+                span.addEventListener('blur', function() {
+                    const idx = this.dataset.idx;
+                    const newName = this.textContent.trim();
+                    if (newName && !categories.find((c, i) => c.name.toLowerCase() === newName.toLowerCase() && i != idx)) {
+                        categories[idx].name = newName;
+                        saveCategories();
+                        renderCategoryFilters();
+                        renderLinks();
+                    } else {
+                        this.textContent = categories[idx].name; // revert
+                    }
+                });
+            });
+            // Delete
+            categoriesList.querySelectorAll('.delete-category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    if (confirm('Excluir categoria? Os links permanecerão, mas sem categoria.')) {
+                        const catId = categories[idx].id;
+                        categories.splice(idx, 1);
+                        links.forEach(link => { if (link.category === catId) link.category = ''; });
+                        saveCategories();
+                        saveLinks();
+                        renderCategoriesUI();
+                        renderCategoryFilters();
+                        renderLinks();
+                    }
+                });
+            });
+        }
+        function openCategoriesModal() {
+            renderCategoriesUI();
+            categoriesModal.classList.remove('hidden');
+        }
+        function closeCategoriesModal() { categoriesModal.classList.add('hidden'); }
+        function saveLinks() { localStorage.setItem('links', JSON.stringify(links)); }
+        function saveCategories() { localStorage.setItem('categories', JSON.stringify(categories)); }
+        function getCategoryName(catId) {
+            const cat = categories.find(c => c.id === catId);
+            return cat ? cat.name : '';
+        }
+        function randomColor() {
+            const colors = ['blue','green','yellow','red','purple','pink','indigo'];
+            return colors[Math.floor(Math.random()*colors.length)];
+        }
+        async function fetchMicrolink(url) {
+            const api = 'https://api.microlink.io/?url=' + encodeURIComponent(url);
+            const res = await fetch(api);
+            const data = await res.json();
+            if (data && data.status === 'success' && data.data) return data.data;
+            throw new Error('No meta');
+        }
+        // Autofill title on URL blur
+        document.getElementById('linkUrl').addEventListener('blur', async function() {
+            const url = this.value.trim();
+            if (!url) return;
+            const titleInput = document.getElementById('linkTitle');
+            if (titleInput.value.trim()) return;
+            metaLoading.classList.remove('hidden');
+            try {
+                const meta = await fetchMicrolink(url.startsWith('http') ? url : 'https://' + url);
+                if (meta.title) titleInput.value = meta.title;
+            } catch {}
+            metaLoading.classList.add('hidden');
+        });
+    });
+    </script>
+  
+  <script>
+    // ... (all your previous JS, but replace all Portuguese text with English) ...
+    // Add/replace this in your JS:
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... your previous code and variables ...
+        // (after "const metaLoading = document.getElementById('metaLoading');")
+        const linkPreview = document.getElementById('linkPreview');
+
+        // ... rest of your code ...
+
+        // Helper for preview rendering
+        function renderLinkPreview(meta) {
+            if (!meta) {
+                linkPreview.innerHTML = '';
+                return;
+            }
+            linkPreview.innerHTML = `
+                <div class="border rounded-lg p-3 bg-gray-50 flex gap-3 items-center">
+                    ${meta.image?.url ? `<img src="${meta.image.url}" alt="" class="rounded w-16 h-16 object-cover flex-shrink-0">` : ''}
+                    <div>
+                        <div class="font-semibold text-gray-800">${meta.title || ''}</div>
+                        <div class="text-gray-600 text-sm">${meta.description || ''}</div>
+                        <a href="${meta.url}" target="_blank" class="text-blue-500 text-xs">${meta.url}</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function fetchMicrolink(url) {
+            const api = 'https://api.microlink.io/?url=' + encodeURIComponent(url);
+            const res = await fetch(api);
+            const data = await res.json();
+            if (data && data.status === 'success' && data.data) return data.data;
+            throw new Error('No meta');
+        }
+
+        // Show link preview on URL change
+        document.getElementById('linkUrl').addEventListener('input', async function() {
+            const url = this.value.trim();
+            linkPreview.innerHTML = '';
+            if (!url) return;
+            metaLoading.classList.remove('hidden');
+            try {
+                const meta = await fetchMicrolink(url.startsWith('http') ? url : 'https://' + url);
+                renderLinkPreview(meta);
+            } catch {
+                linkPreview.innerHTML = '<div class="text-sm text-gray-400">No preview available.</div>';
+            }
+            metaLoading.classList.add('hidden');
+        });
+
+        // ... rest of your code, but make sure all text is in English!
+    });
+    </script>
+</body>
+</html>
