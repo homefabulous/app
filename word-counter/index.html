@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"6534ffa5a920f38780a1d897"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Word Counter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .progress-ring {
+            transition: stroke-dashoffset 0.3s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        .textarea-container {
+            transition: all 0.3s ease;
+        }
+        .textarea-container:focus-within {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+        }
+        .counter-animation {
+            animation: pulse 1s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .readability-meter {
+            height: 8px;
+            border-radius: 4px;
+            background-image: linear-gradient(to right, 
+                #10B981 0%, 
+                #10B981 20%, 
+                #84CC16 20%, 
+                #84CC16 40%, 
+                #F59E0B 40%, 
+                #F59E0B 60%, 
+                #F97316 60%, 
+                #F97316 80%, 
+                #EF4444 80%, 
+                #EF4444 100%);
+        }
+        .histogram-bar {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-chart-bar mr-3 text-indigo-500"></i>
+                Advanced Text Analyzer
+            </h1>
+            <p class="text-gray-500 mt-1">Paste your text to analyze readability, word length distribution, and more</p>
+            
+            <div class="textarea-container mt-6 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <textarea id="text-input" class="w-full h-64 bg-transparent outline-none resize-none text-gray-700" 
+                          placeholder="Type or paste your text here to analyze..."></textarea>
+            </div>
+            
+            <!-- Basic Stats -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Word Count -->
+                <div class="bg-indigo-50 rounded-lg p-4 flex items-center">
+                    <div class="relative w-16 h-16 mr-4">
+                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                            <path d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none" stroke="#E0E7FF" stroke-width="3"/>
+                            <path id="word-ring" class="progress-ring" 
+                                d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none" stroke="#6366F1" stroke-width="3" 
+                                stroke-dasharray="100, 100"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="word-count" class="text-indigo-700 font-bold text-lg">0</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm text-indigo-500 font-medium">Words</p>
+                        <p class="text-xs text-indigo-400">Count</p>
+                    </div>
+                </div>
+                
+                <!-- Character Count -->
+                <div class="bg-blue-50 rounded-lg p-4 flex items-center">
+                    <div class="w-16 h-16 mr-4 flex items-center justify-center">
+                        <i class="fas fa-font text-blue-500 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-blue-500 font-medium">Characters</p>
+                        <p id="char-count" class="text-xl text-blue-700 font-bold">0</p>
+                    </div>
+                </div>
+                
+                <!-- Sentence Count -->
+                <div class="bg-purple-50 rounded-lg p-4 flex items-center">
+                    <div class="w-16 h-16 mr-4 flex items-center justify-center">
+                        <i class="fas fa-terminal text-purple-500 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-purple-500 font-medium">Sentences</p>
+                        <p id="sentence-count" class="text-xl text-purple-700 font-bold">0</p>
+                    </div>
+                </div>
+                
+                <!-- Reading Time -->
+                <div class="bg-emerald-50 rounded-lg p-4 flex items-center">
+                    <div class="w-16 h-16 mr-4 flex items-center justify-center">
+                        <i class="far fa-clock text-emerald-500 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-emerald-500 font-medium">Reading Time</p>
+                        <p id="reading-time" class="text-xl text-emerald-700 font-bold">0 min</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Advanced Stats Section -->
+            <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Readability Section -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-graduation-cap text-yellow-500 mr-2"></i>
+                        Readability
+                    </h2>
+                    <div class="mt-4">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-medium text-gray-700">Grade Level:</span>
+                            <span id="grade-level" class="text-lg font-bold text-gray-900">0</span>
+                        </div>
+                        <div class="readability-meter w-full mb-4"></div>
+                        <p id="readability-description" class="text-sm text-gray-600">
+                            The text is very easy to read.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 rounded p-3">
+                            <p class="text-sm text-gray-500">Avg. Words/Sentence</p>
+                            <p id="avg-words-sentence" class="text-lg font-bold text-gray-700">0</p>
+                        </div>
+                        <div class="bg-gray-50 rounded p-3">
+                            <p class="text-sm text-gray-500">Avg. Syllables/Word</p>
+                            <p id="avg-syllables-word" class="text-lg font-bold text-gray-700">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Word Length Distribution -->
+                <div class="bg-white border border-gray-200 rounded-lg p-5">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-chart-pie text-indigo-500 mr-2"></i>
+                        Word Length Distribution
+                    </h2>
+                    <div class="mt-4 space-y-3">
+                        <div class="flex items-center">
+                            <span class="text-xs font-medium text-gray-500 w-16">1-3 letters</span>
+                            <div class="flex-1 mx-2">
+                                <div id="histo-1-3" class="histogram-bar h-4 bg-blue-100 rounded-full"></div>
+                            </div>
+                            <span id="histo-1-3-count" class="text-xs font-medium text-gray-500 w-6">0</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xs font-medium text-gray-500 w-16">4-6 letters</span>
+                            <div class="flex-1 mx-2">
+                                <div id="histo-4-6" class="histogram-bar h-4 bg-blue-200 rounded-full"></div>
+                            </div>
+                            <span id="histo-4-6-count" class="text-xs font-medium text-gray-500 w-6">0</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xs font-medium text-gray-500 w-16">7-9 letters</span>
+                            <div class="flex-1 mx-2">
+                                <div id="histo-7-9" class="histogram-bar h-4 bg-blue-300 rounded-full"></div>
+                            </div>
+                            <span id="histo-7-9-count" class="text-xs font-medium text-gray-500 w-6">0</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-xs font-medium text-gray-500 w-16">10+ letters</span>
+                            <div class="flex-1 mx-2">
+                                <div id="histo-10p" class="histogram-bar h-4 bg-blue-400 rounded-full"></div>
+                            </div>
+                            <span id="histo-10p-count" class="text-xs font-medium text-gray-500 w-6">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 rounded p-3">
+                            <p class="text-sm text-gray-500">Shortest Word</p>
+                            <p id="shortest-word" class="text-lg font-bold text-gray-700">-</p>
+                        </div>
+                        <div class="bg-gray-50 rounded p-3">
+                            <p class="text-sm text-gray-500">Longest Word</p>
+                            <p id="longest-word" class="text-lg font-bold text-gray-700">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="mt-6 flex flex-wrap gap-3">
+                <button id="clear-btn" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition flex items-center">
+                    <i class="fas fa-trash-alt mr-2"></i> Clear
+                </button>
+                <button id="copy-btn" class="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg transition flex items-center">
+                    <i class="fas fa-copy mr-2"></i> Copy Text
+                </button>
+                <div class="ml-auto flex items-center">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="live-count" class="sr-only peer" checked>
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span class="ms-3 text-sm font-medium text-gray-700">Live Count</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textInput = document.getElementById('text-input');
+            const wordCount = document.getElementById('word-count');
+            const charCount = document.getElementById('char-count');
+            const sentenceCount = document.getElementById('sentence-count');
+            const readingTime = document.getElementById('reading-time');
+            const gradeLevel = document.getElementById('grade-level');
+            const readabilityDesc = document.getElementById('readability-description');
+            const avgWordsSentence = document.getElementById('avg-words-sentence');
+            const avgSyllablesWord = document.getElementById('avg-syllables-word');
+            const clearBtn = document.getElementById('clear-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const liveCount = document.getElementById('live-count');
+            const wordRing = document.getElementById('word-ring');
+            
+            // Word length distribution elements
+            const histo1_3 = document.getElementById('histo-1-3');
+            const histo4_6 = document.getElementById('histo-4-6');
+            const histo7_9 = document.getElementById('histo-7-9');
+            const histo10p = document.getElementById('histo-10p');
+            const histo1_3Count = document.getElementById('histo-1-3-count');
+            const histo4_6Count = document.getElementById('histo-4-6-count');
+            const histo7_9Count = document.getElementById('histo-7-9-count');
+            const histo10pCount = document.getElementById('histo-10p-count');
+            const shortestWord = document.getElementById('shortest-word');
+            const longestWord = document.getElementById('longest-word');
+            
+            let timeout;
+            const maxWords = 1000; // For progress ring visualization
+            
+            // Initialize with empty text
+            updateCounts('');
+            
+            // Event listeners
+            textInput.addEventListener('input', function() {
+                if (liveCount.checked) {
+                    updateCounts(this.value);
+                } else {
+                    // Debounce for performance if not live counting
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => updateCounts(this.value), 500);
+                }
+            });
+            
+            clearBtn.addEventListener('click', function() {
+                textInput.value = '';
+                updateCounts('');
+                textInput.focus();
+            });
+            
+            copyBtn.addEventListener('click', function() {
+                if (textInput.value.trim()) {
+                    textInput.select();
+                    document.execCommand('copy');
+                    
+                    // Visual feedback
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+                    copyBtn.classList.add('bg-green-100', 'text-green-700');
+                    copyBtn.classList.remove('bg-indigo-100', 'text-indigo-700');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                        copyBtn.classList.remove('bg-green-100', 'text-green-700');
+                        copyBtn.classList.add('bg-indigo-100', 'text-indigo-700');
+                    }, 2000);
+                }
+            });
+            
+            liveCount.addEventListener('change', function() {
+                if (this.checked) {
+                    updateCounts(textInput.value);
+                }
+            });
+            
+            function updateCounts(text) {
+                // Word count (counts words separated by whitespace)
+                const words = text.trim() ? text.trim().split(/\s+/) : [];
+                const wordCountValue = words.length;
+                
+                // Character count
+                const charCountValue = text.length;
+                
+                // Sentence count (simplified - counts sentence-ending punctuation)
+                const sentenceCountValue = text.trim() ? 
+                    (text.split(/[.!?]+/).filter(s => s.trim().length > 0).length) : 0;
+                
+                // Reading time (average 200 words per minute)
+                const minutes = Math.ceil(wordCountValue / 200);
+                
+                // Calculate syllables in words (approximation)
+                let totalSyllables = 0;
+                const syllablesPerWord = [];
+                
+                words.forEach(word => {
+                    // Simple syllable count approximation
+                    let syllableCount = 0;
+                    word = word.toLowerCase().replace(/[^a-z]/g, '');
+                    
+                    if (word.length <= 3) {
+                        syllableCount = 1;
+                    } else {
+                        // Count vowel groups
+                        syllableCount = word.replace(/[^aeiouy]+/g, ' ').trim().split(' ').length;
+                        // Adjust for silent e
+                        if (word.endsWith('e') && !word.endsWith('le') && syllableCount > 1) {
+                            syllableCount--;
+                        }
+                        // Minimum 1 syllable
+                        syllableCount = Math.max(syllableCount, 1);
+                    }
+                    
+                    totalSyllables += syllableCount;
+                    syllablesPerWord.push(syllableCount);
+                });
+                
+                // Calculate Flesch-Kincaid Grade Level
+                const avgWordsPerSentence = wordCountValue / Math.max(sentenceCountValue, 1);
+                const avgSyllablesPerWord = totalSyllables / Math.max(wordCountValue, 1);
+                const gradeLevelValue = 
+                    0.39 * avgWordsPerSentence + 11.8 * avgSyllablesPerWord - 15.59;
+                
+                // Word length distribution
+                const wordLengths = words.map(word => word.replace(/[^a-z0-9]/gi, '').length).filter(len => len > 0);
+                const lengthCounts = {
+                    '1-3': wordLengths.filter(len => len >= 1 && len <= 3).length,
+                    '4-6': wordLengths.filter(len => len >= 4 && len <= 6).length,
+                    '7-9': wordLengths.filter(len => len >= 7 && len <= 9).length,
+                    '10+': wordLengths.filter(len => len >= 10).length
+                };
+                
+                const maxLengthCount = Math.max(...Object.values(lengthCounts), 1);
+                
+                // Find shortest and longest words
+                let shortest = '-';
+                let longest = '-';
+                
+                if (wordLengths.length > 0) {
+                    const minLen = Math.min(...wordLengths);
+                    const maxLen = Math.max(...wordLengths);
+                    
+                    // Find example words of shortest and longest length
+                    shortest = words.find(w => w.replace(/[^a-z0-9]/gi, '').length === minLen);
+                    longest = words.find(w => w.replace(/[^a-z0-9]/gi, '').length === maxLen);
+                }
+                
+                // Update DOM
+                wordCount.textContent = wordCountValue;
+                charCount.textContent = charCountValue;
+                sentenceCount.textContent = sentenceCountValue;
+                readingTime.textContent = minutes + (minutes === 1 ? ' min' : ' mins');
+                gradeLevel.textContent = gradeLevelValue.toFixed(1);
+                avgWordsSentence.textContent = avgWordsPerSentence.toFixed(1);
+                avgSyllablesWord.textContent = avgSyllablesPerWord.toFixed(1);
+                
+                // Update readability description
+                updateReadabilityDescription(gradeLevelValue);
+                
+                // Update word length distribution
+                histo1_3.style.width = `${(lengthCounts['1-3'] / maxLengthCount * 100).toFixed(1)}%`;
+                histo4_6.style.width = `${(lengthCounts['4-6'] / maxLengthCount * 100).toFixed(1)}%`;
+                histo7_9.style.width = `${(lengthCounts['7-9'] / maxLengthCount * 100).toFixed(1)}%`;
+                histo10p.style.width = `${(lengthCounts['10+'] / maxLengthCount * 100).toFixed(1)}%`;
+                
+                histo1_3Count.textContent = lengthCounts['1-3'];
+                histo4_6Count.textContent = lengthCounts['4-6'];
+                histo7_9Count.textContent = lengthCounts['7-9'];
+                histo10pCount.textContent = lengthCounts['10+'];
+                
+                shortestWord.textContent = shortest ? shortest.replace(/[^a-z0-9\s]/gi, '').substring(0, 10) + (shortest.length > 10 ? '...' : '') : '-';
+                longestWord.textContent = longest ? longest.replace(/[^a-z0-9\s]/gi, '').substring(0, 15) + (longest.length > 15 ? '...' : '') : '-';
+                
+                // Animate counter changes
+                wordCount.classList.add('counter-animation');
+                setTimeout(() => wordCount.classList.remove('counter-animation'), 1000);
+                
+                // Update progress ring (capped at maxWords)
+                const percentage = Math.min((wordCountValue / maxWords) * 100, 100);
+                const circumference = 2 * Math.PI * 15.9155;
+                const offset = circumference - (percentage / 100) * circumference;
+                wordRing.style.strokeDashoffset = offset;
+                
+                // Change ring color based on word count
+                if (wordCountValue > maxWords * 0.8) {
+                    wordRing.style.stroke = '#EF4444'; // red
+                } else if (wordCountValue > maxWords * 0.5) {
+                    wordRing.style.stroke = '#F59E0B'; // amber
+                } else {
+                    wordRing.style.stroke = '#6366F1'; // indigo
+                }
+            }
+            
+            function updateReadabilityDescription(gradeLevel) {
+                let description = '';
+                let colorClass = '';
+                
+                if (gradeLevel <= 6) {
+                    description = 'Very easy to read. Easily understood by an average 11-year-old student.';
+                    colorClass = 'text-emerald-500';
+                } else if (gradeLevel <= 9) {
+                    description = 'Easy to read. Conversational English for consumers.';
+                    colorClass = 'text-blue-500';
+                } else if (gradeLevel <= 12) {
+                    description = 'Fairly easy to read. The average high school student can understand.';
+                    colorClass = 'text-amber-500';
+                } else if (gradeLevel <= 16) {
+                    description = 'Difficult to read. Best understood by college graduates.';
+                    colorClass = 'text-orange-500';
+                } else {
+                    description = 'Very difficult to read. Best understood by university graduates.';
+                    colorClass = 'text-red-500';
+                }
+                
+                gradeLevel.className = `text-lg font-bold ${colorClass}`;
+                readabilityDesc.innerHTML = description;
+            }
+        });
+    </script>
+</body>
+</html>
