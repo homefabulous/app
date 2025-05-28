@@ -1,0 +1,368 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Spend Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            'from': { opacity: '0', transform: 'translateY(10px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            input[type="number"]::-webkit-inner-spin-button,
+            input[type="number"]::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+        }
+        @layer components {
+            .currency-selector {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+                background-position: right 0.5rem center;
+                background-repeat: no-repeat;
+                background-size: 1.5em 1.5em;
+                padding-right: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <div class="text-center mb-6 sm:mb-10">
+            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-1 sm:mb-2">Budget Planner</h1>
+            <p class="text-sm sm:text-base text-gray-600">Track your expenses and manage your budget</p>
+        </div>
+
+        <!-- Salary Input Section -->
+        <div class="bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Your Salary</h2>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
+                <div class="flex-1 min-w-0">
+                    <select id="currencyPicker" class="currency-selector w-full border-b-2 border-gray-300 py-1 sm:py-2 px-1 focus:border-indigo-500 focus:outline-none text-base sm:text-lg bg-no-repeat">
+                        <option value="$">USD ($)</option>
+                        <option value="€">EUR (€)</option>
+                        <option value="£">GBP (£)</option>
+                        <option value="£">EGP (£)</option>
+                        <option value="₹">INR (₹)</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-0 flex items-center">
+                    <span id="currencySymbol" class="mr-2 text-gray-700 text-base sm:text-lg">$</span>
+                    <input type="number" id="salaryInput" placeholder="Enter salary" 
+                           class="w-full border-b-2 border-gray-300 py-1 sm:py-2 px-1 focus:border-indigo-500 focus:outline-none text-base sm:text-lg">
+                </div>
+                <button id="setSalaryBtn" class="bg-indigo-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-md sm:rounded-lg hover:bg-indigo-700 transition whitespace-nowrap text-sm sm:text-base">
+                    Set Salary
+                </button>
+            </div>
+        </div>
+
+        <!-- Budget Summary -->
+        <div id="summarySection" class="hidden bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+                <div class="bg-indigo-50 p-2 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-indigo-600 font-medium">Total Salary</p>
+                    <p id="totalSalary" class="text-xl sm:text-2xl font-bold text-indigo-800 truncate">$0</p>
+                </div>
+                <div class="bg-red-50 p-2 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-red-600 font-medium">Total Expenses</p>
+                    <p id="totalExpenses" class="text-xl sm:text-2xl font-bold text-red-800 truncate">$0</p>
+                </div>
+                <div class="bg-green-50 p-2 sm:p-4 rounded-lg">
+                    <p class="text-xs sm:text-sm text-green-600 font-medium">Remaining</p>
+                    <p id="remainingSalary" class="text-xl sm:text-2xl font-bold text-green-800 truncate">$0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Categories -->
+        <div id="expensesSection" class="hidden bg-white rounded-lg sm:rounded-xl shadow-sm sm:shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <div class="flex justify-between items-center mb-3 sm:mb-4">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Your Expenses</h2>
+                <button id="addCategoryBtn" class="text-indigo-600 hover:text-indigo-800 flex items-center text-sm sm:text-base">
+                    <i class="fas fa-plus-circle mr-1 text-xs sm:text-sm"></i> Add
+                </button>
+            </div>
+
+            <div id="expensesList" class="space-y-3 sm:space-y-4">
+                <!-- Items will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- Add Custom Category Modal -->
+        <div id="addCategoryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 w-full max-w-md">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Add New Category</h3>
+                <div class="mb-3 sm:mb-4">
+                    <label class="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Category Name</label>
+                    <input type="text" id="newCategoryName" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-1 sm:py-2 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                </div>
+                <div class="mb-4 sm:mb-5">
+                    <label class="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Icon</label>
+                    <select id="newCategoryIcon" class="w-full border-2 border-gray-300 rounded-lg px-3 sm:px-4 py-1 sm:py-2 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                        <option value="fa-shopping-bag">Shopping</option>
+                        <option value="fa-car">Transport</option>
+                        <option value="fa-home">Housing</option>
+                        <option value="fa-heart">Health</option>
+                        <option value="fa-graduation-cap">Education</option>
+                        <option value="fa-film">Entertainment</option>
+                        <option value="fa-tshirt">Clothing</option>
+                        <option value="fa-wifi">Utilities</option>
+                        <option value="fa-gift">Gifts</option>
+                        <option value="fa-plane">Travel</option>
+                        <option value="fa-pills">Vitamins</option>
+                        <option value="fa-dumbbell">Sports</option>
+                        <option value="fa-utensils">Food</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 sm:space-x-3">
+                    <button id="cancelAddCategory" class="px-3 sm:px-4 py-1 sm:py-2 text-gray-600 hover:text-gray-800 text-sm sm:text-base">Cancel</button>
+                    <button id="confirmAddCategory" class="px-3 sm:px-4 py-1 sm:py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm sm:text-base">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const salaryInput = document.getElementById('salaryInput');
+            const setSalaryBtn = document.getElementById('setSalaryBtn');
+            const summarySection = document.getElementById('summarySection');
+            const expensesSection = document.getElementById('expensesSection');
+            const totalSalaryDisplay = document.getElementById('totalSalary');
+            const totalExpensesDisplay = document.getElementById('totalExpenses');
+            const remainingSalaryDisplay = document.getElementById('remainingSalary');
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const addCategoryModal = document.getElementById('addCategoryModal');
+            const cancelAddCategory = document.getElementById('cancelAddCategory');
+            const confirmAddCategory = document.getElementById('confirmAddCategory');
+            const newCategoryName = document.getElementById('newCategoryName');
+            const newCategoryIcon = document.getElementById('newCategoryIcon');
+            const expensesList = document.getElementById('expensesList');
+            const currencyPicker = document.getElementById('currencyPicker');
+            const currencySymbol = document.getElementById('currencySymbol');
+
+            // Load data from localStorage
+            let salary = parseFloat(localStorage.getItem('salary')) || 0;
+            let currentCurrency = localStorage.getItem('currency') || '$';
+            let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+
+            // Initialize the app with saved data
+            function initApp() {
+                // Set currency
+                currencyPicker.value = currentCurrency;
+                currencySymbol.textContent = currentCurrency;
+                
+                // Set salary if exists
+                if (salary > 0) {
+                    salaryInput.value = salary;
+                    updateSummaryDisplay();
+                    summarySection.classList.remove('hidden');
+                    expensesSection.classList.remove('hidden');
+                }
+
+                // Load expenses
+                if (expenses.length > 0) {
+                    expenses.forEach(expense => {
+                        addExpenseItem(expense.name, expense.amount, expense.icon);
+                    });
+                } else {
+                    // Add default categories if no expenses exist
+                    addDefaultCategories();
+                }
+                
+                calculateRemaining();
+            }
+
+            // Add default categories if no expenses exist
+            function addDefaultCategories() {
+                const defaultCategories = [
+                    { name: 'Vitamins', icon: 'fa-pills', color: 'purple' },
+                    { name: 'Sports', icon: 'fa-dumbbell', color: 'blue' },
+                    { name: 'Food', icon: 'fa-utensils', color: 'orange' }
+                ];
+                
+                defaultCategories.forEach(category => {
+                    addExpenseItem(category.name, 0, category.icon, category.color);
+                });
+            }
+
+            // Add an expense item to the DOM
+            function addExpenseItem(name, amount, icon, color = 'indigo') {
+                const newItem = document.createElement('div');
+                newItem.className = 'expense-item animate-fade-in';
+                newItem.innerHTML = `
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+                        <div class="flex items-center sm:w-2/5">
+                            <i class="fas ${icon} text-${color}-500 mr-2 text-sm sm:text-base"></i>
+                            <span class="text-gray-700 text-sm sm:text-base">${name}</span>
+                        </div>
+                        <div class="flex items-center sm:w-3/5">
+                            <span class="expense-currency mr-2 text-gray-700 text-sm sm:text-base">${currentCurrency}</span>
+                            <input type="number" placeholder="Amount" value="${amount || ''}" 
+                                   class="expense-input flex-1 border-b-2 border-gray-300 py-1 px-1 focus:border-indigo-500 focus:outline-none text-sm sm:text-base">
+                            <button class="delete-btn ml-2 sm:ml-3 text-red-500 hover:text-red-700 text-sm sm:text-base">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                expensesList.appendChild(newItem);
+                newItem.querySelector('.expense-input').addEventListener('input', function() {
+                    updateExpensesInStorage();
+                    calculateRemaining();
+                });
+            }
+
+            // Update currency symbols
+            function updateCurrencySymbols() {
+                currencySymbol.textContent = currentCurrency;
+                
+                document.querySelectorAll('.expense-currency').forEach(el => {
+                    el.textContent = currentCurrency;
+                });
+                
+                updateSummaryDisplay();
+            }
+
+            // Save expenses to localStorage
+            function updateExpensesInStorage() {
+                expenses = [];
+                document.querySelectorAll('.expense-item').forEach(item => {
+                    const name = item.querySelector('span').textContent;
+                    const icon = item.querySelector('i').className.match(/fa-[a-z-]+/)[0];
+                    const amount = parseFloat(item.querySelector('.expense-input').value) || 0;
+                    
+                    expenses.push({
+                        name: name,
+                        amount: amount,
+                        icon: icon
+                    });
+                });
+                
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+            }
+
+            // Currency picker change handler
+            currencyPicker.addEventListener('change', function() {
+                currentCurrency = this.value;
+                localStorage.setItem('currency', currentCurrency);
+                updateCurrencySymbols();
+            });
+
+            // Set salary
+            setSalaryBtn.addEventListener('click', function() {
+                const value = parseFloat(salaryInput.value);
+                if (!isNaN(value) && value > 0) {
+                    salary = value;
+                    localStorage.setItem('salary', salary.toString());
+                    updateSummaryDisplay();
+                    summarySection.classList.remove('hidden');
+                    expensesSection.classList.remove('hidden');
+                    calculateRemaining();
+                    updateCurrencySymbols();
+                } else {
+                    alert('Please enter a valid salary amount');
+                }
+            });
+
+            // Delete expense item
+            expensesList.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
+                    const item = e.target.closest('.expense-item');
+                    item.classList.add('hidden');
+                    setTimeout(() => {
+                        item.remove();
+                        updateExpensesInStorage();
+                        calculateRemaining();
+                    }, 300);
+                }
+            });
+
+            // Show add category modal
+            addCategoryBtn.addEventListener('click', function() {
+                addCategoryModal.classList.remove('hidden');
+                newCategoryName.focus();
+            });
+
+            // Hide add category modal
+            cancelAddCategory.addEventListener('click', function() {
+                addCategoryModal.classList.add('hidden');
+                newCategoryName.value = '';
+            });
+
+            // Add new category
+            confirmAddCategory.addEventListener('click', function() {
+                const name = newCategoryName.value.trim();
+                const icon = newCategoryIcon.value;
+                
+                if (name) {
+                    addExpenseItem(name, 0, icon);
+                    updateExpensesInStorage();
+                    addCategoryModal.classList.add('hidden');
+                    newCategoryName.value = '';
+                } else {
+                    alert('Please enter a category name');
+                }
+            });
+
+            // Update summary display with current currency
+            function updateSummaryDisplay() {
+                totalSalaryDisplay.textContent = `${currentCurrency}${salary.toFixed(2)}`;
+                calculateRemaining();
+            }
+
+            // Calculate remaining salary
+            function calculateRemaining() {
+                let totalExpenses = 0;
+                document.querySelectorAll('.expense-input').forEach(input => {
+                    const value = parseFloat(input.value);
+                    if (!isNaN(value) && value > 0) {
+                        totalExpenses += value;
+                    }
+                });
+
+                totalExpensesDisplay.textContent = `${currentCurrency}${totalExpenses.toFixed(2)}`;
+                
+                const remaining = salary - totalExpenses;
+                remainingSalaryDisplay.textContent = `${currentCurrency}${remaining.toFixed(2)}`;
+                
+                // Change color based on remaining amount
+                if (remaining < 0) {
+                    remainingSalaryDisplay.classList.remove('text-green-800', 'text-yellow-600');
+                    remainingSalaryDisplay.classList.add('text-red-800');
+                } else if (remaining < salary * 0.2) {
+                    remainingSalaryDisplay.classList.remove('text-green-800', 'text-red-800');
+                    remainingSalaryDisplay.classList.add('text-yellow-600');
+                } else {
+                    remainingSalaryDisplay.classList.remove('text-red-800', 'text-yellow-600');
+                    remainingSalaryDisplay.classList.add('text-green-800');
+                }
+            }
+
+            // Initialize the app
+            initApp();
+        });
+    </script>
+</body>
+</html>
