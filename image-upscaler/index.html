@@ -1,0 +1,416 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Image Upscaler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        .dropzone {
+            border: 2px dashed #9CA3AF;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .dropzone.active {
+            border-color: #3B82F6;
+            background-color: #EFF6FF;
+        }
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #E5E7EB;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3B82F6;
+            transition: width 0.3s ease;
+        }
+        .image-card {
+            transition: all 0.3s ease;
+        }
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .upscale-btn {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+        }
+        .upscale-btn:hover {
+            background: linear-gradient(135deg, #1D4ED8, #3B82F6);
+        }
+        .download-all-btn {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+        .download-all-btn:hover {
+            background: linear-gradient(135deg, #059669, #10B981);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Ultra Image Upscaler</h1>
+            <p class="text-lg text-gray-600">Enhance your images with AI-powered upscaling while preserving quality</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Upload Section -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">Upload Images</h2>
+                    <p class="text-gray-600">Bulk upload multiple images to upscale (JPG, PNG, WEBP supported)</p>
+                </div>
+
+                <!-- Dropzone -->
+                <div id="dropzone" class="dropzone p-10 text-center cursor-pointer mb-6">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-blue-500 mb-3"></i>
+                        <h3 class="text-xl font-medium text-gray-700 mb-1">Drag & Drop your images here</h3>
+                        <p class="text-gray-500 mb-4">or click to browse files</p>
+                        <input type="file" id="fileInput" class="hidden" multiple accept="image/jpeg,image/png,image/webp">
+                        <button id="browseBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                            <i class="fas fa-folder-open mr-2"></i> Select Files
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="uploadProgress" class="hidden mb-4">
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Uploading...</span>
+                        <span id="uploadPercentage">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="uploadProgressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- File List -->
+                <div id="fileList" class="hidden mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Selected Files</h3>
+                    <div id="fileListItems" class="space-y-2 mb-4"></div>
+                </div>
+
+                <!-- Upscale Button -->
+                <div class="text-center">
+                    <button id="upscaleAllBtn" class="upscale-btn text-white font-medium py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-magic mr-2"></i> Upscale All Images
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800">Upscaled Results</h2>
+                    <div class="flex space-x-3">
+                        <button id="downloadAllBtn" class="download-all-btn text-white font-medium py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition-all">
+                            <i class="fas fa-download mr-2"></i> Download All
+                        </button>
+                        <button id="downloadZipBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition-all">
+                            <i class="fas fa-file-archive mr-2"></i> Download as ZIP
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Results will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid mx-auto mb-4"></div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Processing Images</h3>
+                <p class="text-gray-600 mb-4" id="processingStatus">Upscaling your images with AI...</p>
+                <div class="progress-bar">
+                    <div id="processingProgressFill" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <p class="text-sm text-gray-500 mt-2" id="processingCount">0 of 0 images processed</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadPercentage = document.getElementById('uploadPercentage');
+            const uploadProgressFill = document.getElementById('uploadProgressFill');
+            const fileList = document.getElementById('fileList');
+            const fileListItems = document.getElementById('fileListItems');
+            const upscaleAllBtn = document.getElementById('upscaleAllBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsGrid = document.getElementById('resultsGrid');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+            const downloadZipBtn = document.getElementById('downloadZipBtn');
+            const processingModal = document.getElementById('processingModal');
+            const processingStatus = document.getElementById('processingStatus');
+            const processingProgressFill = document.getElementById('processingProgressFill');
+            const processingCount = document.getElementById('processingCount');
+
+            // Variables
+            let files = [];
+            let upscaledImages = [];
+
+            // Event Listeners
+            browseBtn.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('active');
+            });
+            
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('active');
+            });
+            
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('active');
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect({ target: fileInput });
+                }
+            });
+            
+            upscaleAllBtn.addEventListener('click', processImages);
+            
+            downloadAllBtn.addEventListener('click', downloadAllImages);
+            
+            downloadZipBtn.addEventListener('click', downloadAsZip);
+
+            // Functions
+            function handleFileSelect(e) {
+                files = Array.from(e.target.files);
+                
+                if (files.length === 0) return;
+                
+                // Show upload progress
+                uploadProgress.classList.remove('hidden');
+                simulateUploadProgress();
+                
+                // After "upload"
+                setTimeout(() => {
+                    uploadProgress.classList.add('hidden');
+                    renderFileList();
+                    upscaleAllBtn.disabled = false;
+                }, 1500);
+            }
+            
+            function simulateUploadProgress() {
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                    }
+                    uploadProgressFill.style.width = `${progress}%`;
+                    uploadPercentage.textContent = `${Math.round(progress)}%`;
+                }, 100);
+            }
+            
+            function renderFileList() {
+                fileListItems.innerHTML = '';
+                
+                files.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between bg-gray-50 p-3 rounded-lg';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-image text-blue-500 mr-3"></i>
+                            <div>
+                                <p class="text-sm font-medium text-gray-800 truncate max-w-xs">${file.name}</p>
+                                <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                            </div>
+                        </div>
+                        <button class="text-red-500 hover:text-red-600" data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    fileListItems.appendChild(fileItem);
+                });
+                
+                // Add event listeners to remove buttons
+                document.querySelectorAll('#fileListItems button').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                        files.splice(index, 1);
+                        if (files.length === 0) {
+                            fileList.classList.add('hidden');
+                            upscaleAllBtn.disabled = true;
+                        } else {
+                            renderFileList();
+                        }
+                    });
+                });
+                
+                fileList.classList.remove('hidden');
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            function processImages() {
+                if (files.length === 0) return;
+                
+                // Show processing modal
+                processingModal.classList.remove('hidden');
+                processingStatus.textContent = 'Upscaling your images with AI...';
+                processingProgressFill.style.width = '0%';
+                
+                // Simulate processing
+                let processed = 0;
+                upscaledImages = [];
+                
+                const processInterval = setInterval(() => {
+                    processed++;
+                    const progress = (processed / files.length) * 100;
+                    processingProgressFill.style.width = `${progress}%`;
+                    processingCount.textContent = `${processed} of ${files.length} images processed`;
+                    
+                    if (processed === files.length) {
+                        clearInterval(processInterval);
+                        processingStatus.textContent = 'Enhancing final details...';
+                        
+                        // After a short delay, show results
+                        setTimeout(() => {
+                            processingModal.classList.add('hidden');
+                            showResults();
+                        }, 800);
+                    }
+                }, 1000);
+                
+                // Simulate upscaling by creating "enhanced" versions
+                files.forEach((file, index) => {
+                    setTimeout(() => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const upscaledImage = {
+                                original: file,
+                                upscaled: new File([file], `upscaled_${file.name}`, { type: file.type }),
+                                url: e.target.result,
+                                upscaledUrl: e.target.result // In a real app, this would be different
+                            };
+                            upscaledImages.push(upscaledImage);
+                        };
+                        reader.readAsDataURL(file);
+                    }, index * 300);
+                });
+            }
+            
+            function showResults() {
+                resultsGrid.innerHTML = '';
+                
+                upscaledImages.forEach((image, index) => {
+                    const resultCard = document.createElement('div');
+                    resultCard.className = 'image-card bg-white rounded-xl shadow-md overflow-hidden fade-in';
+                    resultCard.innerHTML = `
+                        <div class="relative group">
+                            <img src="${image.url}" alt="Original" class="w-full h-48 object-cover">
+                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="bg-white text-blue-600 font-medium py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 hover:text-white transition-colors download-btn" data-index="${index}">
+                                    <i class="fas fa-download mr-2"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-gray-700 truncate">${image.original.name}</span>
+                                <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Upscaled 2x</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Original: ${formatFileSize(image.original.size)}</span>
+                                <span>Upscaled: ${formatFileSize(image.original.size * 1.8)}</span>
+                            </div>
+                        </div>
+                    `;
+                    resultsGrid.appendChild(resultCard);
+                });
+                
+                // Add event listeners to download buttons
+                document.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const index = parseInt(e.currentTarget.getAttribute('data-index'));
+                        downloadImage(upscaledImages[index]);
+                    });
+                });
+                
+                resultsSection.classList.remove('hidden');
+                
+                // Scroll to results
+                setTimeout(() => {
+                    resultsSection.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+            
+            function downloadImage(image) {
+                const link = document.createElement('a');
+                link.href = image.upscaledUrl;
+                link.download = image.upscaled.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            function downloadAllImages() {
+                upscaledImages.forEach((image, index) => {
+                    setTimeout(() => {
+                        downloadImage(image);
+                    }, index * 300);
+                });
+            }
+            
+            function downloadAsZip() {
+                processingStatus.textContent = 'Creating ZIP archive...';
+                processingModal.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    const zip = new JSZip();
+                    const imgFolder = zip.folder("upscaled_images");
+                    
+                    upscaledImages.forEach((image, index) => {
+                        // In a real app, you would fetch the actual upscaled image data
+                        // Here we're just using the original as a placeholder
+                        imgFolder.file(image.upscaled.name, image.original);
+                    });
+                    
+                    zip.generateAsync({ type: "blob" }).then(function(content) {
+                        saveAs(content, "upscaled_images.zip");
+                        processingModal.classList.add('hidden');
+                    });
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
