@@ -1,0 +1,580 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67e900a0071a97c8457f6bd8"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Invoice Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .invoice-item:last-child {
+            border-bottom: none;
+        }
+        
+        .modal {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        #invoice-preview {
+            background-color: white;
+            color: black;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">
+                <i class="fas fa-file-invoice-dollar mr-2 text-blue-600"></i>
+                Invoice Generator
+            </h1>
+            <button id="preview-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center">
+                <i class="fas fa-eye mr-2"></i> Preview Invoice
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Invoice Form -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Invoice Details</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                        <input type="text" id="invoice-number" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="INV-0001">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="invoice-date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                        <input type="date" id="due-date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select id="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="$">USD ($)</option>
+                            <option value="€">EUR (€)</option>
+                            <option value="£">GBP (£)</option>
+                            <option value="¥">JPY (¥)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- From Section -->
+                    <div>
+                        <h3 class="text-lg font-medium mb-2 text-gray-800 flex items-center">
+                            <i class="fas fa-building mr-2 text-blue-600"></i> From
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+                                <input type="text" id="from-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="Your Company Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="from-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="contact@yourcompany.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="text" id="from-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="+1 (555) 123-4567">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea id="from-address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">123 Business St, Suite 100
+City, State 12345
+Country</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- To Section -->
+                    <div>
+                        <h3 class="text-lg font-medium mb-2 text-gray-800 flex items-center">
+                            <i class="fas fa-user-tie mr-2 text-blue-600"></i> To
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                                <input type="text" id="to-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="Client Company Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="to-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="contact@clientcompany.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                <input type="text" id="to-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value="+1 (555) 987-6543">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea id="to-address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">456 Client Ave, Floor 5
+City, State 67890
+Country</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Items Section -->
+                <div>
+                    <h3 class="text-lg font-medium mb-2 text-gray-800 flex items-center">
+                        <i class="fas fa-list-ul mr-2 text-blue-600"></i> Items
+                    </h3>
+                    <div class="mb-4">
+                        <div id="invoice-items" class="space-y-4">
+                            <!-- Item rows will be added here -->
+                        </div>
+                        <button id="add-item-btn" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center">
+                            <i class="fas fa-plus mr-2"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Notes & Terms -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea id="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">Thank you for your business!</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions</label>
+                        <textarea id="terms" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">Payment due within 30 days. Late payments subject to 1.5% monthly interest.</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Preview Section -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-md p-6 sticky top-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Summary</h2>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Subtotal:</span>
+                            <span id="subtotal" class="font-medium">$0.00</span>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Tax Rate:</span>
+                            <div class="flex items-center">
+                                <input type="number" id="tax-rate" min="0" max="100" step="0.1" value="10" class="w-16 px-2 py-1 border border-gray-300 rounded-md text-right">
+                                <span class="ml-1">%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Tax Amount:</span>
+                            <span id="tax-amount" class="font-medium">$0.00</span>
+                        </div>
+                        
+                        <div class="border-t border-gray-200 pt-2 flex justify-between">
+                            <span class="text-gray-800 font-semibold">Total:</span>
+                            <span id="total" class="text-lg font-bold text-blue-600">$0.00</span>
+                        </div>
+                    </div>
+                    
+                    <button id="download-pdf-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center">
+                        <i class="fas fa-file-pdf mr-2"></i> Download PDF
+                    </button>
+                    
+                    <button id="clear-form-btn" class="w-full mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-3 px-4 rounded-lg transition flex items-center justify-center">
+                        <i class="fas fa-trash-alt mr-2"></i> Clear Form
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Invoice Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden modal">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h2 class="text-xl font-bold">Invoice Preview</h2>
+                <button id="close-preview-btn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="invoice-preview" class="p-8">
+                <!-- Preview content will be generated here -->
+            </div>
+            <div class="p-4 border-t flex justify-end">
+                <button id="download-from-preview-btn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition flex items-center">
+                    <i class="fas fa-file-pdf mr-2"></i> Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set today's date as default
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('invoice-date').value = formattedDate;
+            
+            // Set due date to 30 days from today
+            const dueDate = new Date();
+            dueDate.setDate(today.getDate() + 30);
+            const formattedDueDate = dueDate.toISOString().split('T')[0];
+            document.getElementById('due-date').value = formattedDueDate;
+            
+            // Add first item row
+            addItemRow();
+            
+            // Event listeners
+            document.getElementById('add-item-btn').addEventListener('click', addItemRow);
+            document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
+            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+            document.getElementById('preview-btn').addEventListener('click', showPreview);
+            document.getElementById('close-preview-btn').addEventListener('click', () => {
+                document.getElementById('preview-modal').classList.add('hidden');
+            });
+            document.getElementById('download-from-preview-btn').addEventListener('click', generatePDFFromPreview);
+            
+            // Add input event listeners for calculations
+            document.getElementById('tax-rate').addEventListener('input', calculateTotals);
+            
+            // Initialize calculations
+            calculateTotals();
+        });
+        
+        // Add a new item row
+        function addItemRow() {
+            const itemsContainer = document.getElementById('invoice-items');
+            const itemId = Date.now(); // Unique ID for each item
+            
+            const itemRow = document.createElement('div');
+            itemRow.className = 'invoice-item border-b border-gray-200 pb-4';
+            itemRow.dataset.id = itemId;
+            
+            itemRow.innerHTML = `
+                <div class="grid grid-cols-12 gap-2 items-end">
+                    <div class="col-span-5">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <input type="text" class="item-description w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Item description">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                        <input type="number" min="1" value="1" class="item-quantity w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rate</label>
+                        <input type="number" min="0" step="0.01" value="0.00" class="item-rate w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                        <input type="text" class="item-amount w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50" readonly>
+                    </div>
+                    <div class="col-span-1 flex justify-end">
+                        <button class="remove-item-btn text-red-500 hover:text-red-700 p-2">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            itemsContainer.appendChild(itemRow);
+            
+            // Add event listeners for the new row
+            const quantityInput = itemRow.querySelector('.item-quantity');
+            const rateInput = itemRow.querySelector('.item-rate');
+            const amountInput = itemRow.querySelector('.item-amount');
+            const removeBtn = itemRow.querySelector('.remove-item-btn');
+            
+            quantityInput.addEventListener('input', () => {
+                calculateItemAmount(itemRow);
+                calculateTotals();
+            });
+            
+            rateInput.addEventListener('input', () => {
+                calculateItemAmount(itemRow);
+                calculateTotals();
+            });
+            
+            removeBtn.addEventListener('click', () => {
+                itemRow.remove();
+                calculateTotals();
+            });
+            
+            // Calculate initial amount for the new row
+            calculateItemAmount(itemRow);
+        }
+        
+        // Calculate amount for a single item
+        function calculateItemAmount(itemRow) {
+            const quantity = parseFloat(itemRow.querySelector('.item-quantity').value) || 0;
+            const rate = parseFloat(itemRow.querySelector('.item-rate').value) || 0;
+            const amount = quantity * rate;
+            
+            itemRow.querySelector('.item-amount').value = formatCurrency(amount);
+        }
+        
+        // Calculate all totals
+        function calculateTotals() {
+            const items = document.querySelectorAll('.invoice-item');
+            let subtotal = 0;
+            
+            items.forEach(item => {
+                const amount = parseFloat(item.querySelector('.item-amount').value.replace(/[^0-9.-]+/g,"")) || 0;
+                subtotal += amount;
+            });
+            
+            const taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+            const taxAmount = subtotal * (taxRate / 100);
+            const total = subtotal + taxAmount;
+            
+            const currencySymbol = document.getElementById('currency').value;
+            
+            document.getElementById('subtotal').textContent = `${currencySymbol}${formatCurrency(subtotal)}`;
+            document.getElementById('tax-amount').textContent = `${currencySymbol}${formatCurrency(taxAmount)}`;
+            document.getElementById('total').textContent = `${currencySymbol}${formatCurrency(total)}`;
+        }
+        
+        // Format currency
+        function formatCurrency(amount) {
+            return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+        
+        // Generate PDF from form
+        function generatePDF() {
+            // First generate the preview HTML
+            generatePreview();
+            
+            // Then use html2canvas to capture it
+            const invoicePreview = document.getElementById('invoice-preview');
+            
+            html2canvas(invoicePreview).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm'
+                });
+                
+                // Calculate the PDF dimensions to maintain aspect ratio
+                const imgWidth = 210; // A4 width in mm
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                
+                // Get invoice number for filename
+                const invoiceNumber = document.getElementById('invoice-number').value || 'invoice';
+                
+                // Save the PDF
+                pdf.save(`${invoiceNumber}.pdf`);
+            });
+        }
+        
+        // Generate PDF from preview modal
+        function generatePDFFromPreview() {
+            generatePDF();
+            document.getElementById('preview-modal').classList.add('hidden');
+        }
+        
+        // Show preview modal
+        function showPreview() {
+            generatePreview();
+            document.getElementById('preview-modal').classList.remove('hidden');
+        }
+        
+        // Generate the preview HTML
+        function generatePreview() {
+            const previewContainer = document.getElementById('invoice-preview');
+            const currencySymbol = document.getElementById('currency').value;
+            
+            // Get all form values
+            const invoiceNumber = document.getElementById('invoice-number').value;
+            const invoiceDate = formatDate(document.getElementById('invoice-date').value);
+            const dueDate = formatDate(document.getElementById('due-date').value);
+            
+            const fromName = document.getElementById('from-name').value;
+            const fromEmail = document.getElementById('from-email').value;
+            const fromPhone = document.getElementById('from-phone').value;
+            const fromAddress = document.getElementById('from-address').value.replace(/\n/g, '<br>');
+            
+            const toName = document.getElementById('to-name').value;
+            const toEmail = document.getElementById('to-email').value;
+            const toPhone = document.getElementById('to-phone').value;
+            const toAddress = document.getElementById('to-address').value.replace(/\n/g, '<br>');
+            
+            const notes = document.getElementById('notes').value.replace(/\n/g, '<br>');
+            const terms = document.getElementById('terms').value.replace(/\n/g, '<br>');
+            
+            const subtotal = document.getElementById('subtotal').textContent;
+            const taxAmount = document.getElementById('tax-amount').textContent;
+            const total = document.getElementById('total').textContent;
+            const taxRate = document.getElementById('tax-rate').value;
+            
+            // Generate items HTML
+            let itemsHTML = '';
+            const items = document.querySelectorAll('.invoice-item');
+            
+            items.forEach(item => {
+                const description = item.querySelector('.item-description').value || 'Item';
+                const quantity = item.querySelector('.item-quantity').value || '0';
+                const rate = `${currencySymbol}${parseFloat(item.querySelector('.item-rate').value || 0).toFixed(2)}`;
+                const amount = item.querySelector('.item-amount').value || '0.00';
+                
+                itemsHTML += `
+                    <tr class="border-b border-gray-200">
+                        <td class="py-3">${description}</td>
+                        <td class="text-center py-3">${quantity}</td>
+                        <td class="text-right py-3">${rate}</td>
+                        <td class="text-right py-3">${currencySymbol}${amount}</td>
+                    </tr>
+                `;
+            });
+            
+            // Build the preview HTML
+            previewContainer.innerHTML = `
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h1 class="text-3xl font-bold text-blue-600 mb-1">${fromName}</h1>
+                            <div class="text-gray-600">
+                                ${fromAddress}<br>
+                                ${fromEmail}<br>
+                                ${fromPhone}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <h2 class="text-2xl font-bold mb-2">INVOICE</h2>
+                            <div class="text-gray-600">
+                                <div class="mb-1"><strong>Invoice #:</strong> ${invoiceNumber}</div>
+                                <div class="mb-1"><strong>Date:</strong> ${invoiceDate}</div>
+                                <div><strong>Due Date:</strong> ${dueDate}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between mb-8">
+                        <div class="bg-gray-100 p-4 rounded-lg w-1/2">
+                            <h3 class="font-bold text-gray-800 mb-2">From:</h3>
+                            <div class="text-gray-600">
+                                ${fromName}<br>
+                                ${fromAddress}<br>
+                                ${fromEmail}<br>
+                                ${fromPhone}
+                            </div>
+                        </div>
+                        <div class="bg-gray-100 p-4 rounded-lg w-1/2 ml-4">
+                            <h3 class="font-bold text-gray-800 mb-2">To:</h3>
+                            <div class="text-gray-600">
+                                ${toName}<br>
+                                ${toAddress}<br>
+                                ${toEmail}<br>
+                                ${toPhone}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <table class="w-full mb-8">
+                        <thead>
+                            <tr class="bg-gray-100 text-left border-b border-gray-200">
+                                <th class="py-3 font-bold">Description</th>
+                                <th class="py-3 font-bold text-center">Quantity</th>
+                                <th class="py-3 font-bold text-right">Rate</th>
+                                <th class="py-3 font-bold text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHTML}
+                        </tbody>
+                    </table>
+                    
+                    <div class="flex justify-end mb-8">
+                        <div class="w-1/3">
+                            <div class="flex justify-between py-2 border-b border-gray-200">
+                                <span class="font-bold">Subtotal:</span>
+                                <span>${subtotal}</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-200">
+                                <span class="font-bold">Tax (${taxRate}%):</span>
+                                <span>${taxAmount}</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span class="font-bold text-lg">Total:</span>
+                                <span class="font-bold text-lg">${total}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="font-bold text-gray-800 mb-2">Notes</h3>
+                            <div class="text-gray-600">${notes}</div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800 mb-2">Terms & Conditions</h3>
+                            <div class="text-gray-600">${terms}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-12 pt-4 border-t border-gray-200 text-center text-gray-500 text-sm">
+                        Thank you for your business!
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Format date from YYYY-MM-DD to Month Day, Year
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', options);
+        }
+        
+        // Clear form
+        function clearForm() {
+            if (confirm('Are you sure you want to clear the entire form? All data will be lost.')) {
+                // Reset form fields
+                document.getElementById('invoice-number').value = 'INV-' + Math.floor(1000 + Math.random() * 9000);
+                
+                const today = new Date();
+                document.getElementById('invoice-date').value = today.toISOString().split('T')[0];
+                
+                const dueDate = new Date();
+                dueDate.setDate(today.getDate() + 30);
+                document.getElementById('due-date').value = dueDate.toISOString().split('T')[0];
+                
+                document.getElementById('from-name').value = 'Your Company Name';
+                document.getElementById('from-email').value = 'contact@yourcompany.com';
+                document.getElementById('from-phone').value = '+1 (555) 123-4567';
+                document.getElementById('from-address').value = '123 Business St, Suite 100\nCity, State 12345\nCountry';
+                
+                document.getElementById('to-name').value = 'Client Company Name';
+                document.getElementById('to-email').value = 'contact@clientcompany.com';
+                document.getElementById('to-phone').value = '+1 (555) 987-6543';
+                document.getElementById('to-address').value = '456 Client Ave, Floor 5\nCity, State 67890\nCountry';
+                
+                document.getElementById('notes').value = 'Thank you for your business!';
+                document.getElementById('terms').value = 'Payment due within 30 days. Late payments subject to 1.5% monthly interest.';
+                document.getElementById('tax-rate').value = '10';
+                
+                // Clear items and add one empty row
+                document.getElementById('invoice-items').innerHTML = '';
+                addItemRow();
+                
+                // Recalculate totals
+                calculateTotals();
+            }
+        }
+    </script>
+</body>
+</html>
