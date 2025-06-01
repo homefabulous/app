@@ -1,0 +1,442 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordPress Plugin Prompt Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .prompt-container {
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .prompt-container.show {
+            max-height: 1000px;
+        }
+        .customize-panel {
+            transition: max-height 0.5s ease-in-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .customize-panel.open {
+            max-height: 500px;
+        }
+        #promptOutput {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-indigo-700 mb-4">WordPress Plugin Prompt Builder</h1>
+            <p class="text-gray-600 text-lg max-w-2xl mx-auto">Create the perfect AI prompt to generate WordPress plugins with exactly the features you need.</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Step 1: Basic Information</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Plugin Name</label>
+                        <input type="text" id="pluginName" placeholder="My Awesome Plugin" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Purpose/Functionality</label>
+                        <textarea id="pluginPurpose" rows="2" placeholder="Briefly describe what your plugin should do..."
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Step 2: Select Features</h2>
+                <p class="text-gray-600 mb-6">Select the features your WordPress plugin should include:</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'admin_panel')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="admin_panel" class="h-5 w-5 text-indigo-600">
+                            <label for="admin_panel" class="ml-3 font-medium text-gray-700">Admin Panel</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Custom admin interface for settings and controls</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'shortcodes')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="shortcodes" class="h-5 w-5 text-indigo-600">
+                            <label for="shortcodes" class="ml-3 font-medium text-gray-700">Shortcodes</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Create custom shortcodes for frontend output</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'widgets')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="widgets" class="h-5 w-5 text-indigo-600">
+                            <label for="widgets" class="ml-3 font-medium text-gray-700">Widgets</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Add custom widgets for drag-and-drop functionality</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'rest_api')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="rest_api" class="h-5 w-5 text-indigo-600">
+                            <label for="rest_api" class="ml-3 font-medium text-gray-700">REST API</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Expose custom endpoints for external integrations</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'cpt')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="cpt" class="h-5 w-5 text-indigo-600">
+                            <label for="cpt" class="ml-3 font-medium text-gray-700">Custom Post Types</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Create and manage custom content types</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'taxonomy')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="taxonomy" class="h-5 w-5 text-indigo-600">
+                            <label for="taxonomy" class="ml-3 font-medium text-gray-700">Custom Taxonomies</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Add classification and organization systems</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'settings_page')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="settings_page" class="h-5 w-5 text-indigo-600">
+                            <label for="settings_page" class="ml-3 font-medium text-gray-700">Settings Page</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Create options for users to customize behavior</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'cron_jobs')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="cron_jobs" class="h-5 w-5 text-indigo-600">
+                            <label for="cron_jobs" class="ml-3 font-medium text-gray-700">Cron Jobs</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Schedule automatic background tasks</p>
+                    </div>
+                    
+                    <div class="feature-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-all"
+                         onclick="toggleFeature(this, 'multilingual')">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="multilingual" class="h-5 w-5 text-indigo-600">
+                            <label for="multilingual" class="ml-3 font-medium text-gray-700">Multilingual</label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Prepare for translation (i18n ready)</p>
+                    </div>
+                </div>
+                
+                <!-- Advanced options toggle -->
+                <div class="flex items-center justify-center mb-6">
+                    <button id="advancedToggle" class="flex items-center text-indigo-600 hover:text-indigo-800">
+                        <span class="mr-2">Show Advanced Options</span>
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </button>
+                </div>
+                
+                <!-- Advanced options panel -->
+                <div id="advancedOptions" class="customize-panel border-t border-gray-200 pt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Development Approach</label>
+                            <select id="devApproach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="oop">Object-Oriented Programming (OOP)</option>
+                                <option value="functional">Functional Programming</option>
+                                <option value="mixed">Mixed Approach</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Code Standards</label>
+                            <select id="codeStandards" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="wp">WordPress Coding Standards</option>
+                                <option value="psr">PSR Standards</option>
+                                <option value="custom">Custom Organization Standards</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Security Requirements</label>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="nonces" class="h-4 w-4 text-indigo-600">
+                                    <label for="nonces" class="ml-2 text-gray-700">Nonces for all forms</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="sanitization" class="h-4 w-4 text-indigo-600">
+                                    <label for="sanitization" class="ml-2 text-gray-700">Data sanitization</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="escaping" class="h-4 w-4 text-indigo-600">
+                                    <label for="escaping" class="ml-2 text-gray-700">Output escaping</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="capabilities" class="h-4 w-4 text-indigo-600">
+                                    <label for="capabilities" class="ml-2 text-gray-700">Capability checks</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tests</label>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="unit_tests" class="h-4 w-4 text-indigo-600">
+                                    <label for="unit_tests" class="ml-2 text-gray-700">Unit tests</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="integration_tests" class="h-4 w-4 text-indigo-600">
+                                    <label for="integration_tests" class="ml-2 text-gray-700">Integration tests</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="phpunit" class="h-4 w-4 text-indigo-600">
+                                    <label for="phpunit" class="ml-2 text-gray-700">PHPUnit setup</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Step 3: Additional Requirements</h2>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Third-Party Integrations</label>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="integration-tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center" 
+                              onclick="toggleIntegration(this)" data-value="woocommerce">
+                            <input type="checkbox" class="hidden" id="int_woocommerce" value="woocommerce">
+                            WooCommerce <i class="fas fa-check ml-2"></i>
+                        </span>
+                        <span class="integration-tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center" 
+                              onclick="toggleIntegration(this)" data-value="gravity_forms">
+                            <input type="checkbox" class="hidden" id="int_gravity_forms" value="gravity_forms">
+                            Gravity Forms <i class="fas fa-check ml-2"></i>
+                        </span>
+                        <span class="integration-tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center" 
+                              onclick="toggleIntegration(this)" data-value="cf7">
+                            <input type="checkbox" class="hidden" id="int_cf7" value="cf7">
+                            Contact Form 7 <i class="fas fa-check ml-2"></i>
+                        </span>
+                        <span class="integration-tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center" 
+                              onclick="toggleIntegration(this)" data-value="elementor">
+                            <input type="checkbox" class="hidden" id="int_elementor" value="elementor">
+                            Elementor <i class="fas fa-check ml-2"></i>
+                        </span>
+                        <span class="integration-tag bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center" 
+                              onclick="toggleIntegration(this)" data-value="acf">
+                            <input type="checkbox" class="hidden" id="int_acf" value="acf">
+                            ACF <i class="fas fa-check ml-2"></i>
+                        </span>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="customRequirements" class="block text-sm font-medium text-gray-700 mb-2">Custom Requirements</label>
+                    <textarea id="customRequirements" rows="3" placeholder="Any other specific requirements for your plugin..."
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 mb-4"></textarea>
+                </div>
+                
+                <div class="flex justify-center mt-8">
+                    <button id="generatePrompt" class="px-8 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors flex items-center">
+                        <i class="fas fa-magic mr-2"></i> Generate Plugin Prompt
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prompt Output -->
+        <div class="prompt-container bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800">Your Generated Prompt</h2>
+                    <button id="copyPrompt" class="flex items-center text-sm text-indigo-600 hover:text-indigo-800">
+                        <i class="fas fa-copy mr-1"></i> Copy to Clipboard
+                    </button>
+                </div>
+                
+                <div id="promptOutput" class="bg-gray-50 p-6 rounded-lg text-gray-800 font-mono text-sm overflow-x-auto"></div>
+                
+                <div class="mt-6 text-right">
+                    <button id="copyPrompt" class="px-6 py-2 bg-indigo-100 text-indigo-700 font-medium rounded-lg hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors flex items-center ml-auto" onclick="copyToClipboard()">
+                        <i class="fas fa-copy mr-2"></i> Copy Prompt
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle feature selection
+        function toggleFeature(card, featureId) {
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                card.classList.add('bg-indigo-50', 'border-indigo-300');
+            } else {
+                card.classList.remove('bg-indigo-50', 'border-indigo-300');
+            }
+        }
+        
+        // Toggle integration selection
+        function toggleIntegration(tag) {
+            const checkbox = tag.querySelector('input[type="checkbox"]');
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                tag.classList.add('bg-indigo-200', 'text-indigo-900');
+            } else {
+                tag.classList.remove('bg-indigo-200', 'text-indigo-900');
+            }
+        }
+        
+        // Toggle advanced options
+        document.getElementById('advancedToggle').addEventListener('click', function() {
+            const panel = document.getElementById('advancedOptions');
+            const icon = this.querySelector('i');
+            
+            panel.classList.toggle('open');
+            
+            if (panel.classList.contains('open')) {
+                this.innerHTML = '<span class="mr-2">Hide Advanced Options</span><i class="fas fa-chevron-up text-sm"></i>';
+            } else {
+                this.innerHTML = '<span class="mr-2">Show Advanced Options</span><i class="fas fa-chevron-down text-sm"></i>';
+            }
+        });
+        
+        // Generate the prompt
+        document.getElementById('generatePrompt').addEventListener('click', function() {
+            const pluginName = document.getElementById('pluginName').value.trim();
+            const pluginPurpose = document.getElementById('pluginPurpose').value.trim();
+            
+            if (!pluginName || !pluginPurpose) {
+                alert('Please fill in the plugin name and purpose before generating the prompt.');
+                return;
+            }
+            
+            // Collect features
+            const features = [];
+            document.querySelectorAll('.feature-card input[type="checkbox"]:checked').forEach(checkbox => {
+                const label = checkbox.nextElementSibling.textContent;
+                features.push(label);
+            });
+            
+            // Collect advanced options
+            const devApproach = document.getElementById('devApproach').value;
+            const codeStandards = document.getElementById('codeStandards').value;
+            
+            // Collect security requirements
+            const security = [];
+            document.querySelectorAll('#advancedOptions input[type="checkbox"]:checked').forEach(checkbox => {
+                security.push(checkbox.nextElementSibling.textContent);
+            });
+            
+            // Collect integrations
+            const integrations = [];
+            document.querySelectorAll('.integration-tag input[type="checkbox"]:checked').forEach(checkbox => {
+                integrations.push(checkbox.value);
+            });
+            
+            const customRequirements = document.getElementById('customRequirements').value.trim();
+            
+            // Build the prompt
+            let prompt = `Create a WordPress plugin called "${pluginName}" with the following specifications:\n\n`;
+            prompt += `=== PURPOSE ===\n${pluginPurpose}\n\n`;
+            
+            if (features.length > 0) {
+                prompt += `=== REQUIRED FEATURES ===\n`;
+                prompt += `${features.join('\n')}\n\n`;
+            }
+            
+            if (integrations.length > 0) {
+                prompt += `=== INTEGRATIONS ===\n`;
+                prompt += integrations.map(int => {
+                    switch(int) {
+                        case 'woocommerce': return "Integrate with WooCommerce";
+                        case 'gravity_forms': return "Integrate with Gravity Forms";
+                        case 'cf7': return "Integrate with Contact Form 7";
+                        case 'elementor': return "Integrate with Elementor";
+                        case 'acf': return "Integrate with Advanced Custom Fields";
+                        default: return `Integrate with ${int}`;
+                    }
+                }).join('\n') + '\n\n';
+            }
+            
+            prompt += `=== DEVELOPMENT APPROACH ===\n`;
+            switch(devApproach) {
+                case 'oop': prompt += "Use object-oriented programming with proper class structure.\n"; break;
+                case 'functional': prompt += "Use functional programming approach.\n"; break;
+                case 'mixed': prompt += "Use a combination of OOP and functional programming as appropriate.\n"; break;
+            }
+            
+            prompt += `=== CODING STANDARDS ===\n`;
+            switch(codeStandards) {
+                case 'wp': prompt += "Follow WordPress coding standards.\n"; break;
+                case 'psr': prompt += "Follow PSR standards (specify which ones if needed).\n"; break;
+                case 'custom': prompt += "Follow custom organizational standards.\n"; break;
+            }
+            
+            if (security.length > 0) {
+                prompt += `=== SECURITY REQUIREMENTS ===\n`;
+                prompt += `${security.join('\n')}\n\n`;
+            }
+            
+            if (customRequirements) {
+                prompt += `=== ADDITIONAL REQUIREMENTS ===\n`;
+                prompt += `${customRequirements}\n\n`;
+            }
+            
+            prompt += `=== OUTPUT FORMAT ===\n`;
+            prompt += `Provide the complete plugin code in a single file with appropriate comments and documentation. Include installation instructions and basic usage examples.`;
+            
+            // Display the prompt
+            document.getElementById('promptOutput').textContent = prompt;
+            document.querySelector('.prompt-container').classList.add('show');
+        });
+        
+        // Copy to clipboard
+        function copyToClipboard() {
+            const promptText = document.getElementById('promptOutput').textContent;
+            if (!promptText) {
+                alert('Please generate a prompt first.');
+                return;
+            }
+            
+            navigator.clipboard.writeText(promptText).then(() => {
+                const copyBtn = document.querySelector('#copyPrompt');
+                copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy mr-2"></i> Copy Prompt';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
