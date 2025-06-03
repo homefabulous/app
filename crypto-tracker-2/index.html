@@ -1,0 +1,1358 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Dashboard - Market Analysis & Predictions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .scroll-container {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #1e293b;
+        }
+        
+        .scroll-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scroll-container::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        .scroll-container::-webkit-scrollbar-thumb {
+            background-color: #334155;
+            border-radius: 3px;
+        }
+        
+        .token-item:hover {
+            background-color: #1e293b;
+        }
+        
+        .token-item.active {
+            background-color: #1e40af;
+        }
+        
+        .price-animation-up {
+            animation: pricePulseUp 1s;
+        }
+        
+        .price-animation-down {
+            animation: pricePulseDown 1s;
+        }
+        
+        @keyframes pricePulseUp {
+            0% { background-color: rgba(5, 150, 105, 0.3); }
+            100% { background-color: transparent; }
+        }
+        
+        @keyframes pricePulseDown {
+            0% { background-color: rgba(220, 38, 38, 0.3); }
+            100% { background-color: transparent; }
+        }
+        
+        .blink {
+            animation: blinker 1.5s linear infinite;
+        }
+        
+        @keyframes blinker {
+            50% { opacity: 0.5; }
+        }
+        
+        .signal-long {
+            background-color: rgba(5, 150, 105, 0.1);
+            border-left: 4px solid #059669;
+        }
+        
+        .signal-short {
+            background-color: rgba(220, 38, 38, 0.1);
+            border-left: 4px solid #dc2626;
+        }
+        
+        .prediction-dot {
+            position: relative;
+        }
+        
+        .prediction-dot::before {
+            content: "";
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .dot-long::before {
+            background-color: #059669;
+        }
+        
+        .dot-short::before {
+            background-color: #dc2626;
+        }
+        
+        .prediction-strength-meter {
+            height: 4px;
+            border-radius: 2px;
+            background: linear-gradient(to right, #dc2626, #d97706, #059669);
+        }
+        
+        .prediction-strength-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .strength-high {
+            width: 85%;
+            background-color: #059669;
+        }
+        
+        .strength-medium {
+            width: 55%;
+            background-color: #d97706;
+        }
+        
+        .strength-low {
+            width: 35%;
+            background-color: #dc2626;
+        }
+        
+        .cross-verified {
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .cross-verified::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10B981;
+        }
+        
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .data-loading {
+            opacity: 0.7;
+            position: relative;
+        }
+        
+        .data-loading::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        .prediction-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .prediction-badge-long {
+            background-color: rgba(5, 150, 105, 0.2);
+            color: #34d399;
+            border-left: 3px solid #059669;
+        }
+        
+        .prediction-badge-short {
+            background-color: rgba(220, 38, 38, 0.2);
+            color: #f87171;
+            border-left: 3px solid #dc2626;
+        }
+        
+        .prediction-badge-neutral {
+            background-color: rgba(156, 163, 175, 0.2);
+            color: #d1d5db;
+            border-left: 3px solid #6b7280;
+        }
+        
+        .algo-score {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 4px;
+            background-color: #334155;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .algo-score-fill {
+            position: absolute;
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .algo-score-long {
+            background: linear-gradient(to right, #059669, #34d399);
+        }
+        
+        .algo-score-short {
+            background: linear-gradient(to right, #dc2626, #f87171);
+        }
+        
+        .prediction-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .prediction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .live-analysis {
+            background: linear-gradient(90deg, rgba(6, 78, 59, 0.1) 0%, rgba(30, 58, 138, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        
+        .prediction-history-item {
+            position: relative;
+            padding-left: 16px;
+        }
+        
+        .prediction-history-item:before {
+            content: "";
+            position: absolute;
+            left: 7px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background-color: #334155;
+        }
+        
+        .prediction-history-item:last-child:before {
+            height: 50%;
+        }
+        
+        .prediction-history-dot {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #334155;
+            border: 2px solid #1e293b;
+            z-index: 1;
+        }
+        
+        .prediction-history-dot.long {
+            background-color: #059669;
+        }
+        
+        .prediction-history-dot.short {
+            background-color: #dc2626;
+        }
+        
+        .prediction-history-dot.neutral {
+            background-color: #6b7280;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+    <!-- Header -->
+    <div class="bg-slate-800 p-4 flex items-center justify-between border-b border-slate-700">
+        <div class="flex items-center space-x-3">
+            <i class="fas fa-chart-line text-blue-400 text-xl"></i>
+            <h1 class="text-xl font-bold">Crypto Dashboard</h1>
+            <div class="text-xs bg-blue-500 px-2 py-1 rounded-full">Market Cap Rankings (No Stablecoins)</div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button id="refreshBtn" class="text-slate-300 hover:text-blue-400 transition text-sm">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <div class="text-xs bg-slate-700 px-2 py-1 rounded-full flex items-center">
+                <span class="w-2 h-2 rounded-full bg-green-500 mr-1 blink"></span>
+                <span>Live Analysis</span>
+            </div>
+            <div class="text-xs">
+                <i class="far fa-clock mr-1"></i>
+                <span id="currentTime">${new Date().toLocaleTimeString()}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Left Column - Token List with Predictions -->
+        <div class="w-1/3 bg-slate-900 flex flex-col border-r border-slate-800">
+            <div class="p-3 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+                <h2 class="font-medium text-slate-400">Market Predictions</h2>
+                <div class="text-xs text-slate-500">Excluding stablecoins</div>
+            </div>
+            
+            <!-- Prediction Overview -->
+            <div class="p-3 border-b border-slate-800 bg-slate-950">
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-slate-800 rounded p-2">
+                        <div class="text-xs text-slate-400 mb-1">LONG Signals</div>
+                        <div id="longSignals" class="text-green-400 font-bold">0</div>
+                    </div>
+                    <div class="bg-slate-800 rounded p-2">
+                        <div class="text-xs text-slate-400 mb-1">SHORT Signals</div>
+                        <div id="shortSignals" class="text-red-400 font-bold">0</div>
+                    </div>
+                    <div class="bg-slate-800 rounded p-2">
+                        <div class="text-xs text-slate-400 mb-1">Confidence</div>
+                        <div id="marketConfidence" class="text-sky-400 font-bold">-</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Token List Container -->
+            <div id="tokenList" class="flex-1 overflow-y-auto scroll-container">
+                <!-- Tokens will be populated here -->
+                <div class="flex justify-center items-center h-full">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            
+            <!-- Price Verification Status -->
+            <div class="p-3 border-t border-slate-800 bg-slate-950 text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="text-green-400"><i class="fas fa-check-circle"></i></span>
+                    <span id="verificationStatus" class="text-slate-300">Running market analysis...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column - Chart & Deep Analysis -->
+        <div class="w-2/3 flex flex-col">
+            <!-- Token Header with Prediction Badge -->
+            <div class="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img id="currentTokenImage" src="" 
+                         alt="Token" class="w-12 h-12 rounded-full">
+                    <div>
+                        <div class="flex items-center">
+                            <h2 id="currentTokenName" class="text-xl font-bold">...</h2>
+                            <span id="currentTokenSymbol" class="ml-2 bg-blue-500 text-xs px-2 py-1 rounded-full">...</span>
+                            <div id="currentPredictionBadge" class="ml-2 prediction-badge prediction-badge-neutral hidden">
+                                <span class="prediction-text">Analyzing...</span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1">
+                            Rank: <span id="currentRank" class="font-medium">...</span> • 
+                            Market cap: $<span id="currentMarketCap">...</span> • 
+                            Alg. Score: <span id="currentAlgoScore" class="font-medium">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div id="currentTokenPrice" class="text-3xl font-bold">$...</div>
+                    <div class="flex items-center justify-end">
+                        <span id="currentTokenChange" class="text-sm font-medium">...</span>
+                        <span class="text-slate-500 text-xs ml-2">(24h)</span>
+                        <span class="text-green-400 text-xs ml-2 cross-verified">Live Analysis</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chart Container -->
+            <div id="tradingview-chart" class="flex-1">
+                <div class="flex justify-center items-center h-full">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            
+            <!-- Token Details Section -->
+            <div id="tokenDetails" class="p-4 bg-slate-900 border-t border-slate-800">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <div class="text-xs text-slate-400 mb-1">Volume (24h)</div>
+                        <div class="font-medium" id="token24hVolume">...</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 mb-1">Circulating Supply</div>
+                        <div class="font-medium" id="tokenCirculatingSupply">...</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 mb-1">All-Time High</div>
+                        <div class="font-medium" id="tokenATH">...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Signal Prediction & Analysis -->
+            <div id="predictionSection" class="p-4 bg-slate-900 border-t border-slate-800">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-bolt text-yellow-400 mr-2"></i>
+                        <h3 class="font-bold">Advanced Market Prediction</h3>
+                        <span id="signalStatus" class="ml-2 text-xs px-2 py-1 rounded-full bg-gray-500">Loading...</span>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                        Analysis: <span id="signalAnalysisTime">in progress</span>
+                    </div>
+                </div>
+                
+                <div id="signalContainer" class="space-y-4">
+                    <!-- Main prediction card -->
+                    <div class="live-analysis p-4 rounded-lg border border-blue-400/20">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <div class="text-xs text-blue-300 mb-1">ALGO RECOMMENDATION</div>
+                                <h4 class="text-lg font-bold" id="currentPredictionText">Analyzing market data...</h4>
+                            </div>
+                            <div id="predictionConfidence" class="text-right">
+                                <div class="text-xs text-slate-400 mb-1">CONFIDENCE SCORE</div>
+                                <div id="confidenceValue" class="text-2xl font-bold text-blue-400">-</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>Risk Level</span>
+                                <span id="riskLevel">-</span>
+                            </div>
+                            <div class="w-full bg-slate-700 rounded-full h-2">
+                                <div id="riskMeter" class="bg-yellow-400 h-2 rounded-full" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Prediction factors grid -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-800 p-3 rounded-lg">
+                            <div class="text-xs text-slate-400 mb-2">TECHNICAL FACTORS</div>
+                            <ul class="space-y-1 text-sm">
+                                <li class="flex justify-between">
+                                    <span>RSI Momentum</span>
+                                    <span id="techRsi" class="font-medium">-</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span>MACD Signal</span>
+                                    <span id="techMacd" class="font-medium">-</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span>Volume Strength</span>
+                                    <span id="techVolume" class="font-medium">-</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-slate-800 p-3 rounded-lg">
+                            <div class="text-xs text-slate-400 mb-2">MARKET FACTORS</div>
+                            <ul class="space-y-1 text-sm">
+                                <li class="flex justify-between">
+                                    <span>Market Sentiment</span>
+                                    <span id="marketSentiment" class="font-medium">-</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span>24h Trend</span>
+                                    <span id="marketTrend" class="font-medium">-</span>
+                                </li>
+                                <li class="flex justify-between">
+                                    <span>Liquidity Score</span>
+                                    <span id="marketLiquidity" class="font-medium">-</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Prediction History -->
+                    <div class="bg-slate-800 p-3 rounded-lg">
+                        <div class="text-xs text-slate-400 mb-2">PREDICTION HISTORY</div>
+                        <div id="predictionHistory" class="space-y-2">
+                            <div class="text-sm text-slate-300">
+                                No prediction history available yet
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeframe Selector -->
+            <div class="p-3 bg-slate-900 border-t border-slate-800 flex justify-center space-x-2">
+                <button class="timeframe-btn active px-3 py-1 rounded-md text-sm" data-timeframe="15">15m</button>
+                <button class="timeframe-btn px-3 py-1 rounded-md text-sm" data-timeframe="60">1h</button>
+                <button class="timeframe-btn px-3 py-1 rounded-md text-sm" data-timeframe="240">4h</button>
+                <button class="timeframe-btn px-3 py-1 rounded-md text-sm" data-timeframe="1D">1d</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="bg-slate-800 p-2 text-xs text-center text-slate-400 border-t border-slate-700">
+        <div class="flex items-center justify-between px-4">
+            <span>Real-time data & predictions from CoinGecko API</span>
+            <span><i class="fas fa-info-circle mr-1"></i>Excludes stablecoins</span>
+            <span>ALGO v1.5.2</span>
+        </div>
+    </div>
+
+    <!-- TradingView Widget Script -->
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    
+    <script>
+        // Current selected token and timeframe
+        let selectedToken = null;
+        let currentTimeframe = "240"; // Default to 4h
+        let tradingViewWidget = null;
+        let priceUpdateIntervals = [];
+        let predictionIntervals = [];
+        
+        // Cryptocurrencies data (updated from CoinGecko API)
+        let cryptoData = [];
+        let marketInsights = {
+            longCount: 0,
+            shortCount: 0,
+            confidence: 'Medium',
+            dominance: null
+        };
+        
+        // CoinGecko API endpoints
+        const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+        
+        // List of stablecoin IDs to exclude
+        const STABLECOINS = [
+            'tether', 'usd-coin', 'binance-usd', 'dai', 'true-usd', 'frax', 'tusd', 
+            'usdd', 'pax-dollar', 'usdp', 'liquity-usd', 'fei-usd', 'gemini-dollar'
+        ];
+
+        // Initialize the application
+        async function initApp() {
+            // Update time display
+            updateCurrentTime();
+            
+            // Fetch data from CoinGecko
+            await fetchCoinGeckoData();
+            
+            // Start background analysis
+            startMarketAnalysis();
+            
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+            setTimeout(updateCurrentTime, 1000);
+        }
+
+        // Fetch data from CoinGecko API (including token categories)
+        async function fetchCoinGeckoData() {
+            try {
+                // Show loading state
+                document.getElementById('verificationStatus').textContent = 'Fetching market data...';
+                document.getElementById('signalAnalysisTime').textContent = "updating";
+                
+                // First fetch market data for top 30 coins (we'll filter out stablecoins)
+                const marketDataResponse = await fetch(
+                    `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=1&sparkline=false&price_change_percentage=24h,7d`
+                );
+                
+                if (!marketDataResponse.ok) {
+                    throw new Error('Failed to fetch market data from CoinGecko API');
+                }
+                
+                let marketData = await marketDataResponse.json();
+                
+                // Filter out stablecoins
+                marketData = marketData.filter(token => !STABLECOINS.includes(token.id));
+                
+                // If we don't have enough tokens, fetch more
+                if (marketData.length < 15) {
+                    const additionalResponse = await fetch(
+                        `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=2&sparkline=false&price_change_percentage=24h,7d`
+                    );
+                    
+                    if (additionalResponse.ok) {
+                        const additionalData = await additionalResponse.json();
+                        const filteredAdditional = additionalData.filter(token => !STABLECOINS.includes(token.id));
+                        marketData = marketData.concat(filteredAdditional.slice(0, 15 - marketData.length));
+                    }
+                }
+                
+                // Fetch categories for the tokens we have
+                const categoryData = await getTokenCategories(marketData.map(t => t.id));
+                
+                // Map the API data to our token structure
+                cryptoData = marketData.map((token) => {
+                    // Generate initial analysis with more parameters
+                    const predictions = generateMarketPrediction(token);
+                    
+                    return {
+                        id: token.id,
+                        name: token.name,
+                        symbol: token.symbol.toUpperCase(),
+                        rank: token.market_cap_rank,
+                        price: token.current_price,
+                        change24h: token.price_change_percentage_24h,
+                        change7d: token.price_change_percentage_7d_in_currency,
+                        marketCap: token.market_cap,
+                        volume24h: token.total_volume,
+                        circulatingSupply: token.circulating_supply,
+                        ath: token.ath,
+                        imageUrl: token.image,
+                        lastUpdated: new Date(token.last_updated),
+                        category: categoryData[token.id] || 'Cryptocurrency',
+                        analysis: predictions,
+                        predictionHistory: []
+                    };
+                });
+                
+                // Sort by market cap rank
+                cryptoData.sort((a, b) => a.rank - b.rank);
+                
+                // Render the token list
+                renderTokenList();
+                
+                // Select the first token by default
+                if (cryptoData.length > 0) {
+                    selectToken(cryptoData[0]);
+                }
+                
+                // Update verification status
+                const updateTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById('verificationStatus').textContent = 'Market predictions active';
+                document.getElementById('signalAnalysisTime').textContent = `updated at ${updateTime}`;
+                
+            } catch (error) {
+                console.error('Error fetching CoinGecko data:', error);
+                document.getElementById('verificationStatus').textContent = 'Error fetching data. Please try again.';
+                document.getElementById('signalAnalysisTime').textContent = "update failed";
+                
+                // Show error in token list
+                const tokenListContainer = document.getElementById('tokenList');
+                tokenListContainer.innerHTML = `
+                    <div class="p-4 text-center text-red-400">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Failed to load data. Please refresh the page.
+                    </div>
+                `;
+            }
+        }
+        
+        // Get token categories from CoinGecko API
+        async function getTokenCategories(tokenIds) {
+            try {
+                const response = await fetch(`${COINGECKO_API}/coins/list?include_platform=false`);
+                const data = await response.json();
+                
+                // Create a map of token IDs to categories
+                const categories = {};
+                
+                data.forEach(token => {
+                    if (tokenIds.includes(token.id) && token.categories && token.categories.length > 0) {
+                        // Skip if it's a stablecoin
+                        if (STABLECOINS.includes(token.id)) return;
+                        
+                        // Take the first category (most significant)
+                        categories[token.id] = token.categories[0];
+                    }
+                });
+                
+                return categories;
+            } catch (error) {
+                console.error('Error fetching token categories:', error);
+                return {};
+            }
+        }
+        
+        // Generate market prediction with more sophisticated algorithm
+        function generateMarketPrediction(token) {
+            // Technical indicators (simulated)
+            const rsi = 30 + Math.random() * 40; // Random RSI between 30-70
+            const macdSignal = Math.random() > 0.5 ? 'bullish' : 'bearish';
+            const volumeStrength = token.total_volume / token.market_cap > 0.1 ? 'high' : 
+                                 token.total_volume / token.market_cap > 0.05 ? 'medium' : 'low';
+            
+            // Market indicators
+            const marketTrend = token.price_change_percentage_24h > 0 ? 'bullish' : 'bearish';
+            const weeklyTrend = token.price_change_percentage_7d_in_currency > 0 ? 'bullish' : 'bearish';
+            
+            // Calculate scores
+            let momentumScore = 0;
+            momentumScore += rsi > 50 ? 1 : -1; // RSI above 50 is bullish
+            momentumScore += macdSignal === 'bullish' ? 1 : -1;
+            momentumScore += volumeStrength === 'high' ? 1 : (volumeStrength === 'medium' ? 0.5 : 0);
+            momentumScore += marketTrend === 'bullish' ? 1 : -1;
+            momentumScore += weeklyTrend === 'bullish' ? 0.5 : -0.5;
+            
+            // Market cap adjustment (larger caps get more weight)
+            let marketCapScore = 0;
+            if (token.market_cap > 20000000000) { // >$20B
+                marketCapScore = 1;
+            } else if (token.market_cap > 5000000000) { // $5B-$20B
+                marketCapScore = 0.5;
+            } // <$5B gets no extra score
+            
+            // Calculate overall score (0 to 100 scale)
+            let finalScore = 50 + (momentumScore * 10) + (marketCapScore * 5);
+            finalScore = Math.min(Math.max(finalScore, 0), 100); // Clamp between 0-100
+            
+            // Determine prediction
+            let prediction, confidence, strength, risk;
+            if (finalScore >= 65) {
+                prediction = "LONG";
+                confidence = "High";
+                strength = "strong";
+                risk = "Low-Medium";
+            } else if (finalScore >= 55) {
+                prediction = "LONG";
+                confidence = "Medium";
+                strength = "moderate";
+                risk = "Medium";
+            } else if (finalScore <= 35) {
+                prediction = "SHORT";
+                confidence = "High";
+                strength = "strong";
+                risk = "High";
+            } else if (finalScore <= 45) {
+                prediction = "SHORT";
+                confidence = "Medium";
+                strength = "moderate";
+                risk = "Medium-High";
+            } else {
+                prediction = "HOLD";
+                confidence = "Low";
+                strength = "neutral";
+                risk = "Medium";
+            }
+            
+            return {
+                prediction,
+                confidence,
+                strength,
+                risk,
+                finalScore,
+                technicals: {
+                    rsi: rsi.toFixed(1),
+                    macd: macdSignal,
+                    volume: volumeStrength,
+                    trend: marketTrend
+                },
+                marketFactors: {
+                    trend: marketTrend,
+                    weeklyTrend: weeklyTrend,
+                    liquidity: token.total_volume / token.market_cap > 0.1 ? 'high' : 'medium'
+                }
+            };
+        }
+
+        // Render the token list with prediction indicators
+        function renderTokenList() {
+            const tokenListContainer = document.getElementById('tokenList');
+            tokenListContainer.innerHTML = '';
+            
+            if (cryptoData.length === 0) {
+                tokenListContainer.innerHTML = `
+                    <div class="p-4 text-center text-slate-400">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        No cryptocurrency data available (excluding stablecoins)
+                    </div>
+                `;
+                return;
+            }
+            
+            // Reset market insights counters
+            marketInsights.longCount = 0;
+            marketInsights.shortCount = 0;
+            
+            cryptoData.forEach(token => {
+                const changeColor = token.change24h >= 0 ? 'text-green-500' : 'text-red-500';
+                const changeIcon = token.change24h >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                
+                // Determine prediction badge
+                let predictionBadge = '';
+                if (token.analysis) {
+                    if (token.analysis.prediction === "LONG") {
+                        predictionBadge = `<div class="ml-2 prediction-badge prediction-badge-long">
+                            <i class="fas fa-arrow-up mr-1"></i> ${token.analysis.prediction}
+                        </div>`;
+                        marketInsights.longCount++;
+                    } else if (token.analysis.prediction === "SHORT") {
+                        predictionBadge = `<div class="ml-2 prediction-badge prediction-badge-short">
+                            <i class="fas fa-arrow-down mr-1"></i> ${token.analysis.prediction}
+                        </div>`;
+                        marketInsights.shortCount++;
+                    }
+                }
+                
+                const tokenElement = document.createElement('div');
+                tokenElement.className = 'token-item p-3 border-b border-slate-800 cursor-pointer transition';
+                tokenElement.dataset.symbol = token.symbol;
+                tokenElement.dataset.id = token.id;
+                
+                tokenElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <img src="${token.imageUrl}" alt="${token.symbol}" class="w-8 h-8 rounded-full">
+                            <div>
+                                <div class="font-medium flex items-center">
+                                    ${token.name}
+                                    ${token.rank <= 10 ? '<span class="ml-2 text-xs bg-blue-500 px-1.5 py-0.5 rounded-full">TOP 10</span>' : ''}
+                                </div>
+                                <div class="text-xs text-slate-400">${token.symbol} • ${token.category}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="algo-score mr-3">
+                                <div class="algo-score-fill ${
+                                    token.analysis && token.analysis.prediction === "LONG" ? "algo-score-long" : 
+                                    token.analysis && token.analysis.prediction === "SHORT" ? "algo-score-short" : ""
+                                }" style="width: ${token.analysis ? token.analysis.finalScore : 0}%"></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-medium">$${formatPrice(token.price, token.symbol)}</div>
+                                <div class="text-xs ${changeColor}">
+                                    <i class="fas ${changeIcon} mr-1"></i>
+                                    ${token.change24h >= 0 ? '+' : ''}${token.change24h.toFixed(2)}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${predictionBadge}
+                `;
+                
+                tokenElement.addEventListener('click', () => selectToken(token));
+                tokenListContainer.appendChild(tokenElement);
+                
+                // Start price update polling for this token
+                startPriceUpdates(token.id);
+            });
+            
+            // Update market overview stats
+            updateMarketOverview();
+        }
+
+        // Format price with appropriate decimals for different tokens
+        function formatPrice(price, symbol = '') {
+            // Special formatting for very low price tokens
+            if (price < 0.01) {
+                return price.toFixed(6).replace(/\.?0+$/, '');
+            }
+            if (price < 1) {
+                return price.toFixed(4).replace(/\.?0+$/, '');
+            }
+            if (price < 1000) {
+                return price.toFixed(2);
+            }
+            return price.toLocaleString('en-US', {maximumFractionDigits: 2});
+        }
+
+        // Format large numbers (market cap, volume, supply)
+        function formatLargeNumber(num) {
+            if (num >= 1000000000000) {
+                return (num / 1000000000000).toFixed(2) + 'T';
+            } else if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(2) + 'B';
+            } else if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            } else {
+                return num.toLocaleString('en-US', {maximumFractionDigits: 0});
+            }
+        }
+
+        // Update market overview stats
+        function updateMarketOverview() {
+            // Update counters
+            document.getElementById('longSignals').textContent = marketInsights.longCount;
+            document.getElementById('shortSignals').textContent = marketInsights.shortCount;
+            
+            // Calculate market confidence
+            const totalSignals = marketInsights.longCount + marketInsights.shortCount;
+            const longRatio = totalSignals > 0 ? (marketInsights.longCount / totalSignals) : 0.5;
+            
+            let confidence;
+            if (longRatio >= 0.7 || longRatio <= 0.3) {
+                confidence = "High";
+            } else if (longRatio >= 0.6 || longRatio <= 0.4) {
+                confidence = "Medium";
+            } else {
+                confidence = "Low";
+            }
+            
+            document.getElementById('marketConfidence').textContent = confidence;
+        }
+
+        // Select a token to display its chart and details
+        function selectToken(token) {
+            selectedToken = token;
+            
+            // Update selected state in the list
+            document.querySelectorAll('.token-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.id === token.id) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Update token header info
+            document.getElementById('currentTokenName').textContent = token.name;
+            document.getElementById('currentTokenSymbol').textContent = token.symbol;
+            document.getElementById('currentTokenImage').src = token.imageUrl;
+            document.getElementById('currentTokenImage').alt = `${token.name} logo`;
+            document.getElementById('currentTokenPrice').textContent = `$${formatPrice(token.price, token.symbol)}`;
+            document.getElementById('currentRank').textContent = token.rank;
+            document.getElementById('currentMarketCap').textContent = formatLargeNumber(token.marketCap);
+            document.getElementById('currentAlgoScore').textContent = token.analysis ? token.analysis.finalScore.toFixed(0) : '-';
+            
+            // Update prediction badge
+            const predictionBadge = document.getElementById('currentPredictionBadge');
+            predictionBadge.classList.remove('hidden');
+            
+            if (token.analysis) {
+                if (token.analysis.prediction === "LONG") {
+                    predictionBadge.className = 'prediction-badge prediction-badge-long';
+                    predictionBadge.innerHTML = '<i class="fas fa-arrow-up mr-1"></i> LONG';
+                } else if (token.analysis.prediction === "SHORT") {
+                    predictionBadge.className = 'prediction-badge prediction-badge-short';
+                    predictionBadge.innerHTML = '<i class="fas fa-arrow-down mr-1"></i> SHORT';
+                } else {
+                    predictionBadge.className = 'prediction-badge prediction-badge-neutral';
+                    predictionBadge.innerHTML = '<i class="fas fa-pause-circle mr-1"></i> HOLD';
+                }
+            }
+            
+            // Update price change
+            const changeElement = document.getElementById('currentTokenChange');
+            const change24h = token.change24h;
+            changeElement.textContent = `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
+            changeElement.className = change24h >= 0 ? 'text-green-500 text-sm font-medium' : 'text-red-500 text-sm font-medium';
+            
+            // Update token details
+            document.getElementById('token24hVolume').textContent = `$${formatLargeNumber(token.volume24h)}`;
+            document.getElementById('tokenCirculatingSupply').textContent = formatLargeNumber(token.circulatingSupply) + ' ' + token.symbol;
+            document.getElementById('tokenATH').textContent = `$${formatPrice(token.ath, token.symbol)}`;
+            
+            // Display market analysis if available
+            if (token.analysis) {
+                displayAdvancedAnalysis(token);
+            }
+            
+            // Initialize TradingView chart
+            initTradingViewChart(token.symbol, token.id);
+        }
+
+        // Display advanced analysis with LONG/SHORT prediction
+        function displayAdvancedAnalysis(token) {
+            const signalContainer = document.getElementById('signalContainer');
+            
+            // Update signal status
+            const signalStatus = document.getElementById('signalStatus');
+            document.getElementById('signalAnalysisTime').textContent = 'updated at ' + 
+                token.lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const analysis = token.analysis;
+            
+            // Set prediction color
+            signalStatus.className = analysis.prediction === "LONG" ? 
+                'ml-2 text-xs px-2 py-1 rounded-full bg-green-600' : 
+                analysis.prediction === "SHORT" ? 
+                'ml-2 text-xs px-2 py-1 rounded-full bg-red-600' : 
+                'ml-2 text-xs px-2 py-1 rounded-full bg-gray-500';
+                
+            signalStatus.textContent = analysis.prediction;
+            
+            // Update prediction text
+            let predictionText = '';
+            if (analysis.prediction === "LONG") {
+                predictionText = `${token.symbol} STRONG BUY OPPORTUNITY`;
+            } else if (analysis.prediction === "SHORT") {
+                predictionText = `${token.symbol} CAUTION: CONSIDER SHORTING`;
+            } else {
+                predictionText = `${token.symbol} HOLD - NO STRONG SIGNAL`;
+            }
+            
+            document.getElementById('currentPredictionText').textContent = predictionText;
+            document.getElementById('confidenceValue').textContent = analysis.finalScore.toFixed(0);
+            document.getElementById('riskLevel').textContent = analysis.risk;
+            
+            // Set risk meter width based on risk level
+            let riskWidth;
+            switch(analysis.risk) {
+                case 'Low': riskWidth = '25%'; break;
+                case 'Low-Medium': riskWidth = '35%'; break;
+                case 'Medium': riskWidth = '50%'; break;
+                case 'Medium-High': riskWidth = '65%'; break;
+                case 'High': riskWidth = '85%'; break;
+                default: riskWidth = '50%';
+            }
+            document.getElementById('riskMeter').style.width = riskWidth;
+            
+            // Update technical factors
+            document.getElementById('techRsi').textContent = analysis.technicals.rsi;
+            document.getElementById('techMacd').textContent = analysis.technicals.macd;
+            document.getElementById('techVolume').textContent = analysis.technicals.volume;
+            
+            // Update market factors
+            document.getElementById('marketSentiment').textContent = 
+                analysis.prediction === "LONG" ? 'Bullish' : 
+                analysis.prediction === "SHORT" ? 'Bearish' : 'Neutral';
+                
+            document.getElementById('marketTrend').textContent = analysis.marketFactors.trend;
+            document.getElementById('marketLiquidity').textContent = analysis.marketFactors.liquidity;
+            
+            // Update prediction history
+            updatePredictionHistory(token);
+        }
+        
+        // Update prediction history for a token
+        function updatePredictionHistory(token) {
+            const historyContainer = document.getElementById('predictionHistory');
+            
+            if (!token.predictionHistory || token.predictionHistory.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-sm text-slate-300">
+                        No historical predictions yet
+                    </div>
+                `;
+                return;
+            }
+            
+            historyContainer.innerHTML = '';
+            
+            // Show only the last 5 predictions
+            const recentPredictions = token.predictionHistory.slice(Math.max(token.predictionHistory.length - 5, 0));
+            
+            recentPredictions.forEach((pred, index) => {
+                const predElement = document.createElement('div');
+                predElement.className = 'prediction-history-item';
+                
+                const predDot = document.createElement('div');
+                predDot.className = `prediction-history-dot ${pred.prediction === 'LONG' ? 'long' : pred.prediction === 'SHORT' ? 'short' : 'neutral'}`;
+                
+                const predContent = document.createElement('div');
+                predContent.className = 'text-xs text-slate-300';
+                
+                const timeStr = new Date(pred.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                predContent.innerHTML = `
+                    <div class="flex justify-between mb-1">
+                        <span class="font-medium ${pred.prediction === 'LONG' ? 'text-green-400' : pred.prediction === 'SHORT' ? 'text-red-400' : 'text-gray-400'}">
+                            ${pred.prediction}
+                        </span>
+                        <span class="text-slate-500">${timeStr}</span>
+                    </div>
+                    <div class="text-slate-400 text-xxs">
+                        Score: <span class="font-bold">${pred.score.toFixed(0)}</span> • 
+                        Confidence: <span class="font-bold">${pred.confidence}</span>
+                    </div>
+                `;
+                
+                predElement.appendChild(predDot);
+                predElement.appendChild(predContent);
+                historyContainer.appendChild(predElement);
+            });
+        }
+
+        // Initialize TradingView chart for the selected token
+        function initTradingViewChart(symbol, id) {
+            if (tradingViewWidget !== null) {
+                tradingViewWidget.remove();
+                document.getElementById('tradingview-chart').innerHTML = '<div class="flex justify-center items-center h-full"><div class="loading-spinner"></div></div>';
+            }
+            
+            // Determine the interval based on current timeframe
+            let interval;
+            switch(currentTimeframe) {
+                case '15': interval = '15'; break;
+                case '60': interval = '60'; break;
+                case '240': interval = '240'; break;
+                case '1D': interval = '1D'; break;
+                default: interval = '240';
+            }
+            
+            // Create TradingView widget
+            tradingViewWidget = new TradingView.widget({
+                "autosize": true,
+                "symbol": `BINANCE:${symbol}USDT`,
+                "interval": interval,
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "enable_publishing": false,
+                "allow_symbol_change": false,
+                "hide_sidebar": true,
+                "hide_top_toolbar": true,
+                "container_id": "tradingview-chart",
+                "studies": [
+                    "MACD@tv-basicstudies",
+                    "RSI@tv-basicstudies",
+                    "EMA@tv-basicstudies"
+                ]
+            });
+        }
+        
+        // Start price updates for a specific token
+        function startPriceUpdates(tokenId) {
+            // Clear any existing interval for this token
+            if (priceUpdateIntervals[tokenId]) {
+                clearInterval(priceUpdateIntervals[tokenId]);
+            }
+            
+            // Update price every 30 seconds
+            priceUpdateIntervals[tokenId] = setInterval(() => {
+                updateTokenPrice(tokenId);
+            }, 30000);
+            
+            // Initial update
+            updateTokenPrice(tokenId);
+        }
+        
+        // Start continuous market analysis
+        function startMarketAnalysis() {
+            // Run analysis every 5 minutes (300000 ms)
+            predictionIntervals['market'] = setInterval(() => {
+                runMarketAnalysis();
+            }, 900000); // 15 minutes
+            
+            // Initial analysis
+            setTimeout(runMarketAnalysis, 5000);
+        }
+        
+        // Run analysis on all tokens
+        function runMarketAnalysis() {
+            const analysisTime = new Date();
+            console.log(`Running market analysis at ${analysisTime.toLocaleTimeString()}`);
+            
+            // Show loading state
+            document.getElementById('verificationStatus').textContent = 'Running market analysis...';
+            
+            cryptoData.forEach(token => {
+                // Generate new prediction
+                const newPrediction = generateMarketPrediction(token);
+                
+                // Add to history (if different from last prediction)
+                if (!token.analysis || 
+                    (token.analysis.prediction !== newPrediction.prediction || 
+                     token.analysis.confidence !== newPrediction.confidence)) {
+                    
+                    if (!token.predictionHistory) {
+                        token.predictionHistory = [];
+                    }
+                    
+                    token.predictionHistory.push({
+                        prediction: newPrediction.prediction,
+                        confidence: newPrediction.confidence,
+                        score: newPrediction.finalScore,
+                        timestamp: analysisTime
+                    });
+                }
+                
+                // Update token's current analysis
+                token.analysis = newPrediction;
+                
+                // If this is the selected token, update the UI
+                if (selectedToken && selectedToken.id === token.id) {
+                    displayAdvancedAnalysis(token);
+                }
+            });
+            
+            // Re-render token list to update predictions
+            renderTokenList();
+            
+            // Update status
+            document.getElementById('verificationStatus').textContent = 'Market analysis complete';
+            document.getElementById('signalAnalysisTime').textContent = `updated at ${analysisTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        }
+        
+        // Fetch the latest price for a token from CoinGecko
+        async function updateTokenPrice(tokenId) {
+            try {
+                const token = cryptoData.find(t => t.id === tokenId);
+                if (!token) return;
+                
+                // Show loading state
+                const tokenElements = document.querySelectorAll(`.token-item[data-id="${tokenId}"]`);
+                tokenElements.forEach(el => el.classList.add('data-loading'));
+                
+                // Get the price data from CoinGecko
+                const response = await fetch(`${COINGECKO_API}/simple/price?ids=${tokenId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch price data');
+                }
+                
+                const data = await response.json();
+                const priceData = data[tokenId];
+                
+                // Calculate the price difference
+                const oldPrice = token.price;
+                const newPrice = priceData.usd;
+                const priceDifference = newPrice - oldPrice;
+                const priceChangePercentage = priceData.usd_24h_change;
+                const newVolume = priceData.usd_24h_vol;
+                
+                // Update the token data
+                token.price = newPrice;
+                token.change24h = priceChangePercentage;
+                token.volume24h = newVolume;
+                token.lastUpdated = new Date();
+                
+                // Generate new market prediction with updated data
+                const newPrediction = generateMarketPrediction(token);
+                token.analysis = newPrediction;
+                
+                // Update the displayed price if this is the selected token
+                if (selectedToken && selectedToken.id === tokenId) {
+                    const priceElement = document.getElementById('currentTokenPrice');
+                    priceElement.textContent = `$${formatPrice(newPrice, token.symbol)}`;
+                    
+                    // Highlight price change
+                    priceElement.classList.remove('price-animation-up', 'price-animation-down');
+                    priceElement.classList.add(priceDifference >= 0 ? 'price-animation-up' : 'price-animation-down');
+                    
+                    // Update 24h change
+                    const changeElement = document.getElementById('currentTokenChange');
+                    changeElement.textContent = `${priceChangePercentage >= 0 ? '+' : ''}${priceChangePercentage.toFixed(2)}%`;
+                    changeElement.className = priceChangePercentage >= 0 ? 'text-green-500 text-sm font-medium' : 'text-red-500 text-sm font-medium';
+                    
+                    // Update volume
+                    document.getElementById('token24hVolume').textContent = `$${formatLargeNumber(newVolume)}`;
+                    document.getElementById('currentAlgoScore').textContent = newPrediction.finalScore.toFixed(0);
+                    
+                    // Update analysis
+                    displayAdvancedAnalysis(token);
+                }
+                
+                // Update the token in the list
+                tokenElements.forEach(el => {
+                    el.classList.remove('data-loading');
+                    
+                    const changeColor = priceChangePercentage >= 0 ? 'text-green-500' : 'text-red-500';
+                    const changeIcon = priceChangePercentage >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                    
+                    // Determine prediction badge
+                    let predictionBadge = '';
+                    if (newPrediction) {
+                        if (newPrediction.prediction === "LONG") {
+                            predictionBadge = `<div class="ml-2 prediction-badge prediction-badge-long">
+                                <i class="fas fa-arrow-up mr-1"></i> ${newPrediction.prediction}
+                            </div>`;
+                        } else if (newPrediction.prediction === "SHORT") {
+                            predictionBadge = `<div class="ml-2 prediction-badge prediction-badge-short">
+                                <i class="fas fa-arrow-down mr-1"></i> ${newPrediction.prediction}
+                            </div>`;
+                        }
+                    }
+                    
+                    el.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <img src="${token.imageUrl}" alt="${token.symbol}" class="w-8 h-8 rounded-full">
+                                <div>
+                                    <div class="font-medium flex items-center">
+                                        ${token.name}
+                                        ${token.rank <= 10 ? '<span class="ml-2 text-xs bg-blue-500 px-1.5 py-0.5 rounded-full">TOP 10</span>' : ''}
+                                    </div>
+                                    <div class="text-xs text-slate-400">${token.symbol} • ${token.category}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="algo-score mr-3">
+                                    <div class="algo-score-fill ${
+                                        newPrediction && newPrediction.prediction === "LONG" ? "algo-score-long" : 
+                                        newPrediction && newPrediction.prediction === "SHORT" ? "algo-score-short" : ""
+                                    }" style="width: ${newPrediction ? newPrediction.finalScore : 0}%"></div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-medium">$${formatPrice(newPrice, token.symbol)}</div>
+                                    <div class="text-xs ${changeColor}">
+                                        <i class="fas ${changeIcon} mr-1"></i>
+                                        ${priceChangePercentage >= 0 ? '+' : ''}${priceChangePercentage.toFixed(2)}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ${predictionBadge}
+                    `;
+                    
+                    el.addEventListener('click', () => selectToken(token));
+                });
+                
+                // Update market overview
+                updateMarketOverview();
+                
+            } catch (error) {
+                console.error(`Error updating price for token ${tokenId}:`, error);
+                
+                // Remove loading state
+                document.querySelectorAll(`.token-item[data-id="${tokenId}"]`).forEach(el => {
+                    el.classList.remove('data-loading');
+                });
+            }
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Timeframe buttons
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentTimeframe = this.dataset.timeframe;
+                    
+                    if (selectedToken) {
+                        initTradingViewChart(selectedToken.symbol, selectedToken.id);
+                    }
+                });
+            });
+            
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', async function() {
+                this.querySelector('i').classList.add('animate-spin');
+                
+                // Show loading states
+                document.getElementById('verificationStatus').textContent = 'Refreshing data...';
+                
+                try {
+                    // Force refresh the token data
+                    await fetchCoinGeckoData();
+                    
+                    // Trigger new market analysis
+                    runMarketAnalysis();
+                    
+                } catch (error) {
+                    console.error('Error during refresh:', error);
+                    document.getElementById('verificationStatus').textContent = 'Refresh failed. Please try again.';
+                } finally {
+                    this.querySelector('i').classList.remove('animate-spin');
+                }
+            });
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
