@@ -1,0 +1,686 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Crypto Tracker - Real-time Prices from CoinGecko</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom styles */
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        }
+        .ticker-tape {
+            animation: ticker 30s linear infinite;
+            white-space: nowrap;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .coin-logo {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+        }
+        .positive {
+            color: #10B981;
+        }
+        .negative {
+            color: #EF4444;
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .updated-row {
+            background-color: rgba(219, 234, 254, 0.3);
+            transition: background-color 1s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-chart-line text-3xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">Live Crypto Tracker</h1>
+                        <p class="text-blue-200">Real-time prices from CoinGecko API</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="last-updated" class="text-blue-200 text-sm">
+                        <i class="fas fa-sync-alt mr-1 loading-spinner"></i> Updating...
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full pulse">LIVE</span>
+                        <span class="text-xs">CoinGecko API</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Market Ticker -->
+    <div class="bg-gray-800 text-white py-2 overflow-hidden">
+        <div id="market-ticker" class="ticker-tape flex space-x-8">
+            <div>Loading live market data from CoinGecko...</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Market Overview -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">Top 10 Cryptocurrencies (Live Prices)</h2>
+                        <div class="flex items-center space-x-2">
+                            <button id="refresh-data" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh Now
+                            </button>
+                            <div class="text-sm text-gray-500">
+                                Auto-refresh in <span id="countdown">60</span>s
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top 10 Cryptocurrencies Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coin</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">24h Change</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Cap</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">24h Volume</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crypto-table" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="7" class="px-6 py-4 text-center">
+                                        <div class="flex justify-center items-center">
+                                            <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i>
+                                            Loading live cryptocurrency data from CoinGecko...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Market Performance -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Market Performance (24h)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm text-gray-500">Best Performer</p>
+                                    <p id="top-gainer" class="text-xl font-bold text-blue-700">Loading...</p>
+                                </div>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">24h</span>
+                            </div>
+                            <p id="top-gainer-change" class="text-xs text-gray-500 mt-2">% change: --</p>
+                        </div>
+                        <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm text-gray-500">Worst Performer</p>
+                                    <p id="top-loser" class="text-xl font-bold text-red-700">Loading...</p>
+                                </div>
+                                <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">24h</span>
+                            </div>
+                            <p id="top-loser-change" class="text-xs text-gray-500 mt-2">% change: --</p>
+                        </div>
+                        <div class="bg-green-50 border-l-4 border-green-500 rounded-lg p-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-sm text-gray-500">Market Sentiment</p>
+                                    <p id="market-sentiment" class="text-xl font-bold text-green-700">Loading...</p>
+                                </div>
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Live</span>
+                            </div>
+                            <p id="sentiment-detail" class="text-xs text-gray-500 mt-2">Based on top 10 coins</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Market Summary -->
+            <div class="space-y-8">
+                <!-- Global Stats -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Global Market Summary</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">Active Cryptocurrencies</p>
+                                <p id="active-cryptos" class="text-xl font-bold text-gray-900">--</p>
+                            </div>
+                            <div class="bg-blue-100 p-2 rounded-lg">
+                                <i class="fas fa-coins text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">24h Trading Volume</p>
+                                <p id="total-volume" class="text-xl font-bold text-gray-900">--</p>
+                            </div>
+                            <div class="bg-green-100 p-2 rounded-lg">
+                                <i class="fas fa-exchange-alt text-green-600"></i>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">BTC Dominance</p>
+                                <p id="btc-dominance" class="text-xl font-bold text-gray-900">--</p>
+                            </div>
+                            <div class="bg-yellow-100 p-2 rounded-lg">
+                                <i class="fab fa-bitcoin text-yellow-600"></i>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">ETH Dominance</p>
+                                <p id="eth-dominance" class="text-xl font-bold text-gray-900">--</p>
+                            </div>
+                            <div class="bg-purple-100 p-2 rounded-lg">
+                                <i class="fab fa-ethereum text-purple-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Updates -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Recent Price Updates</h2>
+                    <div id="updates-list" class="space-y-4">
+                        <div class="text-center py-4">
+                            <i class="fas fa-circle-notch fa-spin text-blue-500"></i>
+                            <p class="text-sm text-gray-500 mt-2">Loading live updates...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Status -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">CoinGecko API Status</h2>
+                            <p class="text-sm text-gray-500">Connection health and rate limits</p>
+                        </div>
+                        <div id="api-status" class="flex items-center">
+                            <span class="h-3 w-3 rounded-full bg-gray-400 mr-2"></span>
+                            <span class="text-sm">Checking...</span>
+                        </div>
+                    </div>
+                    <div id="api-stats" class="mt-4 text-sm text-gray-500">
+                        <div class="flex justify-between mb-1">
+                            <span>Last fetch time:</span>
+                            <span id="last-fetch-time">--</span>
+                        </div>
+                        <div class="flex justify-between mb-1">
+                            <span>Response time:</span>
+                            <span id="response-time">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Calls remaining:</span>
+                            <span id="calls-remaining">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col items-center">
+                <div class="flex items-center space-x-2 mb-4">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="font-medium">Live Crypto Tracker</span>
+                </div>
+                <p class="text-gray-400 text-center max-w-lg mb-4">
+                    Real-time cryptocurrency market data powered by CoinGecko API. 
+                    Prices update automatically every 60 seconds.
+                </p>
+                <div class="flex space-x-4 mb-4">
+                    <a href="https://www.coingecko.com/" target="_blank" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-external-link-alt mr-1"></i>CoinGecko
+                    </a>
+                    <a href="https://github.com/" target="_blank" class="text-gray-400 hover:text-white transition">
+                        <i class="fab fa-github mr-1"></i>Source Code
+                    </a>
+                </div>
+                <p class="text-gray-500 text-sm">© <span id="current-year"></span> Live Crypto Tracker. Data updates may be delayed by up to 60 seconds.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Current year for footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // CoinGecko API endpoints
+        const API_URL = 'https://api.coingecko.com/api/v3';
+        const TOP_COINS_ENDPOINT = '/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h';
+        const GLOBAL_DATA_ENDPOINT = '/global';
+
+        // Coin logos mapping
+        const COIN_LOGOS = {
+            bitcoin: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
+            ethereum: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
+            tether: 'https://cryptologos.cc/logos/tether-usdt-logo.png',
+            'binancecoin': 'https://cryptologos.cc/logos/bnb-bnb-logo.png',
+            solana: 'https://cryptologos.cc/logos/solana-sol-logo.png',
+            ripple: 'https://cryptologos.cc/logos/xrp-xrp-logo.png',
+            usdcoin: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+            cardano: 'https://cryptologos.cc/logos/cardano-ada-logo.png',
+            dogecoin: 'https://cryptologos.cc/logos/dogecoin-doge-logo.png',
+            polkadot: 'https://cryptologos.cc/logos/polkadot-new-dot-logo.png',
+            polygon: 'https://cryptologos.cc/logos/polygon-matic-logo.png'
+        };
+
+        // Auto-refresh countdown
+        let countdown = 60;
+        let countdownInterval;
+        let updateHistory = [];
+        let lastUpdateTimestamp = 0;
+
+        // Main function to fetch market data
+        async function fetchMarketData() {
+            const startTime = Date.now();
+            
+            try {
+                // Show loading state
+                document.getElementById('last-updated').innerHTML = '<i class="fas fa-sync-alt mr-1 loading-spinner"></i> Updating...';
+                document.getElementById('refresh-data').innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Refreshing';
+                document.getElementById('api-status').innerHTML = '<span class="h-3 w-3 rounded-full bg-yellow-400 mr-2"></span><span class="text-sm">Updating</span>';
+                
+                // Reset countdown
+                countdown = 60;
+                updateCountdownDisplay();
+                
+                // Fetch data from CoinGecko API
+                const [coinsResponse, globalResponse] = await Promise.all([
+                    fetchWithTimeout(`${API_URL}${TOP_COINS_ENDPOINT}`),
+                    fetchWithTimeout(`${API_URL}${GLOBAL_DATA_ENDPOINT}`)
+                ]);
+                
+                // Check rate limit headers
+                const rateLimitRemaining = coinsResponse.headers.get('x-ratelimit-remaining');
+                document.getElementById('calls-remaining').textContent = rateLimitRemaining || 'Unknown';
+                
+                // Parse responses
+                const coinsData = await coinsResponse.json();
+                const globalData = await globalResponse.json();
+                lastUpdateTimestamp = Date.now();
+                
+                // Update UI
+                updateTopCoinsTable(coinsData);
+                updateTicker(coinsData);
+                updateGlobalMetrics(globalData.data);
+                updatePerformanceMetrics(coinsData);
+                trackUpdates(coinsData);
+                
+                // Calculate response time
+                const responseTime = Date.now() - startTime;
+                document.getElementById('response-time').textContent = `${responseTime}ms`;
+                
+                // Update status
+                document.getElementById('last-updated').innerHTML = `<i class="fas fa-check-circle mr-1"></i> Updated: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('last-fetch-time').textContent = new Date().toLocaleTimeString();
+                document.getElementById('api-status').innerHTML = '<span class="h-3 w-3 rounded-full bg-green-500 mr-2"></span><span class="text-sm">Connected</span>';
+                
+            } catch (error) {
+                console.error('Error fetching live data:', error);
+                document.getElementById('last-updated').innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Update failed';
+                document.getElementById('api-status').innerHTML = '<span class="h-3 w-3 rounded-full bg-red-500 mr-2"></span><span class="text-sm">Error</span>';
+                
+                if (error.name === 'AbortError') {
+                    document.getElementById('updates-list').innerHTML = `
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                            <p class="font-medium">Request Timeout</p>
+                            <p class="text-sm text-gray-500">CoinGecko API response too slow. Retrying in ${countdown} seconds.</p>
+                        </div>
+                    `;
+                }
+            } finally {
+                document.getElementById('refresh-data').innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Refresh Now';
+                clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateCountdown, 1000);
+            }
+        }
+
+        // Helper function with timeout
+        async function fetchWithTimeout(url, options = {}, timeout = 5000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal  
+            });
+            
+            clearTimeout(id);
+            return response;
+        }
+
+        // Update countdown display
+        function updateCountdown() {
+            countdown--;
+            updateCountdownDisplay();
+            
+            if (countdown <= 0) {
+                fetchMarketData();
+            }
+        }
+
+        function updateCountdownDisplay() {
+            document.getElementById('countdown').textContent = countdown;
+        }
+
+        // Update the top 10 coins table
+        function updateTopCoinsTable(coinsData) {
+            const tableBody = document.getElementById('crypto-table');
+            const rowsBeforeUpdate = tableBody.querySelectorAll('tr');
+            const previousData = Array.from(rowsBeforeUpdate).map(row => {
+                if (row.id) {
+                    return {
+                        id: row.id,
+                        price: parseFloat(row.querySelector('td:nth-child(3)').textContent.replace(/[^0-9.]/g, '')),
+                        change: parseFloat(row.querySelector('td:nth-child(4)').textContent.match(/-?\d+\.\d+/)?.[0] || '0')
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+            
+            tableBody.innerHTML = '';
+            
+            coinsData.forEach((coin, index) => {
+                const previousPrice = previousData.find(item => item.id === coin.id)?.price || coin.current_price;
+                const previousChange = previousData.find(item => item.id === coin.id)?.change || coin.price_change_percentage_24h;
+                
+                const priceChange = coin.current_price - previousPrice;
+                const priceChangeClass = coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative';
+                const priceChangeArrow = coin.price_change_percentage_24h >= 0 ? 
+                    '<i class="fas fa-caret-up mr-1"></i>' : '<i class="fas fa-caret-down mr-1"></i>';
+                
+                const priceFormatted = formatCurrency(coin.current_price);
+                const marketCapFormatted = formatCurrency(coin.market_cap);
+                const volumeFormatted = formatCurrency(coin.total_volume);
+                const lastUpdated = new Date(coin.last_updated).toLocaleTimeString();
+                
+                const row = document.createElement('tr');
+                row.id = coin.id;
+                
+                // Highlight row if price changed significantly
+                if (Math.abs(priceChange) > 0.001 * coin.current_price) {
+                    row.classList.add('updated-row');
+                    
+                    // Remove highlight after animation completes
+                    setTimeout(() => {
+                        row.classList.remove('updated-row');
+                    }, 1000);
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <div class="flex items-center">
+                            <img src="${COIN_LOGOS[coin.id] || 'https://cryptologos.cc/logos/default-fallback-logo.png'}" 
+                                 alt="${coin.name}" class="coin-logo">
+                            <span>${coin.symbol.toUpperCase()}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${priceFormatted}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm ${priceChangeClass}">
+                        ${priceChangeArrow}${Math.abs(coin.price_change_percentage_24h).toFixed(2)}%
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${marketCapFormatted}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${volumeFormatted}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lastUpdated}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Update the ticker with top coins
+        function updateTicker(coinsData) {
+            const ticker = document.getElementById('market-ticker');
+            ticker.innerHTML = '';
+            
+            coinsData.forEach(coin => {
+                const priceChangeClass = coin.price_change_percentage_24h >= 0 ? 'positive' : 'negative';
+                const priceChangeArrow = coin.price_change_percentage_24h >= 0 ? '▲' : '▼';
+                
+                const tickerItem = document.createElement('span');
+                tickerItem.classList.add('whitespace-nowrap');
+                tickerItem.innerHTML = `
+                    <span class="font-medium">${coin.symbol.toUpperCase()}</span>: 
+                    <span>$${coin.current_price < 1 ? coin.current_price.toFixed(4) : coin.current_price.toFixed(2)}</span> 
+                    <span class="${priceChangeClass}">
+                        (${priceChangeArrow}${Math.abs(coin.price_change_percentage_24h).toFixed(2)}%)
+                    </span>
+                `;
+                
+                ticker.appendChild(tickerItem);
+                ticker.appendChild(document.createTextNode(' • '));
+            });
+            
+            // Remove the last separator
+            if (ticker.lastChild && ticker.lastChild.nodeType === Node.TEXT_NODE) {
+                ticker.removeChild(ticker.lastChild);
+            }
+        }
+
+        // Update global market metrics
+        function updateGlobalMetrics(globalData) {
+            document.getElementById('active-cryptos').textContent = 
+                globalData.active_cryptocurrencies.toLocaleString();
+            
+            document.getElementById('total-volume').textContent = 
+                `$${(globalData.total_volume.usd / 1000000000000).toFixed(2)}T`;
+            
+            document.getElementById('btc-dominance').textContent = 
+                `${globalData.market_cap_percentage.btc.toFixed(1)}%`;
+            
+            document.getElementById('eth-dominance').textContent = 
+                `${globalData.market_cap_percentage.eth.toFixed(1)}%`;
+        }
+
+        // Update performance metrics
+        function updatePerformanceMetrics(coinsData) {
+            if (!coinsData || coinsData.length === 0) return;
+            
+            // Find top gainer and loser
+            let topGainer = coinsData[0];
+            let topLoser = coinsData[0];
+            
+            coinsData.forEach(coin => {
+                if (coin.price_change_percentage_24h > topGainer.price_change_percentage_24h) {
+                    topGainer = coin;
+                }
+                if (coin.price_change_percentage_24h < topLoser.price_change_percentage_24h) {
+                    topLoser = coin;
+                }
+            });
+            
+            // Update UI
+            document.getElementById('top-gainer').textContent = 
+                `${topGainer.symbol.toUpperCase()} ($${topGainer.current_price < 1 ? 
+                    topGainer.current_price.toFixed(4) : topGainer.current_price.toFixed(2)})`;
+            document.getElementById('top-gainer-change').textContent = 
+                `24h change: +${topGainer.price_change_percentage_24h.toFixed(2)}%`;
+            
+            document.getElementById('top-loser').textContent = 
+                `${topLoser.symbol.toUpperCase()} ($${topLoser.current_price < 1 ? 
+                    topLoser.current_price.toFixed(4) : topLoser.current_price.toFixed(2)})`;
+            document.getElementById('top-loser-change').textContent = 
+                `24h change: ${topLoser.price_change_percentage_24h.toFixed(2)}%`;
+            
+            // Calculate market sentiment
+            const positiveCoins = coinsData.filter(coin => coin.price_change_percentage_24h >= 0).length;
+            const marketRatio = (positiveCoins / coinsData.length) * 100;
+            
+            if (marketRatio >= 70) {
+                document.getElementById('market-sentiment').textContent = 'Bullish';
+                document.getElementById('market-sentiment').className = 'text-xl font-bold text-green-700';
+                document.getElementById('sentiment-detail').textContent = 
+                    `${positiveCoins} of ${coinsData.length} coins gaining in last 24h`;
+            } else if (marketRatio <= 30) {
+                document.getElementById('market-sentiment').textContent = 'Bearish';
+                document.getElementById('market-sentiment').className = 'text-xl font-bold text-red-700';
+                document.getElementById('sentiment-detail').textContent = 
+                    `${coinsData.length - positiveCoins} of ${coinsData.length} coins losing in last 24h`;
+            } else {
+                document.getElementById('market-sentiment').textContent = 'Neutral';
+                document.getElementById('market-sentiment').className = 'text-xl font-bold text-gray-700';
+                document.getElementById('sentiment-detail').textContent = 
+                    `Mixed performance: ${positiveCoins} up, ${coinsData.length - positiveCoins} down`;
+            }
+        }
+
+        // Track price updates and changes
+        function trackUpdates(coinsData) {
+            const now = new Date();
+            const updatesList = document.getElementById('updates-list');
+            
+            // Limit to 5 most recent updates
+            const newUpdate = {
+                timestamp: now,
+                data: coinsData
+            };
+            
+            updateHistory.unshift(newUpdate);
+            if (updateHistory.length > 5) {
+                updateHistory.pop();
+            }
+            
+            // Clear previous updates
+            updatesList.innerHTML = '';
+            
+            // If first update, don't show changes yet
+            if (updateHistory.length < 2) {
+                updatesList.innerHTML = `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                        <p class="font-medium">Initial data loaded</p>
+                        <p class="text-sm text-gray-500">Waiting for next update to track changes...</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Compare with previous update
+            const previousUpdate = updateHistory[1];
+            const currentUpdate = updateHistory[0];
+            
+            currentUpdate.data.forEach(coin => {
+                const previousCoin = previousUpdate.data.find(c => c.id === coin.id);
+                if (!previousCoin) return;
+                
+                const priceChange = coin.current_price - previousCoin.current_price;
+                const percentChange = (priceChange / previousCoin.current_price) * 100;
+                
+                // Only show significant changes (>0.1% price movement)
+                if (Math.abs(percentChange) > 0.1) {
+                    const changeDirection = percentChange >= 0 ? 'up' : 'down';
+                    const changeClass = percentChange >= 0 ? 'text-green-600' : 'text-red-600';
+                    const arrowIcon = percentChange >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                    
+                    const updateElement = document.createElement('div');
+                    updateElement.className = 'flex items-start';
+                    updateElement.innerHTML = `
+                        <div class="bg-${changeDirection === 'up' ? 'green' : 'red'}-100 p-2 rounded-lg mr-3">
+                            <i class="fas ${arrowIcon} text-${changeDirection === 'up' ? 'green' : 'red'}-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">${coin.symbol.toUpperCase()} price ${changeDirection} by ${Math.abs(percentChange).toFixed(2)}%</p>
+                            <p class="text-sm text-gray-500">
+                                $${previousCoin.current_price.toFixed(2)} → <span class="${changeClass}">$${coin.current_price.toFixed(2)}</span>
+                            </p>
+                            <p class="text-xs text-gray-400 mt-1">${now.toLocaleTimeString()}</p>
+                        </div>
+                    `;
+                    
+                    updatesList.appendChild(updateElement);
+                }
+            });
+            
+            // If no significant changes, show message
+            if (updatesList.children.length === 0) {
+                updatesList.innerHTML = `
+                    <div class="bg-gray-50 border-l-4 border-gray-500 p-4">
+                        <p class="font-medium">No significant changes</p>
+                        <p class="text-sm text-gray-500">All price changes under 0.1% in last update</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Helper function to format currency
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '--';
+            
+            if (value >= 1000000000000) {
+                return `$${(value / 1000000000000).toFixed(2)}T`;
+            } else if (value >= 1000000000) {
+                return `$${(value / 1000000000).toFixed(2)}B`;
+            } else if (value >= 1000000) {
+                return `$${(value / 1000000).toFixed(2)}M`;
+            } else if (value >= 1000) {
+                return `$${(value / 1000).toFixed(2)}K`;
+            } else if (value < 1) {
+                return `$${value.toFixed(4)}`;
+            }
+            return `$${value.toFixed(2)}`;
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial data load
+            fetchMarketData();
+            
+            // Manual refresh button
+            document.getElementById('refresh-data').addEventListener('click', function() {
+                fetchMarketData();
+            });
+            
+            // Add animation to refresh button
+            document.getElementById('refresh-data').addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                icon.classList.add('fa-spin');
+                
+                setTimeout(() => {
+                    icon.classList.remove('fa-spin');
+                }, 1000);
+            });
+            
+            // Set up auto-refresh every 60 seconds
+            countdownInterval = setInterval(updateCountdown, 1000);
+        });
+    </script>
+</body>
+</html>
