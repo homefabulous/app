@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Project Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .kanban-column {
+            min-height: 300px;
+            background-color: none;
+            border-radius: 0.5rem;
+            padding: 1rem;
+        }
+        .task-card {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        .task-card:active {
+            cursor: grabbing;
+        }
+        .task-card.dragging {
+            opacity: 0.5;
+            transform: scale(1.05);
+        }
+        .kanban-column.highlight {
+            background-color: #e5e7eb;
+        }
+        .view-option.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .project-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .project-card.selected {
+            border: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Project Manager</h1>
+            <div class="flex space-x-2">
+                <button id="manage-projects-btn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-folder-plus mr-2"></i>Manage Projects
+                </button>
+                <button id="back-to-projects-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg hidden">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Projects
+                </button>
+            </div>
+        </div>
+
+        <!-- Project Selection View -->
+        <div id="project-selection-view" class="view-content">
+            <div class="mb-6">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Your Projects</h2>
+                <div id="projects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Projects will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Management View -->
+        <div id="task-management-view" class="view-content hidden">
+            <!-- Project Header -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 id="current-project-name" class="text-2xl font-bold text-gray-800"></h2>
+                        <p id="current-project-description" class="text-gray-600"></p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span id="task-count" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"></span>
+                        <button id="edit-project-btn" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Controls -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex space-x-2">
+                    <button id="list-view-btn" class="view-option active px-4 py-2 rounded-lg border border-gray-300">
+                        <i class="fas fa-list mr-2"></i>List View
+                    </button>
+                    <button id="kanban-view-btn" class="view-option px-4 py-2 rounded-lg border border-gray-300">
+                        <i class="fas fa-columns mr-2"></i>Kanban Board
+                    </button>
+                    <button id="card-view-btn" class="view-option px-4 py-2 rounded-lg border border-gray-300">
+                        <i class="fas fa-grip mr-2"></i>Card View
+                    </button>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="manage-categories-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-tags mr-2"></i>Manage Categories
+                    </button>
+                    <button id="manage-statuses-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-cog mr-2"></i>Manage Statuses
+                    </button>
+                    <button id="add-task-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i>Add Task
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="mb-6 flex flex-wrap gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Category</label>
+                    <select id="category-filter" class="border border-gray-300 rounded-md px-3 py-2 w-full">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
+                    <select id="status-filter" class="border border-gray-300 rounded-md px-3 py-2 w-full">
+                        <option value="all">All Statuses</option>
+                    </select>
+                </div>
+                <div id="kanban-grouping-controls" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Group By</label>
+                    <select id="kanban-group-by" class="border border-gray-300 rounded-md px-3 py-2 w-full">
+                        <option value="status">Status</option>
+                        <option value="category">Category</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- List View -->
+            <div id="list-view" class="view-content">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="task-list" class="bg-white divide-y divide-gray-200">
+                        <!-- Tasks will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Kanban View -->
+            <div id="kanban-view" class="view-content hidden">
+                <div id="kanban-board" class="grid gap-4">
+                    <!-- Kanban columns will be populated here -->
+                </div>
+            </div>
+
+            <!-- Card View -->
+            <div id="card-view" class="view-content hidden">
+                <div id="card-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Cards will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Modal -->
+    <div id="project-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="project-modal-title" class="text-xl font-semibold text-gray-800">Add New Project</h3>
+                <button id="close-project-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="project-form">
+                <input type="hidden" id="project-id">
+                <div class="mb-4">
+                    <label for="project-name" class="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                    <input type="text" id="project-name" class="border border-gray-300 rounded-md px-3 py-2 w-full" required>
+                </div>
+                <div class="mb-4">
+                    <label for="project-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="project-description" rows="3" class="border border-gray-300 rounded-md px-3 py-2 w-full"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="project-color" class="block text-sm font-medium text-gray-700 mb-1">Project Color</label>
+                    <input type="color" id="project-color" class="w-12 h-10 border border-gray-300 rounded-md" value="#3b82f6">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-project" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600">
+                        Save Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Projects Modal -->
+    <div id="manage-projects-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Manage Projects</h3>
+                <button id="close-manage-projects-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <button id="add-new-project-btn" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg w-full">
+                    <i class="fas fa-plus mr-2"></i>Add New Project
+                </button>
+            </div>
+
+            <div>
+                <h4 class="text-lg font-medium mb-3">Your Projects</h4>
+                <div id="projects-list" class="space-y-2 max-h-64 overflow-y-auto">
+                    <!-- Projects list will be populated here -->
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button id="close-manage-projects-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-xl font-semibold text-gray-800">Add New Task</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <div class="mb-4">
+                    <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="task-description" rows="3" class="border border-gray-300 rounded-md px-3 py-2 w-full" required></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="task-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                        <select id="task-category" class="border border-gray-300 rounded-md px-3 py-2 w-full" required>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="task-status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="task-status" class="border border-gray-300 rounded-md px-3 py-2 w-full" required>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancel-task" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Status Modal -->
+    <div id="status-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Manage Statuses</h3>
+                <button id="close-status-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-lg font-medium mb-3">Add New Status</h4>
+                <form id="status-form" class="flex gap-2">
+                    <input type="text" id="new-status-name" placeholder="Status name" class="flex-1 border border-gray-300 rounded-md px-3 py-2" required>
+                    <input type="color" id="new-status-color" class="w-12 h-10 border border-gray-300 rounded-md" value="#6366f1">
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div>
+                <h4 class="text-lg font-medium mb-3">Current Statuses</h4>
+                <div id="status-list" class="space-y-2 max-h-64 overflow-y-auto">
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button id="close-status-modal-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="category-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Manage Categories</h3>
+                <button id="close-category-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <h4 class="text-lg font-medium mb-3">Add New Category</h4>
+                <form id="category-form" class="flex gap-2">
+                    <input type="text" id="new-category-name" placeholder="Category name" class="flex-1 border border-gray-300 rounded-md px-3 py-2" required>
+                    <input type="color" id="new-category-color" class="w-12 h-10 border border-gray-300 rounded-md" value="#3b82f6">
+                    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div>
+                <h4 class="text-lg font-medium mb-3">Current Categories</h4>
+                <div id="category-list" class="space-y-2 max-h-64 overflow-y-auto">
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button id="close-category-modal-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+<script>
+ // Global state
+let projects = JSON.parse(localStorage.getItem('projectManagerProjects')) || [];
+let currentProjectId = null;
+
+// Default statuses and categories
+const defaultStatuses = [
+    { id: 'to-do', name: 'To Do', color: '#6b7280', deletable: true },
+    { id: 'in-progress', name: 'In Progress', color: '#3b82f6', deletable: true },
+    { id: 'done', name: 'Done', color: '#10b981', deletable: true }
+];
+
+const defaultCategories = [
+    { id: 'work', name: 'Work', color: '#3b82f6', deletable: true },
+    { id: 'errand', name: 'Errand', color: '#10b981', deletable: true },
+    { id: 'home', name: 'Home', color: '#f59e0b', deletable: true },
+    { id: 'social', name: 'Social', color: '#8b5cf6', deletable: true }
+];
+
+// DOM elements
+const projectSelectionView = document.getElementById('project-selection-view');
+const taskManagementView = document.getElementById('task-management-view');
+const projectsGrid = document.getElementById('projects-grid');
+const manageProjectsBtn = document.getElementById('manage-projects-btn');
+const backToProjectsBtn = document.getElementById('back-to-projects-btn');
+const currentProjectName = document.getElementById('current-project-name');
+const currentProjectDescription = document.getElementById('current-project-description');
+const taskCount = document.getElementById('task-count');
+const editProjectBtn = document.getElementById('edit-project-btn');
+
+// Task management elements
+const listView = document.getElementById('list-view');
+const kanbanView = document.getElementById('kanban-view');
+const cardView = document.getElementById('card-view');
+const listViewBtn = document.getElementById('list-view-btn');
+const kanbanViewBtn = document.getElementById('kanban-view-btn');
+const cardViewBtn = document.getElementById('card-view-btn');
+const taskList = document.getElementById('task-list');
+const kanbanBoard = document.getElementById('kanban-board');
+const cardContainer = document.getElementById('card-container');
+const addTaskBtn = document.getElementById('add-task-btn');
+const manageStatusesBtn = document.getElementById('manage-statuses-btn');
+const manageCategoriesBtn = document.getElementById('manage-categories-btn');
+
+// Modal elements
+const projectModal = document.getElementById('project-modal');
+const manageProjectsModal = document.getElementById('manage-projects-modal');
+const taskModal = document.getElementById('task-modal');
+const statusModal = document.getElementById('status-modal');
+const categoryModal = document.getElementById('category-modal');
+
+// Form elements
+const projectForm = document.getElementById('project-form');
+const taskForm = document.getElementById('task-form');
+const statusForm = document.getElementById('status-form');
+const categoryForm = document.getElementById('category-form');
+
+// Filter elements
+const categoryFilter = document.getElementById('category-filter');
+const statusFilter = document.getElementById('status-filter');
+const kanbanGroupingControls = document.getElementById('kanban-grouping-controls');
+const kanbanGroupBy = document.getElementById('kanban-group-by');
+
+// Local Storage functions
+function saveToLocalStorage() {
+    localStorage.setItem('projectManagerProjects', JSON.stringify(projects));
+}
+
+function getCurrentProject() {
+    return projects.find(p => p.id === currentProjectId);
+}
+
+function getCurrentTasks() {
+    const project = getCurrentProject();
+    return project ? project.tasks : [];
+}
+
+function getCurrentStatuses() {
+    const project = getCurrentProject();
+    return project ? project.statuses : defaultStatuses;
+}
+
+function getCurrentCategories() {
+    const project = getCurrentProject();
+    return project ? project.categories : defaultCategories;
+}
+
+// Project management functions
+function createProject(name, description, color) {
+    const id = Date.now();
+    const newProject = {
+        id: id,
+        name: name,
+        description: description,
+        color: color,
+        createdAt: new Date().toISOString(),
+        tasks: [],
+        statuses: [...defaultStatuses],
+        categories: [...defaultCategories]
+    };
+    projects.push(newProject);
+    saveToLocalStorage();
+    return newProject;
+}
+
+function updateProject(id, name, description, color) {
+    const project = projects.find(p => p.id === id);
+    if (project) {
+        project.name = name;
+        project.description = description;
+        project.color = color;
+        saveToLocalStorage();
+        if (currentProjectId === id) {
+            updateCurrentProjectHeader();
+        }
+    }
+}
+
+function deleteProject(id) {
+    const project = projects.find(p => p.id === id);
+    if (project && confirm(`Are you sure you want to delete "${project.name}"? This will delete all tasks within this project.`)) {
+        projects = projects.filter(p => p.id !== id);
+        saveToLocalStorage();
+        if (currentProjectId === id) {
+            showProjectSelection();
+        }
+        renderProjectsGrid();
+        renderProjectsList();
+    }
+}
+
+function selectProject(id) {
+    currentProjectId = id;
+    showTaskManagement();
+}
+
+// View management
+function showProjectSelection() {
+    currentProjectId = null;
+    projectSelectionView.classList.remove('hidden');
+    taskManagementView.classList.add('hidden');
+    backToProjectsBtn.classList.add('hidden');
+    renderProjectsGrid();
+}
+
+function showTaskManagement() {
+    projectSelectionView.classList.add('hidden');
+    taskManagementView.classList.remove('hidden');
+    backToProjectsBtn.classList.remove('hidden');
+    updateCurrentProjectHeader();
+    updateSelects();
+    showTaskView(listView);
+}
+
+function updateCurrentProjectHeader() {
+    const project = getCurrentProject();
+    if (project) {
+        currentProjectName.textContent = project.name;
+        currentProjectDescription.textContent = project.description || 'No description';
+        updateTaskCount();
+    }
+}
+
+function updateTaskCount() {
+    const tasks = getCurrentTasks();
+    taskCount.textContent = `${tasks.length} task${tasks.length !== 1 ? 's' : ''}`;
+}
+
+// Render functions
+function renderProjectsGrid() {
+    projectsGrid.innerHTML = '';
+    
+    if (projects.length === 0) {
+        projectsGrid.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-500 mb-2">No Projects Yet</h3>
+                <p class="text-gray-400 mb-4">Create your first project to get started</p>
+                <button class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg" onclick="showProjectModal()">
+                    <i class="fas fa-plus mr-2"></i>Create Project
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    projects.forEach(project => {
+        const projectCard = document.createElement('div');
+        projectCard.className = 'project-card bg-white rounded-lg shadow-sm p-6 border-l-4 hover:shadow-md transition-all';
+        projectCard.style.borderLeftColor = project.color;
+        
+        projectCard.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="text-xl font-semibold text-gray-800">${project.name}</h3>
+                <div class="w-4 h-4 rounded-full" style="background-color: ${project.color}"></div>
+            </div>
+            <p class="text-gray-600 mb-4 text-sm">${project.description || 'No description'}</p>
+            <div class="flex justify-between items-center text-sm text-gray-500">
+                <span>${project.tasks.length} task${project.tasks.length !== 1 ? 's' : ''}</span>
+                <span>${new Date(project.createdAt).toLocaleDateString()}</span>
+            </div>
+        `;
+
+        projectCard.addEventListener('click', () => selectProject(project.id));
+        projectsGrid.appendChild(projectCard);
+    });
+}
+
+function renderProjectsList() {
+    const projectsList = document.getElementById('projects-list');
+    projectsList.innerHTML = '';
+
+    projects.forEach(project => {
+        const projectItem = document.createElement('div');
+        projectItem.className = 'project-item flex items-center justify-between p-3 bg-gray-50 rounded-md mb-2';
+        projectItem.innerHTML = `
+            <div class="flex items-center space-x-3 flex-1">
+                <div class="w-4 h-4 rounded-full" style="background-color: ${project.color}"></div>
+                <div>
+                    <div class="font-medium">${project.name}</div>
+                    <div class="text-sm text-gray-500">${project.tasks.length} tasks</div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="edit-project-btn text-blue-600 hover:text-blue-800" data-id="${project.id}">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-project-btn text-red-600 hover:text-red-800" data-id="${project.id}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        projectsList.appendChild(projectItem);
+    });
+
+    // Add event listeners
+    projectsList.querySelectorAll('.edit-project-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            editProject(parseInt(btn.dataset.id));
+        });
+    });
+
+    projectsList.querySelectorAll('.delete-project-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteProject(parseInt(btn.dataset.id));
+        });
+    });
+}
+
+// Task management functions
+function showTaskView(view) {
+    document.querySelectorAll('#task-management-view .view-content').forEach(v => {
+        if (v.id === 'list-view' || v.id === 'kanban-view' || v.id === 'card-view') {
+            v.classList.add('hidden');
+        }
+    });
+    document.querySelectorAll('.view-option').forEach(btn => btn.classList.remove('active'));
+    view.classList.remove('hidden');
+
+    if (view === listView) {
+        listViewBtn.classList.add('active');
+        kanbanGroupingControls.classList.add('hidden');
+        renderListView();
+    } else if (view === kanbanView) {
+        kanbanViewBtn.classList.add('active');
+        kanbanGroupingControls.classList.remove('hidden');
+        renderKanbanView();
+    } else if (view === cardView) {
+        cardViewBtn.classList.add('active');
+        kanbanGroupingControls.classList.add('hidden');
+        renderCardView();
+    }
+}
+
+function renderListView() {
+    const tasks = getFilteredTasks();
+    taskList.innerHTML = '';
+
+    if (tasks.length === 0) {
+        taskList.innerHTML = `
+            <div class="text-center py-12">
+                <i class="fas fa-tasks text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-500 mb-2">No Tasks Yet</h3>
+                <p class="text-gray-400 mb-4">Add your first task to get started</p>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg" onclick="showTaskModal()">
+                    <i class="fas fa-plus mr-2"></i>Add Task
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    tasks.forEach(task => {
+        const taskRow = document.createElement('div');
+        taskRow.className = 'task-row flex items-center p-4 bg-white rounded-lg shadow-sm mb-3 hover:shadow-md transition-all';
+        
+        const status = getCurrentStatuses().find(s => s.id === task.status);
+        const category = getCurrentCategories().find(c => c.id === task.category);
+        
+        taskRow.innerHTML = `
+            <div class="flex items-center space-x-4 flex-1">
+                <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                       onchange="toggleTaskCompletion(${task.id})" 
+                       class="w-5 h-5 text-blue-600 rounded">
+                <div class="flex-1">
+                    <h4 class="font-medium text-gray-800 ${task.completed ? 'line-through' : ''}">${task.title}</h4>
+                    <p class="text-sm text-gray-600 mt-1">${task.description || 'No description'}</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="px-2 py-1 text-xs rounded-full" 
+                          style="background-color: ${status.color}20; color: ${status.color};">
+                        ${status.name}
+                    </span>
+                    <span class="px-2 py-1 text-xs rounded-full" 
+                          style="background-color: ${category.color}20; color: ${category.color};">
+                        ${category.name}
+                    </span>
+                    ${task.dueDate ? `<span class="text-xs text-gray-500">${new Date(task.dueDate).toLocaleDateString()}</span>` : ''}
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        taskList.appendChild(taskRow);
+    });
+}
+
+function renderKanbanView() {
+    const groupBy = kanbanGroupBy.value;
+    const tasks = getFilteredTasks();
+    kanbanBoard.innerHTML = '';
+
+    let groups = [];
+    if (groupBy === 'status') {
+        groups = getCurrentStatuses();
+    } else {
+        groups = getCurrentCategories();
+    }
+
+    groups.forEach(group => {
+        const groupTasks = tasks.filter(task => 
+            groupBy === 'status' ? task.status === group.id : task.category === group.id
+        );
+
+        const column = document.createElement('div');
+        column.className = 'kanban-column bg-gray-50 rounded-lg p-4 min-w-80';
+        column.innerHTML = `
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-800">${group.name}</h3>
+                <span class="bg-gray-200 text-gray-600 px-2 py-1 rounded-full text-sm">${groupTasks.length}</span>
+            </div>
+            <div class="kanban-tasks space-y-3" data-group="${group.id}">
+                ${groupTasks.map(task => createTaskCard(task)).join('')}
+            </div>
+        `;
+        
+        kanbanBoard.appendChild(column);
+    });
+
+    // Add drag and drop functionality
+    addDragAndDrop();
+}
+
+function renderCardView() {
+    const tasks = getFilteredTasks();
+    cardContainer.innerHTML = '';
+
+    if (tasks.length === 0) {
+        cardContainer.innerHTML = `
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-tasks text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-500 mb-2">No Tasks Yet</h3>
+                <p class="text-gray-400 mb-4">Add your first task to get started</p>
+                <button class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg" onclick="showTaskModal()">
+                    <i class="fas fa-plus mr-2"></i>Add Task
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    tasks.forEach(task => {
+        const taskCard = document.createElement('div');
+        taskCard.className = 'task-card bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-all';
+        taskCard.innerHTML = createTaskCard(task, true);
+        cardContainer.appendChild(taskCard);
+    });
+}
+
+function createTaskCard(task, detailed = false) {
+    const status = getCurrentStatuses().find(s => s.id === task.status);
+    const category = getCurrentCategories().find(c => c.id === task.category);
+    
+    return `
+        <div class="task-card-content" data-task-id="${task.id}">
+            <div class="flex items-start justify-between mb-3">
+                <h4 class="font-medium text-gray-800 ${task.completed ? 'line-through' : ''}">${task.title}</h4>
+                <div class="flex items-center space-x-2">
+                    <button onclick="editTask(${task.id})" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteTask(${task.id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${task.description ? `<p class="text-sm text-gray-600 mb-3">${task.description}</p>` : ''}
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="px-2 py-1 text-xs rounded-full" 
+                          style="background-color: ${status.color}20; color: ${status.color};">
+                        ${status.name}
+                    </span>
+                    <span class="px-2 py-1 text-xs rounded-full" 
+                          style="background-color: ${category.color}20; color: ${category.color};">
+                        ${category.name}
+                    </span>
+                </div>
+                <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                       onchange="toggleTaskCompletion(${task.id})" 
+                       class="w-4 h-4 text-blue-600 rounded">
+            </div>
+            ${task.dueDate ? `<div class="mt-2 text-xs text-gray-500">Due: ${new Date(task.dueDate).toLocaleDateString()}</div>` : ''}
+        </div>
+    `;
+}
+
+// Task CRUD functions
+function createTask(title, description, category, status, dueDate, priority) {
+    const project = getCurrentProject();
+    if (!project) return;
+
+    const id = Date.now();
+    const newTask = {
+        id: id,
+        title: title,
+        description: description,
+        category: category,
+        status: status,
+        dueDate: dueDate,
+        priority: priority || 'medium',
+        completed: false,
+        createdAt: new Date().toISOString()
+    };
+
+    project.tasks.push(newTask);
+    saveToLocalStorage();
+    updateTaskCount();
+    refreshCurrentView();
+    return newTask;
+}
+
+function updateTask(id, title, description, category, status, dueDate, priority) {
+    const project = getCurrentProject();
+    if (!project) return;
+
+    const task = project.tasks.find(t => t.id === id);
+    if (task) {
+        task.title = title;
+        task.description = description;
+        task.category = category;
+        task.status = status;
+        task.dueDate = dueDate;
+        task.priority = priority;
+        saveToLocalStorage();
+        refreshCurrentView();
+    }
+}
+
+function deleteTask(id) {
+    const project = getCurrentProject();
+    if (!project) return;
+
+    const task = project.tasks.find(t => t.id === id);
+    if (task && confirm(`Are you sure you want to delete "${task.title}"?`)) {
+        project.tasks = project.tasks.filter(t => t.id !== id);
+        saveToLocalStorage();
+        updateTaskCount();
+        refreshCurrentView();
+    }
+}
+
+function toggleTaskCompletion(id) {
+    const project = getCurrentProject();
+    if (!project) return;
+
+    const task = project.tasks.find(t => t.id === id);
+    if (task) {
+        task.completed = !task.completed;
+        saveToLocalStorage();
+        refreshCurrentView();
+    }
+}
+
+// Filter functions
+function getFilteredTasks() {
+    const tasks = getCurrentTasks();
+    const categoryFilterValue = categoryFilter.value;
+    const statusFilterValue = statusFilter.value;
+
+    return tasks.filter(task => {
+        const categoryMatch = !categoryFilterValue || task.category === categoryFilterValue;
+        const statusMatch = !statusFilterValue || task.status === statusFilterValue;
+        return categoryMatch && statusMatch;
+    });
+}
+
+function refreshCurrentView() {
+    const activeView = document.querySelector('#task-management-view .view-content:not(.hidden)');
+    if (activeView === listView) {
+        renderListView();
+    } else if (activeView === kanbanView) {
+        renderKanbanView();
+    } else if (activeView === cardView) {
+        renderCardView();
+    }
+}
+
+// Modal functions
+function showProjectModal(projectId = null) {
+    const isEdit = projectId !== null;
+    const project = isEdit ? projects.find(p => p.id === projectId) : null;
+    
+    document.getElementById('project-modal-title').textContent = isEdit ? 'Edit Project' : 'Create Project';
+    document.getElementById('project-name').value = isEdit ? project.name : '';
+    document.getElementById('project-description').value = isEdit ? project.description : '';
+    document.getElementById('project-color').value = isEdit ? project.color : '#3b82f6';
+    
+    projectForm.onsubmit = (e) => {
+        e.preventDefault();
+        const name = document.getElementById('project-name').value;
+        const description = document.getElementById('project-description').value;
+        const color = document.getElementById('project-color').value;
+        
+        if (isEdit) {
+            updateProject(projectId, name, description, color);
+        } else {
+            createProject(name, description, color);
+        }
+        
+        closeModal(projectModal);
+        renderProjectsGrid();
+        renderProjectsList();
+    };
+    
+    projectModal.classList.remove('hidden');
+}
+
+function showTaskModal(taskId = null) {
+    const isEdit = taskId !== null;
+    const task = isEdit ? getCurrentTasks().find(t => t.id === taskId) : null;
+    
+    document.getElementById('task-modal-title').textContent = isEdit ? 'Edit Task' : 'Create Task';
+    document.getElementById('task-title').value = isEdit ? task.title : '';
+    document.getElementById('task-description').value = isEdit ? task.description : '';
+    document.getElementById('task-category').value = isEdit ? task.category : getCurrentCategories()[0].id;
+    document.getElementById('task-status').value = isEdit ? task.status : getCurrentStatuses()[0].id;
+    document.getElementById('task-due-date').value = isEdit && task.dueDate ? task.dueDate.split('T')[0] : '';
+    document.getElementById('task-priority').value = isEdit ? task.priority : 'medium';
+    
+    taskForm.onsubmit = (e) => {
+        e.preventDefault();
+        const title = document.getElementById('task-title').value;
+        const description = document.getElementById('task-description').value;
+        const category = document.getElementById('task-category').value;
+        const status = document.getElementById('task-status').value;
+        const dueDate = document.getElementById('task-due-date').value;
+        const priority = document.getElementById('task-priority').value;
+        
+        if (isEdit) {
+            updateTask(taskId, title, description, category, status, dueDate, priority);
+        } else {
+            createTask(title, description, category, status, dueDate, priority);
+        }
+        
+        closeModal(taskModal);
+    };
+    
+    taskModal.classList.remove('hidden');
+}
+
+function editProject(id) {
+    showProjectModal(id);
+}
+
+function editTask(id) {
+    showTaskModal(id);
+}
+
+function closeModal(modal) {
+    modal.classList.add('hidden');
+}
+
+// Update selects for current project
+function updateSelects() {
+    updateCategoryFilter();
+    updateStatusFilter();
+    updateTaskFormSelects();
+}
+
+function updateCategoryFilter() {
+    const categories = getCurrentCategories();
+    categoryFilter.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        categoryFilter.appendChild(option);
+    });
+}
+
+function updateStatusFilter() {
+    const statuses = getCurrentStatuses();
+    statusFilter.innerHTML = '<option value="">All Statuses</option>';
+    statuses.forEach(status => {
+        const option = document.createElement('option');
+        option.value = status.id;
+        option.textContent = status.name;
+        statusFilter.appendChild(option);
+    });
+}
+
+function updateTaskFormSelects() {
+    const taskCategorySelect = document.getElementById('task-category');
+    const taskStatusSelect = document.getElementById('task-status');
+    
+    if (taskCategorySelect) {
+        taskCategorySelect.innerHTML = '';
+        getCurrentCategories().forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            taskCategorySelect.appendChild(option);
+        });
+    }
+    
+    if (taskStatusSelect) {
+        taskStatusSelect.innerHTML = '';
+        getCurrentStatuses().forEach(status => {
+            const option = document.createElement('option');
+            option.value = status.id;
+            option.textContent = status.name;
+            taskStatusSelect.appendChild(option);
+        });
+    }
+}
+
+// Drag and drop functionality
+function addDragAndDrop() {
+    const taskCards = document.querySelectorAll('.task-card-content');
+    const kanbanColumns = document.querySelectorAll('.kanban-tasks');
+    
+    taskCards.forEach(card => {
+        card.draggable = true;
+        card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', card.dataset.taskId);
+            card.classList.add('opacity-50');
+        });
+        
+        card.addEventListener('dragend', () => {
+            card.classList.remove('opacity-50');
+        });
+    });
+    
+    kanbanColumns.forEach(column => {
+        column.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            column.classList.add('bg-blue-50');
+        });
+        
+        column.addEventListener('dragleave', () => {
+            column.classList.remove('bg-blue-50');
+        });
+        
+        column.addEventListener('drop', (e) => {
+            e.preventDefault();
+            column.classList.remove('bg-blue-50');
+            
+            const taskId = parseInt(e.dataTransfer.getData('text/plain'));
+            const newGroupValue = column.dataset.group;
+            const groupBy = kanbanGroupBy.value;
+            
+            const project = getCurrentProject();
+            const task = project.tasks.find(t => t.id === taskId);
+            
+            if (task) {
+                if (groupBy === 'status') {
+                    task.status = newGroupValue;
+                } else {
+                    task.category = newGroupValue;
+                }
+                saveToLocalStorage();
+                renderKanbanView();
+            }
+        });
+    });
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // View buttons
+    listViewBtn?.addEventListener('click', () => showTaskView(listView));
+    kanbanViewBtn?.addEventListener('click', () => showTaskView(kanbanView));
+    cardViewBtn?.addEventListener('click', () => showTaskView(cardView));
+    
+    // Navigation buttons
+    backToProjectsBtn?.addEventListener('click', showProjectSelection);
+    manageProjectsBtn?.addEventListener('click', () => {
+        renderProjectsList();
+        manageProjectsModal.classList.remove('hidden');
+    });
+    
+    // Add buttons
+    addTaskBtn?.addEventListener('click', () => showTaskModal());
+    
+    // Filter changes
+    categoryFilter?.addEventListener('change', refreshCurrentView);
+    statusFilter?.addEventListener('change', refreshCurrentView);
+    kanbanGroupBy?.addEventListener('change', renderKanbanView);
+    
+    // Modal close buttons
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modal = e.target.closest('.modal');
+            closeModal(modal);
+        });
+    });
+    
+    // Modal backdrop clicks
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal(modal);
+            }
+        });
+    });
+    
+    // Initialize app
+    showProjectSelection();
+});
+  
+  
+  
+  
+  
+  
+  
+ 
+  </script>
