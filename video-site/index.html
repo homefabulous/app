@@ -1,0 +1,1079 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimeVerse - Free Anime Streaming</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00a8ff;
+            --secondary: #1e272e;
+            --dark: #0e1621;
+            --light: #f5f6fa;
+            --accent: #00d2d3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+        }
+
+        /* Header */
+        .header {
+            background-color: rgba(14, 22, 33, 0.95);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            color: var(--primary);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo i {
+            margin-right: 10px;
+            font-size: 28px;
+        }
+
+        .search-box {
+            width: 50%;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 25px;
+            border: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            outline: none;
+        }
+
+        .search-box button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--light);
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 100px 5% 30px;
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title h2 {
+            color: var(--light);
+            font-size: 22px;
+        }
+
+        .section-title a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .anime-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .anime-card {
+            background-color: var(--secondary);
+            border-radius: 5px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .anime-poster {
+            position: relative;
+        }
+
+        .anime-poster img {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .episode-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .anime-info {
+            padding: 10px;
+        }
+
+        .anime-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .anime-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            font-size: 12px;
+        }
+
+        /* Anime Details Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1001;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: var(--secondary);
+            margin: 50px auto;
+            max-width: 1000px;
+            border-radius: 5px;
+            overflow: hidden;
+            animation: modalOpen 0.4s;
+        }
+
+        @keyframes modalOpen {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            color: var(--primary);
+            font-size: 20px;
+        }
+
+        .close-modal {
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+        }
+
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .anime-details {
+            display: flex;
+            padding: 15px;
+            gap: 20px;
+        }
+
+        .poster-col {
+            flex: 0 0 250px;
+        }
+
+        .poster-col img {
+            width: 100%;
+            border-radius: 5px;
+        }
+
+        .details-col {
+            flex: 1;
+        }
+
+        .anime-title-large {
+            color: var(--light);
+            margin-bottom: 10px;
+            font-size: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .anime-meta-large {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: #aaa;
+        }
+
+        .anime-description {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .anime-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .genre-tag {
+            background-color: rgba(0, 168, 255, 0.2);
+            color: var(--primary);
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .modal-player {
+            width: 100%;
+            height: 500px;
+            background-color: black;
+        }
+
+        .modal-player iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .episode-list {
+            padding: 15px;
+        }
+
+        .episode-list-title {
+            margin-bottom: 15px;
+            color: var(--light);
+            font-size: 18px;
+        }
+
+        .episodes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+        }
+
+        .episode-btn {
+            background-color: var(--dark);
+            color: var(--light);
+            border: none;
+            padding: 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+
+        .episode-btn:hover {
+            background-color: var(--primary);
+        }
+
+        .episode-btn.active {
+            background-color: var(--primary);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--secondary);
+            padding: 30px 5%;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        .copyright {
+            color: #aaa;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .anime-list {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .modal-content {
+                width: 90%;
+            }
+
+            .anime-details {
+                flex-direction: column;
+            }
+
+            .poster-col {
+                flex: initial;
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .nav-links {
+                gap: 15px;
+            }
+
+            .main-content {
+                padding: 150px 5% 30px;
+            }
+
+            .modal-player {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .anime-list {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .episodes {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-play-circle"></i>
+            <span>AnimeVerse</span>
+        </div>
+        <div class="search-box">
+            <input type="text" placeholder="Search anime...">
+            <button><i class="fas fa-search"></i></button>
+        </div>
+        <nav class="nav-links">
+            <a href="#" class="active">Home</a>
+            <a href="#">Popular</a>
+            <a href="#">New Releases</a>
+            <a href="#">Genres</a>
+            <a href="#">Movies</a>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Recently Updated -->
+        <div class="section">
+            <div class="section-title">
+                <h2>Recently Updated</h2>
+                <a href="#">View All</a>
+            </div>
+            <div class="anime-list" id="recent-anime">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Popular Anime -->
+        <div class="section">
+            <div class="section-title">
+                <h2>Popular Anime</h2>
+                <a href="#">View All</a>
+            </div>
+            <div class="anime-list" id="popular-anime">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- New Releases -->
+        <div class="section">
+            <div class="section-title">
+                <h2>New Releases</h2>
+                <a href="#">View All</a>
+            </div>
+            <div class="anime-list" id="new-anime">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Anime Movies -->
+        <div class="section">
+            <div class="section-title">
+                <h2>Anime Movies</h2>
+                <a href="#">View All</a>
+            </div>
+            <div class="anime-list" id="movies-anime">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">DMCA</a>
+            <a href="#">Contact</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+        </div>
+        <p class="copyright">
+            © 2023 AnimeVerse. All rights reserved.<br>
+            Disclaimer: This site does not host any videos. All videos are embedded from other sites.
+        </p>
+    </footer>
+
+    <!-- Anime Details Modal -->
+    <div id="animeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalAnimeTitle">Anime Title</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="anime-details">
+                    <div class="poster-col">
+                        <img id="modalPoster" src="" alt="Anime Poster">
+                    </div>
+                    <div class="details-col">
+                        <h1 class="anime-title-large" id="modalAnimeTitle2">Anime Title</h1>
+                        <div class="anime-meta-large" id="modalAnimeMeta"></div>
+                        <p class="anime-description" id="modalAnimeDesc">Loading description...</p>
+                        <div class="anime-genres" id="modalAnimeGenres"></div>
+                    </div>
+                </div>
+                <div class="modal-player" id="animePlayer">
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100%; color: white;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <div class="episode-list">
+                    <h3 class="episode-list-title">Episodes</h3>
+                    <div class="episodes" id="episodeList">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample anime data with streaming links
+        const animeData = [
+            {
+                id: 1,
+                title: "One Piece",
+                poster: "https://cdn.myanimelist.net/images/anime/6/73245.jpg",
+                year: "1999",
+                episodes: "1000+",
+                status: "Ongoing",
+                type: "TV",
+                genres: ["Action", "Adventure", "Comedy", "Fantasy"],
+                description: "Monkey D. Luffy wants to become the King of all Pirates. Along his quest he meets many friends and fights against foes to fulfill his dream.",
+                popular: true,
+                recent: true,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/one-piece-episode-1",
+                    "https://gogoanime.sk//watch/one-piece-episode-2",
+                    "https://gogoanime.sk//watch/one-piece-episode-3",
+                    "https://gogoanime.sk//watch/one-piece-episode-4",
+                    "https://gogoanime.sk//watch/one-piece-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/LHTYpWI3S6Q",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 2,
+                title: "Demon Slayer",
+                poster: "https://cdn.myanimelist.net/images/anime/1286/99889.jpg",
+                year: "2019",
+                episodes: "26",
+                status: "Completed",
+                type: "TV",
+                genres: ["Action", "Fantasy", "Supernatural"],
+                description: "After his family is brutally murdered and his sister turned into a demon, Tanjiro Kamado becomes a demon slayer to restore her humanity.",
+                popular: true,
+                recent: false,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/kimetsu-no-yaiba-episode-1",
+                    "https://gogoanime.sk//watch/kimetsu-no-yaiba-episode-2",
+                    "https://gogoanime.sk//watch/kimetsu-no-yaiba-episode-3",
+                    "https://gogoanime.sk//watch/kimetsu-no-yaiba-episode-4",
+                    "https://gogoanime.sk//watch/kimetsu-no-yaiba-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/VQGCKyvzIM4",
+                    "https://www.youtube.com/embed/8QE9cmfxx4s",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 3,
+                title: "Jujutsu Kaisen",
+                poster: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg",
+                year: "2020",
+                episodes: "24",
+                status: "Completed",
+                type: "TV",
+                genres: ["Action", "Supernatural", "Demons"],
+                description: "Yuji Itadori swallows a cursed object and becomes host to a powerful curse. To save the world, he trains to become a Jujutsu sorcerer.",
+                popular: true,
+                recent: true,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/jujutsu-kaisen-tv-episode-1",
+                    "https://gogoanime.sk//watch/jujutsu-kaisen-tv-episode-2",
+                    "https://gogoanime.sk//watch/jujutsu-kaisen-tv-episode-3",
+                    "https://gogoanime.sk//watch/jujutsu-kaisen-tv-episode-4",
+                    "https://gogoanime.sk//watch/jujutsu-kaisen-tv-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/pkKu9hLT-x4",
+                    "https://www.youtube.com/embed/WJ0X6B-7gHk",
+                    "https://www.youtube.com/embed/0q5_BlRH3Ao",
+                    "https://www.youtube.com/embed/pOeuF77HrYk",
+                    "https://www.youtube.com/embed/3mDw1OtlW1A"
+                ]
+            },
+            {
+                id: 4,
+                title: "Attack on Titan",
+                poster: "https://cdn.myanimelist.net/images/anime/10/47347.jpg",
+                year: "2013",
+                episodes: "88",
+                status: "Completed",
+                type: "TV",
+                genres: ["Action", "Drama", "Fantasy", "Military"],
+                description: "Humanity lives in fear of the giant Titans who devour them. Eren Yeager joins the fight against them after they destroy his home and kill his mother.",
+                popular: true,
+                recent: false,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/shingeki-no-kyojin-episode-1",
+                    "https://gogoanime.sk//watch/shingeki-no-kyojin-episode-2",
+                    "https://gogoanime.sk//watch/shingeki-no-kyojin-episode-3",
+                    "https://gogoanime.sk//watch/shingeki-no-kyojin-episode-4",
+                    "https://gogoanime.sk//watch/shingeki-no-kyojin-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/LHTYpWI3S6Q",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 5,
+                title: "Spy x Family",
+                poster: "https://cdn.myanimelist.net/images/anime/1441/122795.jpg",
+                year: "2022",
+                episodes: "25",
+                status: "Ongoing",
+                type: "TV",
+                genres: ["Action", "Comedy", "Slice of Life"],
+                description: "A spy builds a fake family as cover, but doesn't realize his wife is an assassin and daughter a telepath. A humorous tale of an unconventional family.",
+                popular: true,
+                recent: true,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/spy-x-family-episode-1",
+                    "https://gogoanime.sk//watch/spy-x-family-episode-2",
+                    "https://gogoanime.sk//watch/spy-x-family-episode-3",
+                    "https://gogoanime.sk//watch/spy-x-family-episode-4",
+                    "https://gogoanime.sk//watch/spy-x-family-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/VQGCKyvzIM4",
+                    "https://www.youtube.com/embed/8QE9cmfxx4s",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 6,
+                title: "Death Note",
+                poster: "https://cdn.myanimelist.net/images/anime/9/9453.jpg",
+                year: "2006",
+                episodes: "37",
+                status: "Completed",
+                type: "TV",
+                genres: ["Mystery", "Psychological", "Supernatural", "Thriller"],
+                description: "A high schooler gains a notebook that can kill anyone whose name is written in it, and sets out to create a utopian world by killing criminals.",
+                popular: true,
+                recent: false,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/death-note-episode-1",
+                    "https://gogoanime.sk//watch/death-note-episode-2",
+                    "https://gogoanime.sk//watch/death-note-episode-3",
+                    "https://gogoanime.sk//watch/death-note-episode-4",
+                    "https://gogoanime.sk//watch/death-note-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/NlJZ-YgAt-c",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 7,
+                title: "Your Name",
+                poster: "https://cdn.myanimelist.net/images/anime/5/87048.jpg",
+                year: "2016",
+                episodes: "1",
+                status: "Completed",
+                type: "Movie",
+                genres: ["Drama", "Romance", "Supernatural"],
+                description: "Two teenagers discover they are swapping bodies and must uncover the mystery of their connection.",
+                popular: true,
+                recent: false,
+                movie: true,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/kimi-no-na-wa"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/3KR8_igDs1Y"
+                ]
+            },
+            {
+                id: 8,
+                title: "My Hero Academia",
+                poster: "https://cdn.myanimelist.net/images/anime/10/78745.jpg",
+                year: "2016",
+                episodes: "113",
+                status: "Ongoing",
+                type: "TV",
+                genres: ["Action", "Superhero"],
+                description: "In a world where people have superpowers, a boy born powerless dreams of becoming a hero like his idol, the #1 hero All Might.",
+                popular: true,
+                recent: true,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/boku-no-hero-academia-episode-1",
+                    "https://gogoanime.sk//watch/boku-no-hero-academia-episode-2",
+                    "https://gogoanime.sk//watch/boku-no-hero-academia-episode-3",
+                    "https://gogoanime.sk//watch/boku-no-hero-academia-episode-4",
+                    "https://gogoanime.sk//watch/boku-no-hero-academia-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/wIb3nnOeves",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 9,
+                title: "Chainsaw Man",
+                poster: "https://cdn.myanimelist.net/images/anime/1806/126216.jpg",
+                year: "2022",
+                episodes: "12",
+                status: "Completed",
+                type: "TV",
+                genres: ["Action", "Horror", "Supernatural"],
+                description: "Denji, a poor devil hunter, merges with his pet devil and becomes Chainsaw Man. He is recruited by the government to hunt other devils.",
+                popular: true,
+                recent: true,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/chainsaw-man-episode-1",
+                    "https://gogoanime.sk//watch/chainsaw-man-episode-2",
+                    "https://gogoanime.sk//watch/chainsaw-man-episode-3",
+                    "https://gogoanime.sk//watch/chainsaw-man-episode-4",
+                    "https://gogoanime.sk//watch/chainsaw-man-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/FpKQFvA-x9E",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 10,
+                title: "A Silent Voice",
+                poster: "https://cdn.myanimelist.net/images/anime/1122/96435.jpg",
+                year: "2016",
+                episodes: "1",
+                status: "Completed",
+                type: "Movie",
+                genres: ["Drama", "Romance"],
+                description: "A former bully tries to make amends with the deaf girl he tormented in elementary school.",
+                popular: true,
+                recent: false,
+                movie: true,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/koe-no-katachi"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/ngTI0L_3C7Q"
+                ]
+            },
+            {
+                id: 11,
+                title: "Naruto Shippuden",
+                poster: "https://cdn.myanimelist.net/images/anime/1565/111305.jpg",
+                year: "2007",
+                episodes: "500",
+                status: "Completed",
+                type: "TV",
+                genres: ["Action", "Adventure", "Martial Arts"],
+                description: "Naruto returns after two years of training, ready to face stronger enemies and fulfill his dream of becoming Hokage.",
+                popular: true,
+                recent: false,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/naruto-shippuden-episode-1",
+                    "https://gogoanime.sk//watch/naruto-shippuden-episode-2",
+                    "https://gogoanime.sk//watch/naruto-shippuden-episode-3",
+                    "https://gogoanime.sk//watch/naruto-shippuden-episode-4",
+                    "https://gogoanime.sk//watch/naruto-shippuden-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/HcptF1qUU7U",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            },
+            {
+                id: 12,
+                title: "The Promised Neverland",
+                poster: "https://cdn.myanimelist.net/images/anime/1171/109222.jpg",
+                year: "2019",
+                episodes: "23",
+                status: "Completed",
+                type: "TV",
+                genres: ["Mystery", "Psychological", "Thriller"],
+                description: "Orphans in a too-good-to-be-true home discover the horrifying truth behind their existence and plot an escape.",
+                popular: true,
+                recent: false,
+                movie: false,
+                episodeLinks: [
+                    "https://gogoanime.sk//watch/yakusoku-neverland-episode-1",
+                    "https://gogoanime.sk//watch/yakusoku-neverland-episode-2",
+                    "https://gogoanime.sk//watch/yakusoku-neverland-episode-3",
+                    "https://gogoanime.sk//watch/yakusoku-neverland-episode-4",
+                    "https://gogoanime.sk//watch/yakusoku-neverland-episode-5"
+                ],
+                embedLinks: [
+                    "https://www.youtube.com/embed/ApbLZu3-0Ns",
+                    "https://www.youtube.com/embed/CpvHyqZ9Qfc",
+                    "https://www.youtube.com/embed/h24gLK0E1SQ",
+                    "https://www.youtube.com/embed/Q2CkPB0s8HU",
+                    "https://www.youtube.com/embed/s8Mk7z4RxvQ"
+                ]
+            }
+        ];
+
+        // DOM Elements
+        const recentAnimeGrid = document.getElementById('recent-anime');
+        const popularAnimeGrid = document.getElementById('popular-anime');
+        const newAnimeGrid = document.getElementById('new-anime');
+        const moviesAnimeGrid = document.getElementById('movies-anime');
+        const searchInput = document.querySelector('.search-box input');
+        const searchButton = document.querySelector('.search-box button');
+        const modal = document.getElementById('animeModal');
+        const closeModal = document.querySelector('.close-modal');
+        const animePlayer = document.getElementById('animePlayer');
+        const episodeList = document.getElementById('episodeList');
+
+        // Current anime being viewed
+        let currentAnime = null;
+
+        // Initialize the page
+        function init() {
+            populateAnimeGrids();
+            setupEventListeners();
+        }
+
+        // Populate all anime grids
+        function populateAnimeGrids() {
+            // Recently Updated - First 6 anime with recent flag
+            const recentAnime = animeData.filter(anime => anime.recent).slice(0, 6);
+            populateGrid(recentAnime, recentAnimeGrid);
+
+            // Popular Anime - First 6 anime with popular flag
+            const popularAnime = animeData.filter(anime => anime.popular).slice(0, 6);
+            populateGrid(popularAnime, popularAnimeGrid);
+
+            // New Releases - First 6 anime with year >= 2022 (recent releases)
+            const newAnime = animeData.filter(anime => anime.year >= 2022).slice(0, 6);
+            populateGrid(newAnime, newAnimeGrid);
+
+            // Movies - All anime with movie flag
+            const movies = animeData.filter(anime => anime.movie).slice(0, 6);
+            populateGrid(movies, moviesAnimeGrid);
+        }
+
+        // Populate a single anime grid
+        function populateGrid(animeList, gridElement) {
+            gridElement.innerHTML = '';
+            
+            animeList.forEach(anime => {
+                const animeCard = createAnimeCard(anime);
+                gridElement.appendChild(animeCard);
+            });
+        }
+
+        // Create an anime card element
+        function createAnimeCard(anime) {
+            const card = document.createElement('div');
+            card.className = 'anime-card';
+            card.dataset.id = anime.id;
+            
+            card.innerHTML = `
+                <div class="anime-poster">
+                    <img src="${anime.poster}" alt="${anime.title}">
+                    <span class="episode-badge">${anime.episodes}</span>
+                </div>
+                <div class="anime-info">
+                    <h3 class="anime-title">${anime.title}</h3>
+                    <div class="anime-meta">
+                        <span>${anime.year}</span>
+                        <span>${anime.type}</span>
+                    </div>
+                </div>
+            `;
+            
+            card.addEventListener('click', () => openAnimeModal(anime.id));
+            return card;
+        }
+
+        // Open anime modal with details
+        function openAnimeModal(animeId) {
+            const anime = animeData.find(a => a.id === animeId);
+            if (!anime) return;
+            
+            currentAnime = anime;
+            
+            // Set modal content
+            document.getElementById('modalAnimeTitle').textContent = anime.title;
+            document.getElementById('modalAnimeTitle2').textContent = anime.title;
+            document.getElementById('modalPoster').src = anime.poster;
+            
+            const metaInfo = document.getElementById('modalAnimeMeta');
+            metaInfo.innerHTML = `
+                <span>${anime.year}</span> •
+                <span>${anime.type}</span> •
+                <span>${anime.status}</span> •
+                <span>${anime.episodes}</span>
+            `;
+            
+            document.getElementById('modalAnimeDesc').textContent = anime.description;
+            
+            const genresContainer = document.getElementById('modalAnimeGenres');
+            genresContainer.innerHTML = '';
+            anime.genres.forEach(genre => {
+                const genreTag = document.createElement('span');
+                genreTag.className = 'genre-tag';
+                genreTag.textContent = genre;
+                genresContainer.appendChild(genreTag);
+            });
+            
+            // Populate episodes
+            episodeList.innerHTML = '';
+            for (let i = 0; i < anime.embedLinks.length; i++) {
+                const epNum = i + 1;
+                const epBtn = document.createElement('button');
+                epBtn.className = 'episode-btn' + (i === 0 ? ' active' : '');
+                epBtn.textContent = anime.movie ? 'Movie' : `Ep ${epNum}`;
+                epBtn.dataset.episode = i;
+                episodeList.appendChild(epBtn);
+                
+                epBtn.addEventListener('click', () => {
+                    // Set this button as active
+                    document.querySelectorAll('.episode-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    epBtn.classList.add('active');
+                    
+                    // Load the episode
+                    loadEpisode(i);
+                });
+            }
+            
+            // Open modal
+            modal.style.display = 'block';
+            
+            // Load the first episode by default
+            setTimeout(() => {
+                loadEpisode(0);
+            }, 300);
+        }
+
+        // Load an episode into the player
+        function loadEpisode(episodeIndex) {
+            if (!currentAnime || episodeIndex >= currentAnime.embedLinks.length) return;
+            
+            // Show loading spinner
+            animePlayer.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; height: 100%; color: white;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
+                </div>
+            `;
+            
+            // Load the embed after a short delay (simulating network request)
+            setTimeout(() => {
+                const embedLink = currentAnime.embedLinks[episodeIndex];
+                animePlayer.innerHTML = `
+                    <iframe src="${embedLink}" allowfullscreen></iframe>
+                `;
+            }, 800);
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Close modal when clicking X
+            closeModal.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // Search functionality
+            searchButton.addEventListener('click', searchAnime);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    searchAnime();
+                }
+            });
+        }
+
+        // Search anime function
+        function searchAnime() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            
+            if (!searchTerm) {
+                populateAnimeGrids();
+                return;
+            }
+            
+            const results = animeData.filter(anime => 
+                anime.title.toLowerCase().includes(searchTerm)
+            );
+            
+            const mainContent = document.querySelector('.main-content');
+            mainContent.innerHTML = `
+                <div class="section">
+                    <div class="section-title">
+                        <h2>Search Results for "${searchTerm}"</h2>
+                    </div>
+                    <div class="anime-list" id="search-results"></div>
+                </div>
+            `;
+            
+            const searchResultsGrid = document.getElementById('search-results');
+            if (results.length === 0) {
+                searchResultsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 50px;">No results found</p>';
+            } else {
+                populateGrid(results, searchResultsGrid);
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
