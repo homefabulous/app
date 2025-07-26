@@ -1,0 +1,169 @@
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Extract Google Form Fields | PQVST</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Extract Google Form Fields" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="I build things" />
+<meta property="og:description" content="I build things" />
+<link rel="canonical" href="https://pqvst.com/tools/extract-google-form-fields/" />
+<meta property="og:url" content="https://pqvst.com/tools/extract-google-form-fields/" />
+<meta property="og:site_name" content="PQVST" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Extract Google Form Fields" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"I build things","headline":"Extract Google Form Fields","url":"https://pqvst.com/tools/extract-google-form-fields/"}</script>
+<!-- End Jekyll SEO tag -->
+
+
+    <!-- https://formito.com/tools/favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22256%22 height=%22256%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230083ff%22></rect><path fill=%22%23fff%22 d=%22M40.48 77.92L28.32 77.92L28.32 22.08L54.72 22.08Q58.64 22.08 61.76 23.40Q64.88 24.72 67.08 27.04Q69.28 29.36 70.48 32.68Q71.68 36 71.68 39.92L71.68 39.92Q71.68 43.92 70.48 47.20Q69.28 50.48 67.08 52.80Q64.88 55.12 61.76 56.44Q58.64 57.76 54.72 57.76L54.72 57.76L40.48 57.76L40.48 77.92ZM40.48 32.64L40.48 47.20L53.28 47.20Q56 47.20 57.56 45.80Q59.12 44.40 59.12 41.68L59.12 41.68L59.12 38.16Q59.12 35.44 57.56 34.04Q56 32.64 53.28 32.64L53.28 32.64L40.48 32.64Z%22></path></svg>" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/0.5.0/modern-normalize.min.css">
+    <link href="/assets/css/github-markdown-light.css" rel="stylesheet">
+    <link href="/assets/css/style.css" rel="stylesheet">
+    <link href="/assets/css/syntax.css" rel="stylesheet">
+
+    <link rel="alternate" type="application/atom+xml" title="PQVST" href="/feed.xml" />
+    
+    
+    <script defer data-domain="pqvst.com" src="https://plausible.io/js/script.js"></script>
+    
+
+  </head>
+  <body>
+    <div class="wrap">
+
+      
+
+      <main>
+<h1 id="extract-google-form-fields">Extract Google Form Fields</h1>
+<p>This is a simple tool that helps you extract your Google Form field names.</p>
+
+<ol>
+  <li>Open your Google Form (in preview mode, not in edit mode)</li>
+  <li>Select all using cmd/ctrl+A and copy using cmd/ctrl+C</li>
+  <li>Paste here using cmd/ctrl+V</li>
+</ol>
+
+<section class="paste">
+  Copy-Paste your Google Form here...
+  <div id="error"></div>
+</section>
+
+<section id="results">
+  <pre><code id="list"></code></pre>
+</section>
+
+<p><em>Note: All processing is performed in the client (your form data is not sent anywhere). Take a look at the page source to see the implementation. Tested with Chrome, Firefox, Opera, and Safari.</em></p>
+
+<style>
+  .paste {
+    border: dashed 1px black;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+
+  #error {
+    color: red;
+  }
+
+  input[type=text] {
+    width: 100%;
+    border: solid 2px #ccc;
+    border-radius: 8px;
+    padding: 8px;
+  }
+
+  #results {
+    display: none;
+  }
+
+  pre {
+    border-radius: 8px;
+    background: #eee;
+    padding: 15px 20px;
+    font-size: 1em;
+  }
+  body{
+    padding: 100px;
+  }
+</style>
+
+<script>
+  (function () {
+
+    function decodeHtml(html) {
+      var txt = document.createElement('textarea');
+      txt.innerHTML = html;
+      return txt.value;
+    }
+
+    function load(data) {
+      
+      const token = 'data-params="%.@.';
+
+      const questions = [];
+
+      let pos;
+      while ((pos = data.indexOf(token, pos + 1)) > -1) {
+        const start = pos + token.length;
+        const end = data.indexOf('"', start);
+        const json = decodeHtml(data.slice(start, end));
+        const params = JSON.parse('[' + json);
+        const id = params[0][4][0][0];
+        const label = params[0][1];
+        if (!questions.find(e => e.id == id)) {
+          questions.push({
+            label: params[0][1],
+            id: params[0][4][0][0],
+          });
+        }
+      }
+
+      if (questions.length == 0) {
+        results.style.display = 'none';
+        error.innerText = 'Are you sure you pasted your Google Form? Open your Google Form preview, press Ctrl/Cmd+A to select the entire page, then press Cmd+C to copy the page. Press Cmd+V here.';
+      } else {
+        error.innerText = '';
+        results.style.display = 'block';
+        list.innerText = questions.map(q => `entry.${q.id}: ${q.label}`).join('\n');
+      }
+    }
+
+    document.addEventListener('paste', async (ev) => {
+      ev = (ev.originalEvent || ev);
+      if (ev.target.nodeName === 'INPUT') {
+        return;
+      }
+      ev.preventDefault();
+      let data = ev.clipboardData.getData('text/html');
+      if (!data) {
+        data = ev.clipboardData.getData('text/plain');
+      }
+      if (data) {
+        load(data);
+      }
+    });
+
+  })();
+</script>
+
+</main>
+      
+    </div>
+   
+  </body>
+</html>
