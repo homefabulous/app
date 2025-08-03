@@ -1,0 +1,1017 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PurpleTask - Modern Task Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .priority-high { border-left: 4px solid #ef4444; }
+        .priority-medium { border-left: 4px solid #f59e0b; }
+        .priority-low { border-left: 4px solid #10b981; }
+        .priority-none { border-left: 4px solid #d1d5db; }
+        
+        .task-completed {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+        
+        .calendar-day.has-tasks {
+            position: relative;
+        }
+        
+        .calendar-day.has-tasks::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            background-color: #8b5cf6;
+            border-radius: 50%;
+        }
+        
+        .calendar-day.today {
+            background-color: #8b5cf6;
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .calendar-day.has-tasks.today::after {
+            background-color: white;
+        }
+        
+        .reminder-popup {
+            animation: slideIn 0.5s forwards;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        
+        .calendar-container {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .calendar-header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .tasks-section {
+            min-height: 50vh;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: absolute;
+                z-index: 20;
+                height: 100vh;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 10;
+                display: none;
+            }
+            
+            .overlay.open {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="overlay"></div>
+    
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar bg-white w-64 border-r border-gray-200 flex flex-col">
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-purple-600 text-2xl mr-2"></i>
+                    <h1 class="text-xl font-bold text-purple-600">PurpleTask</h1>
+                </div>
+            </div>
+            
+            <div class="p-4">
+                <button id="addTaskBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg flex items-center justify-center transition">
+                    <i class="fas fa-plus mr-2"></i> Add Task
+                </button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto">
+                <ul>
+                    <li>
+                        <a href="#" class="filter-btn flex items-center px-4 py-3 text-purple-600 bg-purple-50 font-medium" data-filter="all">
+                            <i class="fas fa-tasks mr-3"></i> Tasks
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="filter-btn flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100" data-filter="upcoming">
+                            <i class="fas fa-calendar-week mr-3"></i> Upcoming
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="filter-btn flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100" data-filter="priority">
+                            <i class="fas fa-flag mr-3"></i> Priority
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="filter-btn flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100" data-filter="completed">
+                            <i class="fas fa-check mr-3"></i> Completed
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="px-4 py-3 mt-4">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Projects</h3>
+                </div>
+                
+                <ul>
+                    <li>
+                        <a href="#" class="project-btn flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100" data-project="work">
+                            <span class="w-3 h-3 bg-red-500 rounded-full mr-3"></span> Work
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="project-btn flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100" data-project="personal">
+                            <span class="w-3 h-3 bg-blue-500 rounded-full mr-3"></span> Personal
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="project-btn flex items-center px-4 py-3 text-gray-600 hover:bg-gray-100" data-project="health">
+                            <span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span> Health
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-semibold">U</div>
+                    <div class="ml-2">
+                        <div class="text-sm font-medium">User</div>
+                        <div class="text-xs text-gray-500">Free Plan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Mobile header -->
+            <div class="md:hidden bg-white border-b border-gray-200 p-4 flex items-center">
+                <button id="mobileMenuBtn" class="text-gray-600 mr-4">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-purple-600 text-xl mr-2"></i>
+                    <h1 class="text-lg font-bold text-purple-600">PurpleTask</h1>
+                </div>
+            </div>
+            
+            <!-- Content header -->
+            <div class="bg-white border-b border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 id="currentView" class="text-xl font-semibold text-gray-800">Tasks</h2>
+                        <p id="currentViewSubtitle" class="text-sm text-gray-500">All your tasks in one place</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-full">
+                            <i class="fas fa-filter"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Task list and calendar -->
+            <div class="flex-1 overflow-y-auto p-4">
+                <!-- Tasks section with more space -->
+                <div class="tasks-section">
+                    <div id="taskList" class="space-y-3">
+                        <!-- Tasks will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Calendar section -->
+                <div class="calendar-container">
+                    <div class="calendar-header p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Schedule Tasks</h3>
+                            <div class="flex items-center space-x-2">
+                                <button id="prevMonth" class="p-1 text-white hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <span id="currentMonth" class="font-medium">April 2024</span>
+                                <button id="nextMonth" class="p-1 text-white hover:bg-purple-700 rounded-full w-8 h-8 flex items-center justify-center">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="grid grid-cols-7 gap-1 mb-2">
+                            <div class="text-center text-xs font-medium text-gray-500">Sun</div>
+                            <div class="text-center text-xs font-medium text-gray-500">Mon</div>
+                            <div class="text-center text-xs font-medium text-gray-500">Tue</div>
+                            <div class="text-center text-xs font-medium text-gray-500">Wed</div>
+                            <div class="text-center text-xs font-medium text-gray-500">Thu</div>
+                            <div class="text-center text-xs font-medium text-gray-500">Fri</div>
+                            <div class="text-center text-xs font-medium text-gray-500">Sat</div>
+                        </div>
+                        
+                        <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+                            <!-- Calendar days will be added here dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Task Modal -->
+    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="p-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Add New Task</h3>
+            </div>
+            
+            <div class="p-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-1">Task Name</label>
+                    <input type="text" id="taskName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <p id="taskNameError" class="text-red-500 text-xs mt-1 hidden">Task name is required</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-1">Description</label>
+                    <textarea id="taskDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Priority</label>
+                        <select id="taskPriority" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="none">None</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Due Date</label>
+                        <input type="text" id="taskDueDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Select date">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-1">Project</label>
+                    <select id="taskProject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="none">None</option>
+                        <option value="work">Work</option>
+                        <option value="personal">Personal</option>
+                        <option value="health">Health</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                <button id="cancelTaskBtn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button id="saveTaskBtn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md">Add Task</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reminder Popup -->
+    <div id="reminderPopup" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 w-80 hidden reminder-popup">
+        <div class="flex items-start">
+            <div class="bg-purple-100 p-2 rounded-full mr-3">
+                <i class="fas fa-bell text-purple-600"></i>
+            </div>
+            <div class="flex-1">
+                <h4 class="font-semibold text-gray-800">Task Reminder</h4>
+                <p id="reminderText" class="text-sm text-gray-600 mt-1">Your task is due soon!</p>
+                <div class="flex justify-end mt-2">
+                    <button id="dismissReminder" class="text-xs text-purple-600 hover:text-purple-800">Dismiss</button>
+                </div>
+            </div>
+            <button id="closeReminder" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize DateTime library
+        const DateTime = luxon.DateTime;
+        
+        // DOM Elements
+        const taskList = document.getElementById('taskList');
+        const taskModal = document.getElementById('taskModal');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const cancelTaskBtn = document.getElementById('cancelTaskBtn');
+        const saveTaskBtn = document.getElementById('saveTaskBtn');
+        const reminderPopup = document.getElementById('reminderPopup');
+        const dismissReminder = document.getElementById('dismissReminder');
+        const closeReminder = document.getElementById('closeReminder');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.overlay');
+        const currentView = document.getElementById('currentView');
+        const currentViewSubtitle = document.getElementById('currentViewSubtitle');
+        const taskNameError = document.getElementById('taskNameError');
+        
+        // Calendar elements
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonth = document.getElementById('currentMonth');
+        const prevMonth = document.getElementById('prevMonth');
+        const nextMonth = document.getElementById('nextMonth');
+        
+        // Task form elements
+        const taskName = document.getElementById('taskName');
+        const taskDescription = document.getElementById('taskDescription');
+        const taskPriority = document.getElementById('taskPriority');
+        const taskDueDate = document.getElementById('taskDueDate');
+        const taskProject = document.getElementById('taskProject');
+        
+        // Filter buttons
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const projectButtons = document.querySelectorAll('.project-btn');
+        
+        // State
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        // Clean up any undefined or invalid tasks
+        tasks = tasks.filter(task => task && task.id && typeof task.id === 'string');
+        let currentDate = DateTime.local();
+        let reminderTimeout = null;
+        let currentFilter = 'all';
+        let currentProject = null;
+        let flatpickrInstance = null;
+        
+        // Initialize date picker (date only, no time)
+        function initDatePicker() {
+            if (flatpickrInstance) {
+                flatpickrInstance.destroy();
+            }
+            
+            flatpickrInstance = flatpickr(taskDueDate, {
+                enableTime: false,
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                allowInput: true,
+                defaultDate: new Date(), // Set default to today
+                parseDate: (datestr, format) => {
+                    return DateTime.fromFormat(datestr, format).toJSDate();
+                },
+                formatDate: (date, format) => {
+                    return DateTime.fromJSDate(date).toFormat(format);
+                }
+            });
+        }
+        
+        initDatePicker();
+        
+        // Event Listeners
+        addTaskBtn.addEventListener('click', () => {
+            taskModal.classList.remove('hidden');
+            taskNameError.classList.add('hidden');
+            initDatePicker(); // Reset date picker with today's date
+        });
+        
+        cancelTaskBtn.addEventListener('click', () => {
+            taskModal.classList.add('hidden');
+            resetTaskForm();
+        });
+        
+        saveTaskBtn.addEventListener('click', addTask);
+        
+        dismissReminder.addEventListener('click', () => {
+            reminderPopup.classList.add('hidden');
+        });
+        
+        closeReminder.addEventListener('click', () => {
+            reminderPopup.classList.add('hidden');
+        });
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('open');
+        });
+        
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+        });
+        
+        prevMonth.addEventListener('click', () => {
+            currentDate = currentDate.minus({ months: 1 });
+            renderCalendar();
+        });
+        
+        nextMonth.addEventListener('click', () => {
+            currentDate = currentDate.plus({ months: 1 });
+            renderCalendar();
+        });
+        
+        // Filter button event listeners
+        filterButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentFilter = button.getAttribute('data-filter');
+                currentProject = null;
+                
+                // Update active state
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('text-purple-600', 'bg-purple-50', 'font-medium');
+                    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                
+                button.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                button.classList.add('text-purple-600', 'bg-purple-50', 'font-medium');
+                
+                // Update project buttons
+                projectButtons.forEach(btn => {
+                    btn.classList.remove('text-purple-600', 'bg-purple-50', 'font-medium');
+                    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                
+                updateViewTitle();
+                renderTasks();
+            });
+        });
+        
+        // Project button event listeners
+        projectButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentProject = button.getAttribute('data-project');
+                currentFilter = 'all';
+                
+                // Update active state
+                projectButtons.forEach(btn => {
+                    btn.classList.remove('text-purple-600', 'bg-purple-50', 'font-medium');
+                    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                
+                button.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                button.classList.add('text-purple-600', 'bg-purple-50', 'font-medium');
+                
+                // Update filter buttons
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('text-purple-600', 'bg-purple-50', 'font-medium');
+                    btn.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                
+                updateViewTitle();
+                renderTasks();
+            });
+        });
+        
+        // Functions
+        function updateViewTitle() {
+            if (currentProject) {
+                currentView.textContent = currentProject.charAt(0).toUpperCase() + currentProject.slice(1);
+                currentViewSubtitle.textContent = `Tasks in ${currentProject} project`;
+            } else {
+                switch(currentFilter) {
+                    case 'all':
+                        currentView.textContent = 'Tasks';
+                        currentViewSubtitle.textContent = 'All your tasks in one place';
+                        break;
+                    case 'upcoming':
+                        currentView.textContent = 'Upcoming';
+                        currentViewSubtitle.textContent = 'Future tasks';
+                        break;
+                    case 'priority':
+                        currentView.textContent = 'Priority';
+                        currentViewSubtitle.textContent = 'High priority tasks';
+                        break;
+                    case 'completed':
+                        currentView.textContent = 'Completed';
+                        currentViewSubtitle.textContent = 'Completed tasks';
+                        break;
+                }
+            }
+        }
+        
+        function resetTaskForm() {
+            taskName.value = '';
+            taskDescription.value = '';
+            taskPriority.value = 'none';
+            taskDueDate.value = '';
+            taskProject.value = 'none';
+            saveTaskBtn.textContent = 'Add Task';
+            saveTaskBtn.onclick = addTask;
+            taskNameError.classList.add('hidden');
+            initDatePicker(); // Reset date picker with today's date
+        }
+        
+        function addTask() {
+            const name = taskName.value.trim();
+            
+            // Validate task name
+            if (!name) {
+                taskNameError.classList.remove('hidden');
+                return;
+            }
+            
+            // Handle date parsing with Luxon (date only)
+            let dueDateValue = null;
+            if (taskDueDate.value) {
+                try {
+                    // Parse date only (no time)
+                    const parsedDate = DateTime.fromISO(taskDueDate.value);
+                    if (parsedDate.isValid) {
+                        dueDateValue = parsedDate.toISODate(); // Store date only
+                    } else {
+                        // Fallback to JS Date parsing if Luxon fails
+                        const jsDate = new Date(taskDueDate.value);
+                        if (!isNaN(jsDate.getTime())) {
+                            dueDateValue = DateTime.fromJSDate(jsDate).toISODate();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Date parsing error:", e);
+                }
+            }
+            
+            const newTask = {
+                id: Date.now().toString(),
+                name,
+                description: taskDescription.value.trim(),
+                priority: taskPriority.value,
+                dueDate: dueDateValue,
+                project: taskProject.value !== 'none' ? taskProject.value : null,
+                completed: false,
+                createdAt: DateTime.local().toISO()
+            };
+            
+            tasks.push(newTask);
+            saveTasks();
+            renderTasks();
+            renderCalendar(); // Update calendar to show new task
+            taskModal.classList.add('hidden');
+            resetTaskForm();
+        }
+        
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+        
+        function filterTasks() {
+            let filteredTasks = [...tasks];
+            
+            // Apply project filter if set
+            if (currentProject) {
+                filteredTasks = filteredTasks.filter(task => task.project === currentProject);
+            }
+            
+            // Apply view filter
+            switch(currentFilter) {
+                case 'upcoming':
+                    filteredTasks = filteredTasks.filter(task => {
+                        if (task.completed) return false;
+                        if (!task.dueDate) return false;
+                        const taskDate = DateTime.fromISO(task.dueDate);
+                        return taskDate > DateTime.local().startOf('day');
+                    });
+                    break;
+                case 'priority':
+                    filteredTasks = filteredTasks.filter(task => {
+                        if (task.completed) return false;
+                        return task.priority === 'high' || task.priority === 'medium';
+                    });
+                    break;
+                case 'completed':
+                    filteredTasks = filteredTasks.filter(task => task.completed);
+                    break;
+                default: // 'all'
+                    filteredTasks = filteredTasks.filter(task => !task.completed);
+                    break;
+            }
+            
+            return filteredTasks;
+        }
+        
+        function renderTasks() {
+            taskList.innerHTML = '';
+            
+            const filteredTasks = filterTasks();
+            
+            if (filteredTasks.length === 0) {
+                let emptyMessage = '';
+                
+                if (currentProject) {
+                    emptyMessage = `No tasks in ${currentProject} project.`;
+                } else {
+                    switch(currentFilter) {
+                        case 'upcoming':
+                            emptyMessage = 'No upcoming tasks scheduled.';
+                            break;
+                        case 'priority':
+                            emptyMessage = 'No priority tasks right now.';
+                            break;
+                        case 'completed':
+                            emptyMessage = 'No completed tasks yet.';
+                            break;
+                        default:
+                            emptyMessage = 'No tasks yet. Add your first task!';
+                            break;
+                    }
+                }
+                
+                taskList.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-tasks text-4xl text-gray-300 mb-2"></i>
+                        <p class="text-gray-500">${emptyMessage}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort tasks: incomplete first, then by priority, then by due date
+            const sortedTasks = [...filteredTasks].sort((a, b) => {
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                
+                const priorityOrder = { high: 3, medium: 2, low: 1, none: 0 };
+                if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+                    return priorityOrder[b.priority] - priorityOrder[a.priority];
+                }
+                
+                if (a.dueDate && b.dueDate) {
+                    return DateTime.fromISO(a.dueDate) - DateTime.fromISO(b.dueDate);
+                }
+                
+                if (a.dueDate && !b.dueDate) return -1;
+                if (!a.dueDate && b.dueDate) return 1;
+                
+                return DateTime.fromISO(b.createdAt) - DateTime.fromISO(a.createdAt);
+            });
+            
+            sortedTasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = `bg-white rounded-lg shadow p-4 flex items-start ${task.completed ? 'opacity-75' : ''}`;
+                taskElement.classList.add(`priority-${task.priority}`);
+                
+                const dueDate = task.dueDate ? DateTime.fromISO(task.dueDate) : null;
+                const isOverdue = dueDate && dueDate < DateTime.local().startOf('day') && !task.completed;
+                
+                taskElement.innerHTML = `
+                    <div class="flex items-start flex-1">
+                        <button class="complete-btn mt-1 mr-3" data-id="${task.id}">
+                            <i class="fas ${task.completed ? 'fa-check-circle text-purple-600' : 'fa-circle text-gray-300'}"></i>
+                        </button>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <h3 class="${task.completed ? 'task-completed' : 'text-gray-800'} font-medium">${task.name}</h3>
+                                <div class="flex items-center space-x-2">
+                                    ${task.project ? 
+                                        `<span class="text-xs px-2 py-1 rounded-full ${
+                                            task.project === 'work' ? 'bg-red-100 text-red-800' : 
+                                            task.project === 'personal' ? 'bg-blue-100 text-blue-800' : 
+                                            'bg-green-100 text-green-800'
+                                        }">${task.project}</span>` : ''}
+                                    ${task.priority !== 'none' ? 
+                                        `<span class="text-xs px-2 py-1 rounded-full ${
+                                            task.priority === 'high' ? 'bg-red-100 text-red-800' : 
+                                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                            'bg-green-100 text-green-800'
+                                        }">${task.priority}</span>` : ''}
+                                    ${isOverdue ? '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">Overdue</span>' : ''}
+                                </div>
+                            </div>
+                            ${task.description ? `<p class="text-sm text-gray-600 mt-1">${task.description}</p>` : ''}
+                            ${dueDate ? `
+                                <div class="flex items-center mt-2 text-sm ${isOverdue && !task.completed ? 'text-red-600' : 'text-gray-500'}">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    ${dueDate.toLocaleString(DateTime.DATE_MED)}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="ml-4 flex items-center">
+                        <button class="edit-btn p-1 text-gray-400 hover:text-purple-600" data-id="${task.id}">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button class="delete-btn p-1 text-gray-400 hover:text-red-600 ml-1" data-id="${task.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+                
+                taskList.appendChild(taskElement);
+            });
+            
+            // Add event listeners to all buttons
+            document.querySelectorAll('.complete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const taskId = e.currentTarget.getAttribute('data-id');
+                    toggleTaskComplete(taskId);
+                });
+            });
+            
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const taskId = e.currentTarget.getAttribute('data-id');
+                    editTask(taskId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const taskId = e.currentTarget.getAttribute('data-id');
+                    deleteTask(taskId);
+                });
+            });
+        }
+        
+        function toggleTaskComplete(taskId) {
+            tasks = tasks.map(task => {
+                if (task.id === taskId) {
+                    return { ...task, completed: !task.completed };
+                }
+                return task;
+            });
+            saveTasks();
+            renderTasks();
+            renderCalendar();
+        }
+        
+        function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            taskName.value = task.name;
+            taskDescription.value = task.description || '';
+            taskPriority.value = task.priority;
+            
+            // Handle date display - properly initialize flatpickr with the task's date
+            if (task.dueDate) {
+                const dueDate = DateTime.fromISO(task.dueDate);
+                if (dueDate.isValid) {
+                    // Reinitialize flatpickr with the task's date
+                    if (flatpickrInstance) {
+                        flatpickrInstance.destroy();
+                    }
+                    flatpickrInstance = flatpickr(taskDueDate, {
+                        enableTime: false,
+                        dateFormat: "Y-m-d",
+                        minDate: "today",
+                        allowInput: true,
+                        defaultDate: dueDate.toJSDate(),
+                        parseDate: (datestr, format) => {
+                            return DateTime.fromFormat(datestr, format).toJSDate();
+                        },
+                        formatDate: (date, format) => {
+                            return DateTime.fromJSDate(date).toFormat(format);
+                        }
+                    });
+                }
+            } else {
+                // If no date, reset to today
+                if (flatpickrInstance) {
+                    flatpickrInstance.destroy();
+                }
+                initDatePicker();
+            }
+            
+            taskProject.value = task.project || 'none';
+            
+            saveTaskBtn.textContent = 'Update Task';
+            saveTaskBtn.onclick = function() { updateTask(taskId); };
+            
+            taskModal.classList.remove('hidden');
+            taskNameError.classList.add('hidden');
+        }
+        
+        function updateTask(taskId) {
+            const name = taskName.value.trim();
+            
+            // Validate task name
+            if (!name) {
+                taskNameError.classList.remove('hidden');
+                return;
+            }
+            
+            // Handle date parsing with Luxon (date only)
+            let dueDateValue = null;
+            if (taskDueDate.value) {
+                try {
+                    // Parse date only (no time)
+                    const parsedDate = DateTime.fromISO(taskDueDate.value);
+                    if (parsedDate.isValid) {
+                        dueDateValue = parsedDate.toISODate();
+                    } else {
+                        // Fallback to JS Date parsing if Luxon fails
+                        const jsDate = new Date(taskDueDate.value);
+                        if (!isNaN(jsDate.getTime())) {
+                            dueDateValue = DateTime.fromJSDate(jsDate).toISODate();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Date parsing error:", e);
+                }
+            }
+            
+            tasks = tasks.map(task => {
+                if (task.id === taskId) {
+                    return {
+                        ...task,
+                        name,
+                        description: taskDescription.value.trim(),
+                        priority: taskPriority.value,
+                        dueDate: dueDateValue,
+                        project: taskProject.value !== 'none' ? taskProject.value : null
+                    };
+                }
+                return task;
+            });
+            
+            saveTasks();
+            renderTasks();
+            renderCalendar();
+            taskModal.classList.add('hidden');
+            resetTaskForm();
+        }
+        
+        function deleteTask(taskId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#8b5cf6',
+                cancelButtonColor: '#d1d5db',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    tasks = tasks.filter(task => task.id !== taskId);
+                    saveTasks();
+                    renderTasks();
+                    renderCalendar();
+                    Swal.fire(
+                        'Deleted!',
+                        'Your task has been deleted.',
+                        'success'
+                    );
+                }
+            });
+        }
+        
+        function renderCalendar() {
+            currentMonth.textContent = currentDate.toFormat('LLLL yyyy');
+            
+            // Get the first day of the month and the number of days in the month
+            const firstDay = currentDate.startOf('month');
+            const daysInMonth = currentDate.daysInMonth;
+            
+            // Get the weekday of the first day (0-6, where 0 is Sunday)
+            const firstDayWeekday = firstDay.weekday % 7; // Luxon uses 1-7, we want 0-6
+            
+            // Create an array of days for the calendar
+            const days = [];
+            
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDayWeekday; i++) {
+                days.push(null);
+            }
+            
+            // Add cells for each day of the month
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayDate = firstDay.plus({ days: i - 1 });
+                days.push(dayDate);
+            }
+            
+            // Fill the remaining cells to complete the last week
+            const remainingCells = 7 - (days.length % 7);
+            if (remainingCells < 7) {
+                for (let i = 0; i < remainingCells; i++) {
+                    days.push(null);
+                }
+            }
+            
+            // Render the calendar grid
+            calendarGrid.innerHTML = '';
+            
+            days.forEach((day, index) => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'text-center p-2 h-12 flex flex-col items-center justify-center';
+                
+                if (!day) {
+                    dayElement.classList.add('text-gray-300');
+                    calendarGrid.appendChild(dayElement);
+                    return;
+                }
+                
+                const dayNumber = day.day;
+                const isToday = day.hasSame(DateTime.local(), 'day');
+                const hasTasks = tasks.some(task => {
+                    if (!task.dueDate || task.completed) return false;
+                    const taskDate = DateTime.fromISO(task.dueDate);
+                    return taskDate.hasSame(day, 'day');
+                });
+                
+                dayElement.className = `text-center p-2 h-12 flex flex-col items-center justify-center cursor-pointer transition ${
+                    isToday ? 'bg-purple-600 text-white rounded-lg' : 
+                    'hover:bg-gray-100 rounded-lg'
+                } ${hasTasks ? 'calendar-day has-tasks' : ''}`;
+                
+                dayElement.innerHTML = `
+                    <span class="text-sm">${dayNumber}</span>
+                `;
+                
+                dayElement.addEventListener('click', () => {
+                    // Show tasks for this day
+                    showTasksForDate(day);
+                });
+                
+                calendarGrid.appendChild(dayElement);
+            });
+        }
+        
+        function showTasksForDate(date) {
+            const filteredTasks = tasks.filter(task => {
+                if (!task.dueDate) return false;
+                const taskDate = DateTime.fromISO(task.dueDate);
+                return taskDate.hasSame(date, 'day');
+            });
+            
+            if (filteredTasks.length === 0) {
+                Swal.fire({
+                    title: date.toLocaleString(DateTime.DATE_FULL),
+                    text: 'No tasks scheduled for this day.',
+                    icon: 'info'
+                });
+            } else {
+                let tasksHtml = filteredTasks.map(task => {
+                    return `
+                        <div class="mb-2 p-2 border-b border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <h4 class="${task.completed ? 'line-through text-gray-400' : 'font-medium'}">${task.name}</h4>
+                                <span class="text-xs px-2 py-1 rounded-full ${
+                                    task.priority === 'high' ? 'bg-red-100 text-red-800' : 
+                                    task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                                    'bg-green-100 text-green-800'
+                                }">${task.priority}</span>
+                            </div>
+                            ${task.description ? `<p class="text-sm text-gray-600 mt-1">${task.description}</p>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+                Swal.fire({
+                    title: date.toLocaleString(DateTime.DATE_FULL),
+                    html: `<div class="max-h-64 overflow-y-auto">${tasksHtml}</div>`,
+                    icon: 'info',
+                    confirmButtonColor: '#8b5cf6'
+                });
+            }
+        }
+        
+        // Initialize the app
+        function init() {
+            // Clean up any undefined or invalid tasks in localStorage
+            tasks = tasks.filter(task => task && task.id && typeof task.id === 'string');
+            saveTasks();
+            
+            renderTasks();
+            renderCalendar();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
