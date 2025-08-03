@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f3f4f6;
+        }
+        
+        .resume-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .header-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e5e7eb;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            background-color: #e5e7eb;
+            color: #374151;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+        
+        .separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #6b7280;
+            margin: 1rem 0;
+        }
+        
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #d1d5db;
+        }
+        
+        .separator::before {
+            margin-right: 0.5rem;
+        }
+        
+        .separator::after {
+            margin-left: 0.5rem;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: #d1d5db;
+        }
+        
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #4f46e5;
+            z-index: 1;
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #resume, #resume * {
+                visibility: visible;
+            }
+            #resume {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        .form-section {
+            transition: all 0.3s ease;
+        }
+        
+        .form-section.hidden {
+            display: none;
+        }
+        
+        .resume-preview {
+            transition: all 0.3s ease;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+        }
+        
+        .resume-preview.active {
+            opacity: 1;
+            height: auto;
+        }
+        
+        .add-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .add-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .remove-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .remove-btn:hover {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 py-8">
+    <div class="container mx-auto px-4 max-w-7xl">
+        <h1 class="text-3xl font-bold text-center mb-8 text-indigo-600">Professional Resume Builder Created By Holy_Dev</h1>
+   
+        
+        <div class="flex flex-col lg:flex-row gap-8 items-start">
+            <!-- Form Section -->
+            <div class="w-full lg:w-1/2 bg-white rounded-lg shadow-md p-6 form-section" id="formSection">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Personal Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="fullName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                        <input type="text" id="jobTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input type="text" id="location" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Website/Portfolio</label>
+                        <input type="url" id="website" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-800">Professional Summary</h2>
+                    </div>
+                    <textarea id="summary" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Briefly describe your professional background and key skills"></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-800">Work Experience</h2>
+                        <button id="addExperience" class="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm add-btn">
+                            <i class="fas fa-plus mr-1"></i> Add
+                        </button>
+                    </div>
+                    <div id="experienceContainer">
+                        <!-- Experience items will be added here -->
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-800">Education</h2>
+                        <button id="addEducation" class="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm add-btn">
+                            <i class="fas fa-plus mr-1"></i> Add
+                        </button>
+                    </div>
+                    <div id="educationContainer">
+                        <!-- Education items will be added here -->
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-800">Skills</h2>
+                        <button id="addSkill" class="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm add-btn">
+                            <i class="fas fa-plus mr-1"></i> Add
+                        </button>
+                    </div>
+                    <div id="skillsContainer" class="flex flex-wrap">
+                        <!-- Skill items will be added here -->
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-semibold text-gray-800">Projects</h2>
+                        <button id="addProject" class="bg-indigo-600 text-white px-3 py-1 rounded-md text-sm add-btn">
+                            <i class="fas fa-plus mr-1"></i> Add
+                        </button>
+                    </div>
+                    <div id="projectsContainer">
+                        <!-- Project items will be added here -->
+                    </div>
+                </div>
+                
+                <div class="flex justify-center mt-8">
+                    <button id="generateResume" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition duration-300">
+                        Generate Resume
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Resume Preview Section -->
+            <div class="w-full lg:w-1/2 resume-preview" id="resumePreview">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Resume Preview</h2>
+                    <div class="flex gap-2">
+                        <button id="editResume" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-md text-sm transition duration-300">
+                            <i class="fas fa-edit mr-1"></i> Edit
+                        </button>
+                        <button id="downloadPdf" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-md text-sm transition duration-300">
+                            <i class="fas fa-download mr-1"></i> Download PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="resume" class="resume-container mx-auto">
+                    <!-- Resume content will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        // DOM Elements
+        const formSection = document.getElementById('formSection');
+        const resumePreview = document.getElementById('resumePreview');
+        const generateResumeBtn = document.getElementById('generateResume');
+        const editResumeBtn = document.getElementById('editResume');
+        const downloadPdfBtn = document.getElementById('downloadPdf');
+        const resumeElement = document.getElementById('resume');
+        
+        // Form elements
+        const fullNameInput = document.getElementById('fullName');
+        const jobTitleInput = document.getElementById('jobTitle');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phone');
+        const locationInput = document.getElementById('location');
+        const websiteInput = document.getElementById('website');
+        const summaryInput = document.getElementById('summary');
+        
+        // Containers for dynamic fields
+        const experienceContainer = document.getElementById('experienceContainer');
+        const educationContainer = document.getElementById('educationContainer');
+        const skillsContainer = document.getElementById('skillsContainer');
+        const projectsContainer = document.getElementById('projectsContainer');
+        
+        // Add buttons
+        const addExperienceBtn = document.getElementById('addExperience');
+        const addEducationBtn = document.getElementById('addEducation');
+        const addSkillBtn = document.getElementById('addSkill');
+        const addProjectBtn = document.getElementById('addProject');
+        
+        // Templates
+        const experienceTemplate = (index) => `
+            <div class="experience-item mb-4 p-4 border border-gray-200 rounded-md relative" data-index="${index}">
+                <button class="remove-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 remove-experience" data-index="${index}">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                        <input type="text" name="expTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                        <input type="text" name="expCompany" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <input type="text" name="expStart" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="MM/YYYY">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input type="text" name="expEnd" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="MM/YYYY or Present">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="expDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+            </div>
+        `;
+        
+        const educationTemplate = (index) => `
+            <div class="education-item mb-4 p-4 border border-gray-200 rounded-md relative" data-index="${index}">
+                <button class="remove-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 remove-education" data-index="${index}">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Degree</label>
+                        <input type="text" name="eduDegree" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Institution</label>
+                        <input type="text" name="eduInstitution" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <input type="text" name="eduStart" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="MM/YYYY">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input type="text" name="eduEnd" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="MM/YYYY or Present">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const skillTemplate = (index) => `
+            <div class="skill-item mb-2 mr-2 relative" data-index="${index}">
+                <div class="flex items-center">
+                    <input type="text" name="skillName" class="w-32 px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Skill">
+                    <select name="skillLevel" class="ml-2 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="1">Beginner</option>
+                        <option value="2">Intermediate</option>
+                        <option value="3">Advanced</option>
+                        <option value="4">Expert</option>
+                    </select>
+                    <button class="remove-btn ml-2 text-gray-400 hover:text-gray-600 remove-skill" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        const projectTemplate = (index) => `
+            <div class="project-item mb-4 p-4 border border-gray-200 rounded-md relative" data-index="${index}">
+                <button class="remove-btn absolute top-2 right-2 text-gray-400 hover:text-gray-600 remove-project" data-index="${index}">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                        <input type="text" name="projectName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Technologies</label>
+                        <input type="text" name="projectTech" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Comma separated">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="projectDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+            </div>
+        `;
+        
+        // Initialize counters
+        let experienceCount = 0;
+        let educationCount = 0;
+        let skillCount = 0;
+        let projectCount = 0;
+        
+        // Event Listeners
+        addExperienceBtn.addEventListener('click', () => {
+            experienceContainer.insertAdjacentHTML('beforeend', experienceTemplate(experienceCount));
+            experienceCount++;
+        });
+        
+        addEducationBtn.addEventListener('click', () => {
+            educationContainer.insertAdjacentHTML('beforeend', educationTemplate(educationCount));
+            educationCount++;
+        });
+        
+        addSkillBtn.addEventListener('click', () => {
+            skillsContainer.insertAdjacentHTML('beforeend', skillTemplate(skillCount));
+            skillCount++;
+        });
+        
+        addProjectBtn.addEventListener('click', () => {
+            projectsContainer.insertAdjacentHTML('beforeend', projectTemplate(projectCount));
+            projectCount++;
+        });
+        
+        // Delegated event listeners for remove buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-experience') || e.target.closest('.remove-experience')) {
+                const btn = e.target.classList.contains('remove-experience') ? e.target : e.target.closest('.remove-experience');
+                const index = btn.getAttribute('data-index');
+                document.querySelector(`.experience-item[data-index="${index}"]`).remove();
+            }
+            
+            if (e.target.classList.contains('remove-education') || e.target.closest('.remove-education')) {
+                const btn = e.target.classList.contains('remove-education') ? e.target : e.target.closest('.remove-education');
+                const index = btn.getAttribute('data-index');
+                document.querySelector(`.education-item[data-index="${index}"]`).remove();
+            }
+            
+            if (e.target.classList.contains('remove-skill') || e.target.closest('.remove-skill')) {
+                const btn = e.target.classList.contains('remove-skill') ? e.target : e.target.closest('.remove-skill');
+                const index = btn.getAttribute('data-index');
+                document.querySelector(`.skill-item[data-index="${index}"]`).remove();
+            }
+            
+            if (e.target.classList.contains('remove-project') || e.target.closest('.remove-project')) {
+                const btn = e.target.classList.contains('remove-project') ? e.target : e.target.closest('.remove-project');
+                const index = btn.getAttribute('data-index');
+                document.querySelector(`.project-item[data-index="${index}"]`).remove();
+            }
+        });
+        
+        // Generate Resume
+        generateResumeBtn.addEventListener('click', () => {
+            // Validate required fields
+            if (!fullNameInput.value.trim()) {
+                alert('Please enter your full name');
+                return;
+            }
+            
+            // Collect form data
+            const formData = {
+                personal: {
+                    fullName: fullNameInput.value.trim(),
+                    jobTitle: jobTitleInput.value.trim(),
+                    email: emailInput.value.trim(),
+                    phone: phoneInput.value.trim(),
+                    location: locationInput.value.trim(),
+                    website: websiteInput.value.trim(),
+                    summary: summaryInput.value.trim()
+                },
+                experiences: [],
+                education: [],
+                skills: [],
+                projects: []
+            };
+            
+            // Collect experiences
+            document.querySelectorAll('.experience-item').forEach(item => {
+                formData.experiences.push({
+                    title: item.querySelector('[name="expTitle"]').value.trim(),
+                    company: item.querySelector('[name="expCompany"]').value.trim(),
+                    start: item.querySelector('[name="expStart"]').value.trim(),
+                    end: item.querySelector('[name="expEnd"]').value.trim(),
+                    description: item.querySelector('[name="expDescription"]').value.trim()
+                });
+            });
+            
+            // Collect education
+            document.querySelectorAll('.education-item').forEach(item => {
+                formData.education.push({
+                    degree: item.querySelector('[name="eduDegree"]').value.trim(),
+                    institution: item.querySelector('[name="eduInstitution"]').value.trim(),
+                    start: item.querySelector('[name="eduStart"]').value.trim(),
+                    end: item.querySelector('[name="eduEnd"]').value.trim()
+                });
+            });
+            
+            // Collect skills
+            document.querySelectorAll('.skill-item').forEach(item => {
+                formData.skills.push({
+                    name: item.querySelector('[name="skillName"]').value.trim(),
+                    level: parseInt(item.querySelector('[name="skillLevel"]').value)
+                });
+            });
+            
+            // Collect projects
+            document.querySelectorAll('.project-item').forEach(item => {
+                formData.projects.push({
+                    name: item.querySelector('[name="projectName"]').value.trim(),
+                    technologies: item.querySelector('[name="projectTech"]').value.trim(),
+                    description: item.querySelector('[name="projectDescription"]').value.trim()
+                });
+            });
+            
+            // Generate resume HTML
+            generateResumeHTML(formData);
+            
+            // Show preview and hide form
+            formSection.classList.add('hidden');
+            resumePreview.classList.add('active');
+            
+            // Scroll to preview
+            resumePreview.scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Edit Resume
+        editResumeBtn.addEventListener('click', () => {
+            resumePreview.classList.remove('active');
+            formSection.classList.remove('hidden');
+            formSection.scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Download PDF
+        downloadPdfBtn.addEventListener('click', () => {
+            // Create a new jsPDF instance
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            // Use html2canvas to capture the resume
+            html2canvas(resumeElement, {
+                scale: 2,
+                logging: false,
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210; // A4 width in mm
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`${fullNameInput.value.trim() || 'resume'}.pdf`);
+            });
+        });
+        
+        // Generate Resume HTML
+        function generateResumeHTML(data) {
+            const { personal, experiences, education, skills, projects } = data;
+            
+            // Header Section
+            let headerHTML = `
+                <div class="header-bg text-white p-8">
+                    <h1 class="text-3xl font-bold mb-1">${personal.fullName}</h1>
+                    <h2 class="text-xl font-medium mb-4">${personal.jobTitle}</h2>
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        ${personal.email ? `<div class="flex items-center"><i class="fas fa-envelope mr-2"></i> ${personal.email}</div>` : ''}
+                        ${personal.phone ? `<div class="flex items-center"><i class="fas fa-phone mr-2"></i> ${personal.phone}</div>` : ''}
+                        ${personal.location ? `<div class="flex items-center"><i class="fas fa-map-marker-alt mr-2"></i> ${personal.location}</div>` : ''}
+                        ${personal.website ? `<div class="flex items-center"><i class="fas fa-globe mr-2"></i> ${personal.website}</div>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Summary Section
+            let summaryHTML = personal.summary ? `
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-2 text-indigo-600 border-b border-gray-200 pb-1">Summary</h3>
+                    <p class="text-gray-700">${personal.summary}</p>
+                </div>
+            ` : '';
+            
+            // Experience Section
+            let experienceHTML = experiences.length > 0 ? `
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-600 border-b border-gray-200 pb-1">Work Experience</h3>
+                    ${experiences.map(exp => `
+                        <div class="timeline-item mb-6">
+                            <div class="timeline-dot"></div>
+                            <div class="ml-4">
+                                <h4 class="font-semibold text-lg">${exp.title}</h4>
+                                <div class="flex flex-wrap items-center text-gray-600 mb-1">
+                                    <span class="mr-2">${exp.company}</span>
+                                    <span class="text-sm">${exp.start} - ${exp.end}</span>
+                                </div>
+                                <p class="text-gray-700">${exp.description}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+            
+            // Education Section
+            let educationHTML = education.length > 0 ? `
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-600 border-b border-gray-200 pb-1">Education</h3>
+                    ${education.map(edu => `
+                        <div class="timeline-item mb-6">
+                            <div class="timeline-dot"></div>
+                            <div class="ml-4">
+                                <h4 class="font-semibold text-lg">${edu.degree}</h4>
+                                <div class="flex flex-wrap items-center text-gray-600 mb-1">
+                                    <span class="mr-2">${edu.institution}</span>
+                                    <span class="text-sm">${edu.start} - ${edu.end}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+            
+            // Skills Section
+            let skillsHTML = skills.length > 0 ? `
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-600 border-b border-gray-200 pb-1">Skills</h3>
+                    <div class="flex flex-wrap gap-2">
+                        ${skills.map(skill => `
+                            <div class="skill-tag">
+                                ${skill.name}
+                                ${skill.level ? `<div class="progress-bar mt-1 w-24">
+                                    <div class="progress-fill" style="width: ${skill.level * 25}%"></div>
+                                </div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+            
+            // Projects Section
+            let projectsHTML = projects.length > 0 ? `
+                <div class="p-6">
+                    <h3 class="text-xl font-semibold mb-4 text-indigo-600 border-b border-gray-200 pb-1">Projects</h3>
+                    ${projects.map(proj => `
+                        <div class="mb-6">
+                            <h4 class="font-semibold text-lg">${proj.name}</h4>
+                            ${proj.technologies ? `<div class="text-sm text-gray-600 mb-1">Technologies: ${proj.technologies}</div>` : ''}
+                            <p class="text-gray-700">${proj.description}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+            
+            // Combine all sections
+            resumeElement.innerHTML = `
+                ${headerHTML}
+                ${summaryHTML}
+                ${experienceHTML}
+                ${educationHTML}
+                ${skillsHTML}
+                ${projectsHTML}
+            `;
+        }
+        
+        // Add initial fields
+        addExperienceBtn.click();
+        addEducationBtn.click();
+        addSkillBtn.click();
+        addProjectBtn.click();
+    </script>
+</body>
+</html>
