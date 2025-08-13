@@ -1,0 +1,1809 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenPomo Pro - Ultimate Productivity Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom CSS (for parts not covered by Tailwind) */
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+            25% { transform: translate(15px, 10px) scale(1.1); opacity: 0.8; }
+            50% { transform: translate(-10px, 15px) scale(0.9); opacity: 0.5; }
+            75% { transform: translate(5px, -10px) scale(1.05); opacity: 0.7; }
+        }
+        
+        .timer-animation .circle {
+            animation: float 15s infinite ease-in-out;
+            background: rgba(108, 92, 231, 0.05);
+        }
+        
+        .progress-bar {
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+        
+        .task-item:hover .task-actions {
+            opacity: 1;
+        }
+        
+        .modal {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s linear;
+        }
+        
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0s linear;
+        }
+        
+        .modal-content {
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.open .modal-content {
+            transform: translateY(0) scale(1);
+        }
+        
+        .notification {
+            transform: translateX(calc(100% + 20px));
+            opacity: 0;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .settings-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .settings-content.open {
+            max-height: 600px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Custom task scrollbar */
+        .task-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .task-list::-webkit-scrollbar-track {
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+        
+        .task-list::-webkit-scrollbar-thumb {
+            background: #a29bfe;
+            border-radius: 10px;
+        }
+        
+        .task-list::-webkit-scrollbar-thumb:hover {
+            background: #6c5ce7;
+        }
+        
+        /* Disable selection on timer and buttons */
+        .timer-display, button {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        /* Sound wave animation when timer running */
+        .sound-wave {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            height: 30px;
+        }
+        
+        .sound-wave div {
+            width: 3px;
+            height: 10px;
+            background-color: #6c5ce7;
+            animation: sound-wave 1.5s infinite ease-in-out;
+        }
+        
+        .sound-wave div:nth-child(1) { animation-delay: 0s; }
+        .sound-wave div:nth-child(2) { animation-delay: 0.2s; }
+        .sound-wave div:nth-child(3) { animation-delay: 0.4s; }
+        .sound-wave div:nth-child(4) { animation-delay: 0.6s; }
+        .sound-wave div:nth-child(5) { animation-delay: 0.8s; }
+        
+        @keyframes sound-wave {
+            0%, 100% { height: 10px; background-color: #6c5ce7; }
+            25% { height: 30px; background-color: #a29bfe; }
+            50% { height: 15px; background-color: #5649c5; }
+            75% { height: 25px; background-color: #8476f9; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-200 min-h-screen flex flex-col text-gray-800">
+    <!-- Header -->
+    <header class="bg-white shadow-md py-4 px-6 sticky top-0 z-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <a href="#" class="flex items-center gap-3 text-2xl font-bold text-purple-600 no-underline">
+            <i class="fas fa-clock text-3xl"></i>
+            <span>ZenPomo Pro</span>
+        </a>
+        
+        <nav class="flex-1">
+            <ul class="flex flex-wrap justify-center gap-2 sm:gap-4">
+                <li><a href="#" class="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all bg-purple-100 text-purple-600"><i class="fas fa-home"></i> <span>Home</span></a></li>
+                <li><a href="#" id="nav-stats" class="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all hover:bg-gray-100 hover:text-purple-600"><i class="fas fa-chart-line"></i> <span>Stats</span></a></li>
+                <li><a href="#" id="nav-tasks" class="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all hover:bg-gray-100 hover:text-purple-600"><i class="fas fa-tasks"></i> <span>Tasks</span></a></li>
+                <li><a href="#" id="nav-settings" class="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all hover:bg-gray-100 hover:text-purple-600"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+            </ul>
+        </nav>
+        
+        <div class="flex gap-3">
+            <button class="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-purple-600 text-purple-600 font-semibold transition-all hover:bg-purple-50 hover:shadow-sm">
+                <i class="fas fa-user"></i>
+                <span>Sign In</span>
+            </button>
+            <button class="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-white font-semibold transition-all hover:bg-purple-700 hover:shadow-md">
+                <i class="fas fa-rocket"></i>
+                <span>Upgrade</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 max-w-7xl mx-auto w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Pomodoro Timer Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 relative overflow-hidden">
+                <!-- Decorative background circles -->
+                <div class="timer-animation absolute inset-0 pointer-events-none overflow-hidden">
+                    <div class="circle absolute rounded-full" style="width: 100px; height: 100px; top: 10%; left: 20%; animation-delay: 0s;"></div>
+                    <div class="circle absolute rounded-full" style="width: 150px; height: 150px; top: 60%; left: 70%; animation-delay: 2s;"></div>
+                    <div class="circle absolute rounded-full" style="width: 80px; height: 80px; top: 30%; left: 50%; animation-delay: 4s;"></div>
+                </div>
+                
+                <!-- Card Header -->
+                <header class="flex justify-between items-center mb-6 relative z-10">
+                    <h2 class="text-xl font-bold text-purple-600 flex items-center gap-2">
+                        <i class="fas fa-stopwatch"></i>
+                        <span>Pomodoro Timer</span>
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="stats-btn" class="w-9 h-9 rounded-full flex items-center justify-center border-2 border-purple-600 text-purple-600 hover:bg-purple-100 transition-all" title="View Stats">
+                            <i class="fas fa-chart-pie"></i>
+                        </button>
+                        <button id="fullscreen-btn" class="w-9 h-9 rounded-full flex items-center justify-center border-2 border-purple-600 text-purple-600 hover:bg-purple-100 transition-all" title="Fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </header>
+                
+                <!-- Mode Indicator -->
+                <div class="flex justify-center mb-6 relative z-10">
+                    <div id="mode-text" class="px-5 py-3 rounded-full font-semibold flex items-center gap-2 bg-purple-100 text-purple-600">
+                        <i class="fas fa-bolt"></i>
+                        <span>Focus</span>
+                    </div>
+                </div>
+                
+                <!-- Timer Display -->
+                <div id="timer" class="text-7xl md:text-8xl font-bold text-center my-8 text-purple-600 font-mono transition-colors">25:00</div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full h-2.5 bg-gray-200 rounded-full mb-8 overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-purple-600 w-0"></div>
+                </div>
+                
+                <!-- Controls -->
+                <div class="flex flex-wrap justify-center gap-3 mb-8 relative z-10">
+                    <button id="start-btn" class="px-6 py-3 rounded-full bg-purple-600 text-white font-semibold flex items-center gap-2 hover:bg-purple-700 hover:shadow-md transition-all">
+                        <i class="fas fa-play"></i>
+                        <span>Start</span>
+                    </button>
+                    <button id="pause-btn" disabled class="px-6 py-3 rounded-full bg-green-500 text-white font-semibold flex items-center gap-2 hover:bg-green-600 hover:shadow-md transition-all">
+                        <i class="fas fa-pause"></i>
+                        <span>Pause</span>
+                    </button>
+                    <button id="reset-btn" disabled class="px-6 py-3 rounded-full bg-pink-500 text-white font-semibold flex items-center gap-2 hover:bg-pink-600 hover:shadow-md transition-all">
+                        <i class="fas fa-redo"></i>
+                        <span>Reset</span>
+                    </button>
+                    <button id="skip-to-break-btn" class="hidden px-6 py-3 rounded-full bg-yellow-400 text-gray-800 font-semibold flex items-center gap-2 hover:bg-yellow-500 hover:shadow-md transition-all" title="Skip to next break">
+                        <i class="fas fa-forward"></i>
+                        <span>Skip</span>
+                    </button>
+                </div>
+                
+                <!-- Activity status -->
+                <div id="activity-status" class="flex items-center justify-center gap-2 mb-4 text-purple-600">
+                    <div class="sound-wave hidden">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                    <span id="status-text" class="text-sm">Timer idle</span>
+                </div>
+                
+                <!-- Settings Toggle -->
+                <div class="flex justify-center mb-4 relative z-10">
+                    <button id="toggle-settings" class="px-4 py-2 rounded-full border-2 border-purple-600 text-purple-600 font-medium flex items-center gap-2 hover:bg-purple-50 transition-all">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Timer Settings</span>
+                    </button>
+                </div>
+                
+                <!-- Settings Content -->
+                <div id="settings-content" class="overflow-hidden">
+                    <div class="space-y-4 mb-4">
+                        <div>
+                            <label for="work-duration" class="block mb-2 font-medium flex items-center gap-2">
+                                <i class="fas fa-briefcase text-purple-600"></i>
+                                <span>Work Duration (minutes)</span>
+                            </label>
+                            <input type="number" id="work-duration" min="1" max="120" value="25" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="break-duration" class="block mb-2 font-medium flex items-center gap-2">
+                                    <i class="fas fa-coffee text-pink-500"></i>
+                                    <span>Short Break (minutes)</span>
+                                </label>
+                                <input type="number" id="break-duration" min="1" max="30" value="5" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label for="long-break-duration" class="block mb-2 font-medium flex items-center gap-2">
+                                    <i class="fas fa-umbrella-beach text-green-500"></i>
+                                    <span>Long Break (minutes)</span>
+                                </label>
+                                <input type="number" id="long-break-duration" min="1" max="60" value="15" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="pomodoros-before-long-break" class="block mb-2 font-medium flex items-center gap-2">
+                                <i class="fas fa-layer-group text-purple-600"></i>
+                                <span>Pomodoros Before Long Break</span>
+                            </label>
+                            <input type="number" id="pomodoros-before-long-break" min="1" max="10" value="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                        </div>
+                        
+                        <div>
+                            <label for="auto-start" class="block mb-2 font-medium flex items-center gap-2">
+                                <i class="fas fa-magic text-purple-600"></i>
+                                <span>Auto Start Next Round</span>
+                            </label>
+                            <select id="auto-start" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                                <option value="false">Disabled</option>
+                                <option value="true">Enabled</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="timer-sound" class="block mb-2 font-medium flex items-center gap-2">
+                                <i class="fas fa-volume-up text-purple-600"></i>
+                                <span>Timer Sound</span>
+                            </label>
+                            <select id="timer-sound" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                                <option value="bell">Classic Bell</option>
+                                <option value="chime">Soft Chime</option>
+                                <option value="digital">Digital Beep</option>
+                                <option value="nature">Nature Sounds</option>
+                                <option value="none">No Sound</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="dark-mode" class="block mb-2 font-medium flex items-center gap-2">
+                                <i class="fas fa-moon text-purple-600"></i>
+                                <span>Theme</span>
+                            </label>
+                            <select id="dark-mode" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="system">System Default</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button id="apply-settings-btn" class="w-full px-4 py-3 rounded-full bg-purple-600 text-white font-semibold flex items-center justify-center gap-2 hover:bg-purple-700 hover:shadow-md transition-all">
+                        <i class="fas fa-check"></i>
+                        <span>Apply Settings</span>
+                    </button>
+                </div>
+                
+                <!-- Stats Section -->
+                <div class="flex gap-3 mt-6 relative z-10">
+                    <div class="bg-white rounded-xl shadow-sm p-4 text-center flex-1">
+                        <div id="today-pomodoros" class="text-2xl font-bold text-purple-600">0</div>
+                        <div class="text-sm text-gray-500">Today</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4 text-center flex-1">
+                        <div id="week-pomodoros" class="text-2xl font-bold text-purple-600">0</div>
+                        <div class="text-sm text-gray-500">This Week</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4 text-center flex-1">
+                        <div id="total-pomodoros" class="text-2xl font-bold text-purple-600">0</div>
+                        <div class="text-sm text-gray-500">Total</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Task Manager Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col h-full">
+                <!-- Card Header -->
+                <header class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-purple-600 flex items-center gap-2">
+                        <i class="fas fa-tasks"></i>
+                        <span>Task Manager</span>
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="clear-completed" class="w-9 h-9 rounded-full flex items-center justify-center border-2 border-purple-600 text-purple-600 hover:bg-purple-100 transition-all" title="Clear Completed Tasks">
+                            <i class="fas fa-check-double"></i>
+                        </button>
+                        <button id="add-task-modal" class="w-9 h-9 rounded-full flex items-center justify-center bg-purple-600 text-white hover:bg-purple-700 transition-all" title="Add New Task">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </header>
+                
+                <!-- Quick Task Input -->
+                <div class="flex mb-6">
+                    <input type="text" id="new-task" placeholder="Add a quick task..." class="flex-1 px-4 py-3 rounded-l-xl border border-gray-300 focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all border-r-0">
+                    <button id="add-task" class="px-4 py-3 rounded-r-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition-all">
+                        <i class="fas fa-plus"></i>
+                        <span class="hidden sm:inline">Add</span>
+                    </button>
+                </div>
+                
+                <!-- Task Categories -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button class="px-3 py-1.5 rounded-full font-medium transition-all bg-purple-600 text-white" data-category="all">All</button>
+                    <button class="px-3 py-1.5 rounded-full font-medium transition-all bg-gray-200 hover:bg-gray-300" data-category="work">Work</button>
+                    <button class="px-3 py-1.5 rounded-full font-medium transition-all bg-gray-200 hover:bg-gray-300" data-category="personal">Personal</button>
+                    <button class="px-3 py-1.5 rounded-full font-medium transition-all bg-gray-200 hover:bg-gray-300" data-category="study">Study</button>
+                    <button class="px-3 py-1.5 rounded-full font-medium transition-all bg-gray-200 hover:bg-gray-300" data-category="other">Other</button>
+                </div>
+                
+                <!-- Task List -->
+                <ul id="task-list" class="flex-1 overflow-y-auto max-h-96 mb-6">
+                    <!-- Tasks will be rendered here -->
+                </ul>
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="flex flex-col items-center justify-center py-12 text-center text-gray-500">
+                    <i class="fas fa-clipboard-list text-6xl mb-4 text-gray-300"></i>
+                    <p class="max-w-xs">No tasks yet. Add your first task to get started!</p>
+                </div>
+                
+                <!-- Task Stats -->
+                <div class="flex justify-between pt-4 border-t border-gray-200 text-sm text-gray-500">
+                    <span id="total-tasks">0 tasks</span>
+                    <span id="completed-tasks">0 completed</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Task Modal -->
+    <div class="modal fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" id="task-modal">
+        <div class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <header class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 id="modal-task-title" class="text-xl font-semibold text-gray-800">Add New Task</h3>
+                <button id="close-modal" class="text-2xl text-gray-500 hover:text-gray-700 transition-all">&times;</button>
+            </header>
+            
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="task-id-input">
+                
+                <div>
+                    <label for="task-name" class="block mb-2 font-medium text-gray-700">Task Name</label>
+                    <input type="text" id="task-name" placeholder="Enter task name" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="task-category" class="block mb-2 font-medium text-gray-700">Category</label>
+                        <select id="task-category" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                            <option value="work">Work</option>
+                            <option value="personal">Personal</option>
+                            <option value="study">Study</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="task-priority" class="block mb-2 font-medium text-gray-700">Priority</label>
+                        <select id="task-priority" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="task-due-date" class="block mb-2 font-medium text-gray-700">Due Date (optional)</label>
+                    <input type="date" id="task-due-date" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all">
+                </div>
+                
+                <div>
+                    <label for="task-notes" class="block mb-2 font-medium text-gray-700">Notes (optional)</label>
+                    <textarea id="task-notes" rows="3" placeholder="Add any additional notes..." class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:border-purple-600 focus:ring-2 focus:ring-purple-200 outline-none transition-all"></textarea>
+                </div>
+            </div>
+            
+            <footer class="p-6 border-t border-gray-200 flex justify-end gap-3">
+                <button id="cancel-task" class="px-5 py-2.5 rounded-full border-2 border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition-all">Cancel</button>
+                <button id="save-task" class="px-5 py-2.5 rounded-full bg-purple-600 text-white font-medium hover:bg-purple-700 transition-all">Save Task</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div class="modal fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" id="stats-modal">
+        <div class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <header class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-purple-600"></i>
+                    <span>Productivity Stats</span>
+                </h3>
+                <button id="close-stats-modal" class="text-2xl text-gray-500 hover:text-gray-700 transition-all">&times;</button>
+            </header>
+            
+            <div class="p-6">
+                <div class="border-b border-gray-200 mb-6">
+                    <div class="flex gap-1">
+                        <button class="tab px-4 py-2 font-medium relative" data-tab="history">History</button>
+                        <button class="tab px-4 py-2 font-medium relative" data-tab="summary">Summary</button>
+                    </div>
+                </div>
+                
+                <div id="history-tab" class="tab-content active">
+                    <h4 class="text-lg font-medium mb-4 text-gray-800">Recent Pomodoro Sessions</h4>
+                    
+                    <div id="history-list" class="max-h-60 overflow-y-auto">
+                        <div id="history-empty-state" class="py-8 text-center text-gray-500">
+                            No completed sessions yet.
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="summary-tab" class="tab-content">
+                    <h4 class="text-lg font-medium mb-4 text-gray-800">Overall Summary</h4>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="stat-card bg-white rounded-xl shadow-sm p-4 text-center">
+                                <div id="modal-today-pomodoros" class="text-2xl font-bold text-purple-600">0</div>
+                                <div class="text-sm text-gray-500">Pomodoros Today</div>
+                            </div>
+                            <div class="stat-card bg-white rounded-xl shadow-sm p-4 text-center">
+                                <div id="modal-week-pomodoros" class="text-2xl font-bold text-purple-600">0</div>
+                                <div class="text-sm text-gray-500">Pomodoros This Week</div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="stat-card bg-white rounded-xl shadow-sm p-4 text-center">
+                                <div id="modal-total-pomodoros" class="text-2xl font-bold text-purple-600">0</div>
+                                <div class="text-sm text-gray-500">Total Pomodoros</div>
+                            </div>
+                            <div class="stat-card bg-white rounded-xl shadow-sm p-4 text-center">
+                                <div id="modal-total-focus-time" class="text-2xl font-bold text-purple-600">0h 0m</div>
+                                <div class="text-sm text-gray-500">Total Focus Time</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card bg-white rounded-xl shadow-sm p-4 text-center">
+                            <div id="modal-current-streak" class="text-2xl font-bold text-purple-600">0 days</div>
+                            <div class="text-sm text-gray-500">Current Streak</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <footer class="p-6 border-t border-gray-200">
+                <button id="reset-stats-btn" class="w-full px-4 py-2.5 rounded-full border-2 border-red-500 text-red-500 font-medium hover:bg-red-50 flex items-center justify-center gap-2 transition-all">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Reset All Stats</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 flex items-center gap-3 max-w-sm w-full border-l-4 hidden">
+        <div class="notification-icon">
+            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+        </div>
+        <div class="flex-1">
+            <div id="notification-title" class="font-semibold">Info</div>
+            <div id="notification-message" class="text-sm text-gray-600">Notification message</div>
+        </div>
+        <button id="close-notification" class="text-gray-500 hover:text-gray-700 transition-all">&times;</button>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="timer-end-sound" preload="auto"></audio>
+    <audio id="break-start-sound" preload="auto"></audio>
+    <audio id="work-start-sound" preload="auto"></audio>
+    <audio id="task-complete-sound" preload="auto"></audio>
+    <audio id="focus-alarm-sound" preload="auto"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Constants ---
+            const SOUND_URLS = {
+                bell: 'https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3',
+                chime: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3',
+                digital: 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3',
+                nature: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-singing-1238.mp3',
+                none: ''
+            };
+            
+            const PRIORITY_COLORS = {
+                high: 'bg-red-500',
+                medium: 'bg-yellow-400',
+                low: 'bg-green-500'
+            };
+            
+            // --- DOM Elements ---
+            // Timer elements
+            const timerDisplay = document.getElementById('timer');
+            const startBtn = document.getElementById('start-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const skipToBreakBtn = document.getElementById('skip-to-break-btn');
+            const modeText = document.getElementById('mode-text');
+            const progressBar = document.getElementById('progress-bar');
+            const soundWave = document.querySelector('.sound-wave');
+            const statusText = document.getElementById('status-text');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const activityStatus = document.getElementById('activity-status');
+            
+            // Settings elements
+            const workDurationInput = document.getElementById('work-duration');
+            const breakDurationInput = document.getElementById('break-duration');
+            const longBreakDurationInput = document.getElementById('long-break-duration');
+            const pomodorosBeforeLongBreakInput = document.getElementById('pomodoros-before-long-break');
+            const autoStartInput = document.getElementById('auto-start');
+            const timerSoundInput = document.getElementById('timer-sound');
+            const darkModeInput = document.getElementById('dark-mode');
+            const toggleSettingsBtn = document.getElementById('toggle-settings');
+            const settingsContent = document.getElementById('settings-content');
+            const applySettingsBtn = document.getElementById('apply-settings-btn');
+            
+            // Stats elements
+            const todayPomodorosDisplay = document.getElementById('today-pomodoros');
+            const weekPomodorosDisplay = document.getElementById('week-pomodoros');
+            const totalPomodorosDisplay = document.getElementById('total-pomodoros');
+            
+            // Task elements
+            const newTaskInput = document.getElementById('new-task');
+            const addTaskBtn = document.getElementById('add-task');
+            const taskList = document.getElementById('task-list');
+            const emptyState = document.getElementById('empty-state');
+            const totalTasksSpan = document.getElementById('total-tasks');
+            const completedTasksSpan = document.getElementById('completed-tasks');
+            const clearCompletedBtn = document.getElementById('clear-completed');
+            const categoryBtns = document.querySelectorAll('.category-btn');
+            
+            // Task modal elements
+            const taskModal = document.getElementById('task-modal');
+            const addTaskModalBtn = document.getElementById('add-task-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const cancelTaskBtn = document.getElementById('cancel-task');
+            const saveTaskBtn = document.getElementById('save-task');
+            const modalTaskTitle = document.getElementById('modal-task-title');
+            const taskNameInput = document.getElementById('task-name');
+            const taskCategoryInput = document.getElementById('task-category');
+            const taskPriorityInput = document.getElementById('task-priority');
+            const taskDueDateInput = document.getElementById('task-due-date');
+            const taskNotesInput = document.getElementById('task-notes');
+            const taskIdInput = document.getElementById('task-id-input');
+            
+            // Stats modal elements
+            const statsModal = document.getElementById('stats-modal');
+            const statsBtn = document.getElementById('stats-btn');
+            const closeStatsModalBtn = document.getElementById('close-stats-modal');
+            const statsTabs = statsModal.querySelectorAll('.tab');
+            const statsTabContents = statsModal.querySelectorAll('.tab-content');
+            const historyList = document.getElementById('history-list');
+            const historyEmptyState = document.getElementById('history-empty-state');
+            const modalTodayPomodoros = document.getElementById('modal-today-pomodoros');
+            const modalWeekPomodoros = document.getElementById('modal-week-pomodoros');
+            const modalTotalPomodoros = document.getElementById('modal-total-pomodoros');
+            const modalTotalFocusTime = document.getElementById('modal-total-focus-time');
+            const modalCurrentStreak = document.getElementById('modal-current-streak');
+            const resetStatsBtn = document.getElementById('reset-stats-btn');
+            
+            // Notification elements
+            const notification = document.getElementById('notification');
+            const notificationIcon = notification.querySelector('.notification-icon i');
+            const notificationTitle = document.getElementById('notification-title');
+            const notificationMessage = document.getElementById('notification-message');
+            const closeNotificationBtn = document.getElementById('close-notification');
+            
+            // Audio elements
+            const timerEndSound = document.getElementById('timer-end-sound');
+            const breakStartSound = document.getElementById('break-start-sound');
+            const workStartSound = document.getElementById('work-start-sound');
+            const taskCompleteSound = document.getElementById('task-complete-sound');
+            const focusAlarmSound = document.getElementById('focus-alarm-sound');
+            
+            // --- State Variables ---
+            let timerInterval;
+            let timeLeft;
+            let totalSeconds;
+            let isRunning = false;
+            let currentMode = 'work';
+            let pomodoroCount = 0;
+            let settings = loadSettings();
+            let tasks = loadTasks();
+            let stats = loadStats();
+            let currentTaskEditingId = null;
+            let currentCategoryFilter = 'all';
+            let notificationTimeout;
+            let isFullscreen = false;
+            
+            // --- Initialization ---
+            function initializeApp() {
+                applySettingsToUI();
+                updateSoundSources();
+                resetTimer(true);
+                renderTasks();
+                updateTaskStats();
+                updateStatsDisplay();
+                updateButtonStates();
+                checkDarkMode();
+                
+                // Initialize tooltips
+                initializeTooltips();
+                
+                // Load sounds and try to unlock audio
+                unlockAudio();
+            }
+            
+            // --- Init Tooltips ---
+            function initializeTooltips() {
+                // Add event listeners for all elements with title attribute
+                document.querySelectorAll('[title]').forEach(el => {
+                    el.addEventListener('mouseenter', showTooltip);
+                    el.addEventListener('mouseleave', hideTooltip);
+                    el.addEventListener('focus', showTooltip);
+                    el.addEventListener('blur', hideTooltip);
+                });
+            }
+            
+            function showTooltip(e) {
+                const element = e.target;
+                const tooltipText = element.getAttribute('title');
+                
+                if (!tooltipText) return;
+                
+                // Create tooltip if it doesn't exist
+                let tooltip = element.querySelector('.custom-tooltip');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.className = 'custom-tooltip absolute z-50 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none hidden';
+                    element.appendChild(tooltip);
+                }
+                
+                // Position tooltip
+                tooltip.textContent = tooltipText;
+                tooltip.classList.remove('hidden');
+                
+                const rect = element.getBoundingClientRect();
+                tooltip.style.left = `${rect.left + rect.width/2 - tooltip.offsetWidth/2}px`;
+                tooltip.style.top = `${rect.top - tooltip.offsetHeight - 5}px`;
+                
+                // Remove title to prevent default tooltip
+                element.removeAttribute('title');
+            }
+            
+            function hideTooltip(e) {
+                const element = e.target;
+                const tooltip = element.querySelector('.custom-tooltip');
+                if (tooltip) {
+                    tooltip.classList.add('hidden');
+                }
+            }
+            
+            // --- Settings Management ---
+            function defaultSettings() {
+                return {
+                    workDuration: 25,
+                    breakDuration: 5,
+                    longBreakDuration: 15,
+                    pomodorosBeforeLongBreak: 4,
+                    autoStart: false,
+                    timerSound: 'bell',
+                    darkMode: 'system'
+                };
+            }
+            
+            function loadSettings() {
+                const savedSettings = localStorage.getItem('zenpomoSettings');
+                return { ...defaultSettings(), ...(savedSettings ? JSON.parse(savedSettings) : {}) };
+            }
+            
+            function saveSettings() {
+                localStorage.setItem('zenpomoSettings', JSON.stringify(settings));
+                checkDarkMode(); // Update dark mode when settings change
+            }
+            
+            function applySettingsToUI() {
+                workDurationInput.value = settings.workDuration;
+                breakDurationInput.value = settings.breakDuration;
+                longBreakDurationInput.value = settings.longBreakDuration;
+                pomodorosBeforeLongBreakInput.value = settings.pomodorosBeforeLongBreak;
+                autoStartInput.value = settings.autoStart.toString();
+                timerSoundInput.value = settings.timerSound;
+                darkModeInput.value = settings.darkMode;
+            }
+            
+            function checkDarkMode() {
+                let darkMode = false;
+                
+                if (settings.darkMode === 'dark' || 
+                    (settings.darkMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    darkMode = true;
+                }
+                
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                    document.body.classList.add('bg-gray-900');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.body.classList.remove('bg-gray-900');
+                }
+            }
+            
+            function applySettings() {
+                // Validate inputs
+                const workDur = parseInt(workDurationInput.value);
+                const breakDur = parseInt(breakDurationInput.value);
+                const longBreakDur = parseInt(longBreakDurationInput.value);
+                const pomBeforeLong = parseInt(pomodorosBeforeLongBreakInput.value);
+                
+                if (isNaN(workDur) || workDur < 1 || workDur > 120 ||
+                    isNaN(breakDur) || breakDur < 1 || breakDur > 30 ||
+                    isNaN(longBreakDur) || longBreakDur < 1 || longBreakDur > 60 ||
+                    isNaN(pomBeforeLong) || pomBeforeLong < 1 || pomBeforeLong > 10) {
+                    showNotification('Invalid Settings', 'Please enter valid numbers within allowed ranges.', 'error');
+                    return;
+                }
+                
+                // Update settings
+                settings.workDuration = workDur;
+                settings.breakDuration = breakDur;
+                settings.longBreakDuration = longBreakDur;
+                settings.pomodorosBeforeLongBreak = pomBeforeLong;
+                settings.autoStart = autoStartInput.value === 'true';
+                settings.timerSound = timerSoundInput.value;
+                settings.darkMode = darkModeInput.value;
+                
+                saveSettings();
+                updateSoundSources();
+                
+                if (!isRunning) {
+                    resetTimer(true); // Update timer display without changing mode
+                }
+                
+                showNotification('Settings Applied', 'New settings saved successfully.', 'success');
+                settingsContent.classList.remove('open');
+                toggleSettingsBtn.innerHTML = '<i class="fas fa-sliders-h"></i> <span>Timer Settings</span>';
+            }
+            
+            function updateSoundSources() {
+                timerEndSound.src = SOUND_URLS[settings.timerSound] || '';
+                timerEndSound.load();
+                breakStartSound.load();
+                workStartSound.load();
+                
+                // Preload task complete sound
+                taskCompleteSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3';
+                taskCompleteSound.load();
+                
+                // Preload focus alarm sound
+                focusAlarmSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-alarm-clock-beep-1103.mp3';
+                focusAlarmSound.load();
+            }
+            
+            // Unlock audio on iOS/devices that require user interaction
+            function unlockAudio() {
+                const playSilentAudio = () => {
+                    const silentAudio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+                    silentAudio.volume = 0;
+                    silentAudio.play().catch(e => console.log('Audio unlock attempt failed'));
+                };
+                
+                document.addEventListener('click', function unlockOnce() {
+                    playSilentAudio();
+                    document.removeEventListener('click', unlockOnce);
+                }, { once: true });
+            }
+            
+            // --- Timer Logic ---
+            function startTimer() {
+                if (isRunning) return;
+                
+                // Sound preload attempt (helps with iOS/Android restrictions)
+                try {
+                    timerEndSound.load();
+                    breakStartSound.load();
+                    workStartSound.load();
+                    const playPromise = timerEndSound.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(_ => {
+                            timerEndSound.pause();
+                            timerEndSound.currentTime = 0;
+                        }).catch(e => {});
+                    }
+                } catch (e) {}
+                
+                isRunning = true;
+                
+                // Update total seconds based on current mode and settings
+                switch (currentMode) {
+                    case 'work': totalSeconds = settings.workDuration * 60; break;
+                    case 'break': totalSeconds = settings.breakDuration * 60; break;
+                    case 'longBreak': totalSeconds = settings.longBreakDuration * 60; break;
+                }
+                
+                // Cap timeLeft if it exceeds new totalSeconds
+                if (timeLeft > totalSeconds) timeLeft = totalSeconds;
+                
+                // Play appropriate sound
+                if (currentMode === 'work') playSound(workStartSound);
+                else playSound(breakStartSound);
+                
+                timerInterval = setInterval(updateTimer, 1000);
+                updateButtonStates();
+                
+                // Show running indicator
+                soundWave.classList.remove('hidden');
+                statusText.textContent = `${currentMode === 'work' ? 'Focusing' : 'On break'}...`;
+                activityStatus.classList.add('text-purple-600');
+                
+                // Show desktop notification if available
+                if (Notification.permission === 'granted' && document.hidden) {
+                    new Notification(`ZenPomo Pro - ${currentMode === 'work' ? 'Work' : 'Break'} Started`, {
+                        body: `Timer started for ${formatMinutesSeconds(totalSeconds)}.`
+                    });
+                }
+            }
+            
+            function pauseTimer() {
+                if (!isRunning) return;
+                
+                clearInterval(timerInterval);
+                isRunning = false;
+                updateButtonStates();
+                
+                // Hide running indicator
+                soundWave.classList.add('hidden');
+                statusText.textContent = 'Timer paused';
+                activityStatus.classList.remove('text-purple-600');
+            }
+            
+            function resetTimer(preventModeSwitch = false) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                
+                if (!preventModeSwitch) {
+                    currentMode = 'work';
+                    pomodoroCount = 0;
+                    updateModeIndicator();
+                }
+                
+                // Update time based on current mode and latest settings
+                switch (currentMode) {
+                    case 'work': timeLeft = settings.workDuration * 60; break;
+                    case 'break': timeLeft = settings.breakDuration * 60; break;
+                    case 'longBreak': timeLeft = settings.longBreakDuration * 60; break;
+                    default: timeLeft = settings.workDuration * 60;
+                }
+                totalSeconds = timeLeft;
+                
+                updateTimerDisplay();
+                updateProgressBar(true);
+                updateButtonStates();
+                
+                // Hide running indicator
+                soundWave.classList.add('hidden');
+                statusText.textContent = 'Timer idle';
+                activityStatus.classList.remove('text-purple-600');
+            }
+            
+            function updateTimer() {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    updateProgressBar();
+                    
+                    // Alert when 1 minute remains
+                    if (timeLeft === 60) {
+                        playSound(focusAlarmSound);
+                    }
+                } else {
+                    // Timer reached 0
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    playSound(timerEndSound);
+                    
+                    // Determine next mode
+                    let nextMode = 'work';
+                    if (currentMode === 'work') {
+                        pomodoroCount++;
+                        recordPomodoroCompletion();
+                        updateStatsDisplay();
+                        
+                        if (pomodoroCount >= settings.pomodorosBeforeLongBreak) {
+                            nextMode = 'longBreak';
+                            pomodoroCount = 0;
+                        } else {
+                            nextMode = 'break';
+                        }
+                    } else {
+                        nextMode = 'work';
+                    }
+                    
+                    // Switch mode
+                    switchMode(nextMode);
+                    
+                    // Auto-start if enabled
+                    if (settings.autoStart) {
+                        setTimeout(startTimer, 500);
+                    } else {
+                        updateButtonStates();
+                    }
+                }
+            }
+            
+            function skipToBreak() {
+                if (currentMode !== 'work') return;
+                
+                clearInterval(timerInterval);
+                isRunning = false;
+                
+                // Determine break type based on next pomodoro
+                let nextBreakMode = pomodoroCount + 1 >= settings.pomodorosBeforeLongBreak ? 'longBreak' : 'break';
+                
+                showNotification('Work Skipped', `Starting ${nextBreakMode === 'longBreak' ? 'long break' : 'short break'}.`, 'info');
+                switchMode(nextBreakMode);
+                
+                if (settings.autoStart) {
+                    setTimeout(startTimer, 500);
+                } else {
+                    updateButtonStates();
+                }
+            }
+            
+            function switchMode(newMode) {
+                currentMode = newMode;
+                
+                // Set time left based on new mode and current settings
+                switch (newMode) {
+                    case 'work': timeLeft = settings.workDuration * 60; break;
+                    case 'break': timeLeft = settings.breakDuration * 60; break;
+                    case 'longBreak': timeLeft = settings.longBreakDuration * 60; break;
+                    default: timeLeft = settings.workDuration * 60;
+                }
+                totalSeconds = timeLeft;
+                
+                updateModeIndicator();
+                updateTimerDisplay();
+                updateProgressBar(true);
+                updateButtonStates();
+                
+                // Update status text
+                if (!isRunning) {
+                    statusText.textContent = 'Timer idle';
+                } else {
+                    statusText.textContent = `${currentMode === 'work' ? 'Focusing' : 'On break'}...`;
+                }
+                
+                // Request notification permission if needed
+                if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        console.log('Notification permission:', permission);
+                    });
+                }
+                
+                // Send desktop notification if enabled
+                if (Notification.permission === 'granted' && document.hidden) {
+                    new Notification(`ZenPomo Pro - ${newMode === 'work' ? 'Work' : 'Break'} Time!`, {
+                        body: `It's time to ${newMode === 'work' ? 'focus' : 'take a break'}!`,
+                    });
+                }
+            }
+            
+            function updateModeIndicator() {
+                let modeClass = 'px-5 py-3 rounded-full font-semibold flex items-center gap-2 transition-colors';
+                let progressColor = 'bg-purple-600';
+                let icon, modeName;
+                
+                switch (currentMode) {
+                    case 'work':
+                        icon = 'fa-bolt';
+                        modeName = 'Focus';
+                        modeClass += ' bg-purple-100 text-purple-600';
+                        break;
+                    case 'break':
+                        icon = 'fa-coffee';
+                        modeName = 'Break';
+                        modeClass += ' bg-pink-100 text-pink-500';
+                        progressColor = 'bg-pink-500';
+                        break;
+                    case 'longBreak':
+                        icon = 'fa-umbrella-beach';
+                        modeName = 'Long Break';
+                        modeClass += ' bg-green-100 text-green-500';
+                        progressColor = 'bg-green-500';
+                        break;
+                }
+                
+                modeText.innerHTML = `<i class="fas ${icon}"></i> <span>${modeName}</span>`;
+                modeText.className = modeClass;
+                progressBar.className = progressColor;
+            }
+            
+            function updateButtonStates() {
+                if (isRunning) {
+                    startBtn.disabled = true;
+                    startBtn.innerHTML = '<i class="fas fa-play"></i> <span class="hidden sm:inline">Running...</span>';
+                    pauseBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    skipToBreakBtn.disabled = currentMode !== 'work';
+                    skipToBreakBtn.classList.toggle('hidden', currentMode !== 'work');
+                } else {
+                    const isAtStart = timeLeft >= getCurrentPhaseTotalSeconds();
+                    
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = isAtStart ? 
+                        '<i class="fas fa-play"></i> <span class="hidden sm:inline">Start</span>' : 
+                        '<i class="fas fa-play"></i> <span class="hidden sm:inline">Resume</span>';
+                    
+                    pauseBtn.disabled = true;
+                    resetBtn.disabled = isAtStart;
+                    skipToBreakBtn.disabled = true;
+                    skipToBreakBtn.classList.add('hidden');
+                }
+            }
+            
+            function getCurrentPhaseTotalSeconds() {
+                switch (currentMode) {
+                    case 'work': return settings.workDuration * 60;
+                    case 'break': return settings.breakDuration * 60;
+                    case 'longBreak': return settings.longBreakDuration * 60;
+                    default: return 25 * 60;
+                }
+            }
+            
+            function updateTimerDisplay() {
+                // Format time
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                const displayTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                timerDisplay.textContent = displayTime;
+                
+                // Update document title
+                const modeTitle = currentMode === 'work' ? 'Work' : currentMode === 'break' ? 'Short Break' : 'Long Break';
+                document.title = `(${displayTime}) ${modeTitle} - ZenPomo Pro`;
+                
+                // Change color based on time and mode
+                if (timeLeft <= 60 && timeLeft > 0) {
+                    timerDisplay.className = 'text-red-500 text-7xl md:text-8xl font-bold text-center my-8 font-mono transition-colors';
+                } else {
+                    let colorClass;
+                    switch (currentMode) {
+                        case 'work': colorClass = 'text-purple-600'; break;
+                        case 'break': colorClass = 'text-pink-500'; break;
+                        case 'longBreak': colorClass = 'text-green-500'; break;
+                    }
+                    timerDisplay.className = `${colorClass} text-7xl md:text-8xl font-bold text-center my-8 font-mono transition-colors`;
+                }
+            }
+            
+            function updateProgressBar(reset = false) {
+                if (reset || totalSeconds <= 0 || timeLeft > totalSeconds) {
+                    progressBar.style.width = '0%';
+                    return;
+                }
+                
+                const currentTimeLeft = Math.max(0, Math.min(timeLeft, totalSeconds));
+                const progress = totalSeconds > 0 ? ((totalSeconds - currentTimeLeft) / totalSeconds) * 100 : 0;
+                progressBar.style.width = `${progress}%`;
+            }
+            
+            function formatMinutesSeconds(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins} minute${mins !== 1 ? 's' : ''} ${secs} second${secs !== 1 ? 's' : ''}`;
+            }
+            
+            function playSound(soundElement) {
+                if ((!soundElement.src && soundElement !== taskCompleteSound) || 
+                    (settings.timerSound === 'none' && soundElement !== taskCompleteSound)) {
+                    return;
+                }
+                
+                try {
+                    soundElement.currentTime = 0;
+                    const playPromise = soundElement.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(_ => {
+                            // console.log(`Sound ${soundElement.id} played`);
+                        }).catch(error => {
+                            console.error('Sound play failed:', error);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Sound error:', error);
+                }
+            }
+            
+            // --- Task Management ---
+            function loadTasks() {
+                const saved = localStorage.getItem('zenpomoTasks');
+                return saved ? JSON.parse(saved) : [];
+            }
+            
+            function saveTasks() {
+                localStorage.setItem('zenpomoTasks', JSON.stringify(tasks));
+            }
+            
+            function addTask(taskData) {
+                const newTask = {
+                    id: taskData.id || Date.now(),
+                    text: taskData.text,
+                    category: taskData.category || 'other',
+                    priority: taskData.priority || 'medium',
+                    dueDate: taskData.dueDate || null,
+                    notes: taskData.notes || '',
+                    completed: taskData.completed || false,
+                    createdAt: taskData.createdAt || new Date().toISOString()
+                };
+                
+                tasks.push(newTask);
+                saveTasks();
+                renderTasks();
+                updateTaskStats();
+                scrollToTask(newTask.id);
+                return newTask;
+            }
+            
+            function updateTask(taskId, updatedData) {
+                tasks = tasks.map(task => 
+                    task.id === taskId ? { ...task, ...updatedData } : task
+                );
+                saveTasks();
+                renderTasks();
+                updateTaskStats();
+                scrollToTask(taskId);
+            }
+            
+            function deleteTask(taskId) {
+                tasks = tasks.filter(task => task.id !== taskId);
+                saveTasks();
+                renderTasks();
+                updateTaskStats();
+                showNotification('Task Deleted', 'The task has been removed.', 'info');
+            }
+            
+            function toggleTaskComplete(taskId) {
+                let taskCompleted = false;
+                
+                tasks = tasks.map(task => {
+                    if (task.id === taskId) {
+                        taskCompleted = !task.completed;
+                        return { ...task, completed: taskCompleted };
+                    }
+                    return task;
+                });
+                
+                saveTasks();
+                renderTasks();
+                updateTaskStats();
+                
+                if (taskCompleted) {
+                    playSound(taskCompleteSound);
+                    showNotification('Task Completed!', 'Well done!', 'success');
+                }
+            }
+            
+            function clearCompletedTasks() {
+                const completedCount = tasks.filter(t => t.completed).length;
+                
+                if (completedCount === 0) {
+                    showNotification('No Completed Tasks', 'Nothing to clear.', 'info');
+                    return;
+                }
+                
+                tasks = tasks.filter(task => !task.completed);
+                saveTasks();
+                renderTasks();
+                updateTaskStats();
+                showNotification('Tasks Cleared', `${completedCount} completed task(s) removed.`, 'success');
+            }
+            
+            function scrollToTask(taskId) {
+                const taskElement = document.querySelector(`.task-item[data-id="${taskId}"]`);
+                if (taskElement) {
+                    taskElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Add highlight effect
+                    taskElement.classList.add('bg-yellow-50');
+                    setTimeout(() => taskElement.classList.remove('bg-yellow-50'), 1000);
+                }
+            }
+            
+            function renderTasks() {
+                // Filter by current category
+                const filtered = tasks.filter(t => 
+                    currentCategoryFilter === 'all' || t.category === currentCategoryFilter
+                );
+                
+                // Sort: incomplete first, then by priority (high to low), then by creation date (newest first)
+                filtered.sort((a, b) => 
+                    (a.completed - b.completed) || 
+                    ({ high: 1, medium: 2, low: 3 }[a.priority] - { high: 1, medium: 2, low: 3 }[b.priority]) || 
+                    (new Date(b.createdAt) - new Date(a.createdAt))
+                );
+                
+                taskList.innerHTML = '';
+                
+                if (filtered.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    taskList.classList.add('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    taskList.classList.remove('hidden');
+                    
+                    filtered.forEach(task => {
+                        const isOverdue = task.dueDate && !task.completed && 
+                                          new Date(task.dueDate + 'T00:00:00') < new Date().setHours(0,0,0,0);
+                        
+                        const formattedDueDate = task.dueDate ? 
+                            new Date(task.dueDate + 'T00:00:00').toLocaleDateString(undefined, { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric' 
+                            }) : '';
+                        
+                        const taskItem = document.createElement('li');
+                        taskItem.className = `task-item flex items-center p-4 bg-gray-50 rounded-xl mb-3 transition-all hover:translate-x-1 ${task.completed ? 'opacity-80 bg-gray-100' : ''}`;
+                        taskItem.dataset.id = task.id;
+                        
+                        // Priority indicator
+                        taskItem.innerHTML = `
+                            <div class="priority-dot w-2 h-2 rounded-full mr-3 ${PRIORITY_COLORS[task.priority]}" title="Priority: ${task.priority}"></div>
+                            <input type="checkbox" class="w-5 h-5 mr-3 cursor-pointer" ${task.completed ? 'checked' : ''}>
+                            <div class="flex-1 overflow-hidden">
+                                <span class="task-text block mb-1 ${task.completed ? 'line-through text-gray-500' : 'text-gray-800'}">${escapeHTML(task.text)}</span>
+                                <div class="flex flex-wrap items-center gap-2 text-xs">
+                                    ${task.category ? `<span class="task-category px-2 py-0.5 rounded-full bg-purple-100 text-purple-600">${task.category}</span>` : ''}
+                                    ${formattedDueDate ? `
+                                        <span class="flex items-center gap-1 ${isOverdue ? 'text-red-500 font-semibold' : 'text-gray-500'}">
+                                            <i class="far fa-calendar-alt"></i>
+                                            <span>${formattedDueDate} ${isOverdue ? '(Overdue)' : ''}</span>
+                                        </span>` : ''}
+                                    ${task.notes ? `<span class="flex items-center gap-1 text-gray-500"><i class="far fa-sticky-note"></i> <span>Has notes</span></span>` : ''}
+                                </div>
+                            </div>
+                            <div class="task-actions flex gap-1 opacity-0 transition-opacity">
+                                <button class="edit-btn w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-200 transition-all text-gray-500 hover:text-blue-500" title="Edit Task">
+                                    <i class="far fa-edit"></i>
+                                </button>
+                                <button class="delete-btn w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-200 transition-all text-gray-500 hover:text-red-500" title="Delete Task">
+                                    <i class="far fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        `;
+                        
+                        // Add event listeners
+                        taskItem.querySelector('input[type="checkbox"]').addEventListener('change', () => toggleTaskComplete(task.id));
+                        taskItem.querySelector('.edit-btn').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openEditTaskModal(task.id);
+                        });
+                        taskItem.querySelector('.delete-btn').addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            deleteTask(task.id);
+                        });
+                        
+                        // Click anywhere on task to toggle (unless clicking buttons)
+                        taskItem.addEventListener('click', (e) => {
+                            if (!e.target.closest('button') && !e.target.closest('input[type="checkbox"]')) {
+                                toggleTaskComplete(task.id);
+                            }
+                        });
+                        
+                        taskList.appendChild(taskItem);
+                    });
+                }
+                
+                updateTaskStats();
+            }
+            
+            function updateTaskStats() {
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.completed).length;
+                totalTasksSpan.textContent = `${total} ${total === 1 ? 'task' : 'tasks'}`;
+                completedTasksSpan.textContent = `${completed} completed`;
+            }
+            
+            function handleAddQuickTask() {
+                const text = newTaskInput.value.trim();
+                if (!text) {
+                    showNotification('Empty Task', 'Please enter task text.', 'error');
+                    newTaskInput.focus();
+                    return;
+                }
+                
+                const category = currentCategoryFilter !== 'all' ? currentCategoryFilter : 'other';
+                addTask({ text, category });
+                newTaskInput.value = '';
+                showNotification('Task Added', 'Quick task added successfully!', 'success');
+            }
+            
+            // --- Task Modal Functions ---
+            function openAddTaskModal() {
+                currentTaskEditingId = null;
+                modalTaskTitle.textContent = 'Add New Task';
+                taskIdInput.value = '';
+                taskNameInput.value = '';
+                taskCategoryInput.value = currentCategoryFilter !== 'all' ? currentCategoryFilter : 'work';
+                taskPriorityInput.value = 'medium';
+                taskDueDateInput.value = '';
+                taskNotesInput.value = '';
+                taskModal.classList.add('open');
+                taskNameInput.focus();
+            }
+            
+            function openEditTaskModal(taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                currentTaskEditingId = taskId;
+                modalTaskTitle.textContent = 'Edit Task';
+                taskIdInput.value = task.id;
+                taskNameInput.value = task.text;
+                taskCategoryInput.value = task.category;
+                taskPriorityInput.value = task.priority;
+                taskDueDateInput.value = task.dueDate || '';
+                taskNotesInput.value = task.notes || '';
+                taskModal.classList.add('open');
+                taskNameInput.focus();
+            }
+            
+            function closeTaskModal() {
+                taskModal.classList.remove('open');
+                
+                // Reset modal after animation
+                setTimeout(() => {
+                    currentTaskEditingId = null;
+                    modalTaskTitle.textContent = 'Add New Task';
+                    taskIdInput.value = '';
+                    taskNameInput.value = '';
+                    taskCategoryInput.value = 'work';
+                    taskPriorityInput.value = 'medium';
+                    taskDueDateInput.value = '';
+                    taskNotesInput.value = '';
+                }, 300);
+            }
+            
+            function saveTaskFromModal() {
+                const text = taskNameInput.value.trim();
+                if (!text) {
+                    showNotification('Error', 'Task name cannot be empty!', 'error');
+                    taskNameInput.focus();
+                    return;
+                }
+                
+                const taskData = {
+                    text,
+                    category: taskCategoryInput.value,
+                    priority: taskPriorityInput.value,
+                    dueDate: taskDueDateInput.value || null,
+                    notes: taskNotesInput.value.trim()
+                };
+                
+                if (currentTaskEditingId) {
+                    updateTask(currentTaskEditingId, taskData);
+                    showNotification('Task Updated', 'Task details saved.', 'success');
+                } else {
+                    addTask(taskData);
+                    showNotification('Task Added', 'New task created.', 'success');
+                }
+                
+                closeTaskModal();
+            }
+            
+            // --- Statistics Management ---
+            function defaultStats() {
+                return {
+                    pomodoros: {},
+                    totalPomodoros: 0,
+                    streak: 0,
+                    lastActivityDate: null,
+                    lastResetDate: new Date().toISOString()
+                };
+            }
+            
+            function loadStats() {
+                const saved = localStorage.getItem('zenpomoStats');
+                let loaded = saved ? JSON.parse(saved) : defaultStats();
+                loaded = { ...defaultStats(), ...loaded };
+                
+                // Ensure required properties exist
+                if (!loaded.pomodoros) loaded.pomodoros = {};
+                if (!loaded.totalPomodoros) loaded.totalPomodoros = 0;
+                if (!loaded.lastActivityDate) loaded.lastActivityDate = null;
+                
+                // Update streak if needed
+                updateStreak(loaded);
+                
+                return loaded;
+            }
+            
+            function updateStreak(statsObj) {
+                if (!statsObj.lastActivityDate) {
+                    statsObj.streak = 0;
+                    return;
+                }
+                
+                const lastDate = new Date(statsObj.lastActivityDate);
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                // Reset streak if last activity was before yesterday
+                if (lastDate.toDateString() !== today.toDateString() && 
+                    lastDate.toDateString() !== yesterday.toDateString()) {
+                    statsObj.streak = 0;
+                }
+            }
+            
+            function saveStats() {
+                localStorage.setItem('zenpomoStats', JSON.stringify(stats));
+            }
+            
+            function recordPomodoroCompletion() {
+                const today = new Date();
+                const dateStr = today.toISOString().split('T')[0];
+                
+                // Update count for today
+                stats.pomodoros[dateStr] = (stats.pomodoros[dateStr] || 0) + 1;
+                stats.totalPomodoros = (stats.totalPomodoros || 0) + 1;
+                
+                // Update streak
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                
+                if (!stats.lastActivityDate || 
+                    stats.lastActivityDate === yesterdayStr || 
+                    stats.lastActivityDate === dateStr) {
+                    // Continue streak
+                    stats.lastActivityDate = dateStr;
+                    stats.streak = (stats.streak || 0) + 1;
+                } else {
+                    // Reset streak
+                    stats.lastActivityDate = dateStr;
+                    stats.streak = 1;
+                }
+                
+                saveStats();
+            }
+            
+            function getPomodorosForDate(dateStr) {
+                return stats.pomodoros[dateStr] || 0;
+            }
+            
+            function getPomodorosThisWeek() {
+                const today = new Date();
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+                
+                let count = 0;
+                
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(startOfWeek);
+                    date.setDate(date.getDate() + i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    count += getPomodorosForDate(dateStr);
+                }
+                
+                return count;
+            }
+            
+            function getTotalFocusTime() {
+                return (stats.totalPomodoros || 0) * settings.workDuration;
+            }
+            
+            function updateStatsDisplay() {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const todayCount = getPomodorosForDate(todayStr);
+                const weekCount = getPomodorosThisWeek();
+                const totalCount = stats.totalPomodoros || 0;
+                
+                // Format total focus time
+                const totalMinutes = getTotalFocusTime();
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                // Update main display
+                todayPomodorosDisplay.textContent = todayCount;
+                weekPomodorosDisplay.textContent = weekCount;
+                totalPomodorosDisplay.textContent = totalCount;
+                
+                // Update modal display
+                modalTodayPomodoros.textContent = todayCount;
+                modalWeekPomodoros.textContent = weekCount;
+                modalTotalPomodoros.textContent = totalCount;
+                modalTotalFocusTime.textContent = `${hours}h ${minutes}m`;
+                modalCurrentStreak.textContent = `${stats.streak || 0} ${stats.streak === 1 ? 'day' : 'days'}`;
+                
+                renderHistoryList();
+            }
+            
+            function renderHistoryList() {
+                const sortedDates = Object.keys(stats.pomodoros)
+                    .sort((a, b) => new Date(b) - new Date(a))
+                    .slice(0, 20); // Show only recent 20 items
+                
+                historyList.innerHTML = '';
+                
+                if (sortedDates.length === 0) {
+                    historyEmptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                historyEmptyState.classList.add('hidden');
+                
+                sortedDates.forEach(dateStr => {
+                    const count = stats.pomodoros[dateStr];
+                    const date = new Date(dateStr + 'T00:00:00');
+                    const formattedDate = date.toLocaleDateString(undefined, {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    
+                    const item = document.createElement('div');
+                    item.className = 'history-item flex justify-between items-center px-4 py-3 border-b border-gray-200 last:border-b-0';
+                    item.innerHTML = `
+                        <span class="history-date font-medium">${formattedDate}</span>
+                        <span class="history-count px-2 py-0.5 rounded-full bg-purple-100 text-purple-600 font-semibold">
+                            ${count} ${count === 1 ? 'session' : 'sessions'}
+                        </span>
+                    `;
+                    
+                    historyList.appendChild(item);
+                });
+            }
+            
+            function resetAllStats() {
+                if (confirm("Are you sure you want to reset ALL statistics? This cannot be undone.")) {
+                    stats = defaultStats();
+                    stats.lastResetDate = new Date().toISOString();
+                    saveStats();
+                    updateStatsDisplay();
+                    showNotification('Stats Reset', 'All statistics have been cleared.', 'success');
+                }
+            }
+            
+            // --- Stats Modal Functions ---
+            function openStatsModal() {
+                updateStatsDisplay();
+                statsModal.classList.add('open');
+                activateStatsTab('history');
+            }
+            
+            function closeStatsModal() {
+                statsModal.classList.remove('open');
+            }
+            
+            function activateStatsTab(tabId) {
+                // Update tabs
+                statsTabs.forEach(tab => {
+                    tab.classList.toggle('text-purple-600', tab.dataset.tab === tabId);
+                    tab.classList.toggle('border-b-2', tab.dataset.tab === tabId);
+                    tab.classList.toggle('border-purple-600', tab.dataset.tab === tabId);
+                });
+                
+                // Update content
+                statsTabContents.forEach(content => {
+                    content.classList.toggle('hidden', content.id !== `${tabId}-tab`);
+                });
+            }
+            
+            // --- Notifications ---
+            function showNotification(title, message, type = 'info') {
+                clearTimeout(notificationTimeout);
+                
+                // Set notification content
+                notificationTitle.textContent = title;
+                notificationMessage.textContent = message;
+                
+                // Set notification style
+                notification.className = 'fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-4 flex items-center gap-3 max-w-sm w-full border-l-4';
+                
+                switch (type) {
+                    case 'success':
+                        notificationIcon.className = 'fas fa-check-circle text-green-500 text-xl';
+                        notification.classList.add('border-green-500');
+                        break;
+                    case 'error':
+                        notificationIcon.className = 'fas fa-times-circle text-red-500 text-xl';
+                        notification.classList.add('border-red-500');
+                        break;
+                    case 'info':
+                        notificationIcon.className = 'fas fa-info-circle text-blue-500 text-xl';
+                        notification.classList.add('border-blue-500');
+                        break;
+                }
+                
+                // Show notification
+                notification.classList.remove('hidden', 'opacity-0');
+                notification.classList.add('show');
+                
+                // Auto-hide after 5 seconds
+                notificationTimeout = setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
+            }
+            
+            function hideNotification() {
+                clearTimeout(notificationTimeout);
+                notification.classList.remove('show');
+            }
+            
+            // --- Utility Functions ---
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            
+            // --- Fullscreen Mode ---
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error('Fullscreen error:', err);
+                        showNotification('Fullscreen Error', 'Could not enter fullscreen mode.', 'error');
+                    });
+                    isFullscreen = true;
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                        isFullscreen = false;
+                    }
+                }
+            }
+            
+            // --- Event Listeners ---
+            // Timer controls
+            startBtn.addEventListener('click', startTimer);
+            pauseBtn.addEventListener('click', pauseTimer);
+            resetBtn.addEventListener('click', () => resetTimer(false));
+            skipToBreakBtn.addEventListener('click', skipToBreak);
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // Settings
+            applySettingsBtn.addEventListener('click', applySettings);
+            toggleSettingsBtn.addEventListener('click', function() {
+                settingsContent.classList.toggle('open');
+                this.innerHTML = settingsContent.classList.contains('open') ? 
+                    '<i class="fas fa-chevron-up"></i> <span>Hide Settings</span>' : 
+                    '<i class="fas fa-sliders-h"></i> <span>Timer Settings</span>';
+            });
+            
+            // Tasks
+            addTaskBtn.addEventListener('click', handleAddQuickTask);
+            newTaskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleAddQuickTask();
+            });
+            clearCompletedBtn.addEventListener('click', clearCompletedTasks);
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    categoryBtns.forEach(b => {
+                        b.classList.remove('bg-purple-600', 'text-white');
+                        b.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                    });
+                    this.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                    this.classList.add('bg-purple-600', 'text-white');
+                    currentCategoryFilter = this.dataset.category;
+                    renderTasks();
+                });
+            });
+            
+            // Task modal
+            addTaskModalBtn.addEventListener('click', openAddTaskModal);
+            closeModalBtn.addEventListener('click', closeTaskModal);
+            cancelTaskBtn.addEventListener('click', closeTaskModal);
+            saveTaskBtn.addEventListener('click', saveTaskFromModal);
+            taskModal.addEventListener('click', (e) => {
+                if (e.target === taskModal) closeTaskModal();
+            });
+            
+            // Stats modal
+            statsBtn.addEventListener('click', openStatsModal);
+            closeStatsModalBtn.addEventListener('click', closeStatsModal);
+            statsModal.addEventListener('click', (e) => {
+                if (e.target === statsModal) closeStatsModal();
+            });
+            resetStatsBtn.addEventListener('click', resetAllStats);
+            
+            // Tabs in stats modal
+            statsTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    activateStatsTab(this.dataset.tab);
+                });
+            });
+            
+            // Notification
+            closeNotificationBtn.addEventListener('click', hideNotification);
+            
+            // Navigation links
+            document.getElementById('nav-stats')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                statsBtn.click();
+            });
+            document.getElementById('nav-tasks')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('.todo-card').scrollIntoView({ behavior: 'smooth' });
+            });
+            document.getElementById('nav-settings')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelector('.pomodoro-card').scrollIntoView({ behavior: 'smooth' });
+                if (!settingsContent.classList.contains('open')) {
+                    toggleSettingsBtn.click();
+                }
+            });
+            
+            // Fullscreen change listener
+            document.addEventListener('fullscreenchange', () => {
+                isFullscreen = !!document.fullscreenElement;
+                fullscreenBtn.innerHTML = isFullscreen ? 
+                    '<i class="fas fa-compress"></i>' : 
+                    '<i class="fas fa-expand"></i>';
+                fullscreenBtn.title = isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
+            });
+            
+            // Page visibility change (for notifications)
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && isRunning) {
+                    const modeName = currentMode === 'work' ? 'Work' : currentMode === 'break' ? 'Short Break' : 'Long Break';
+                    showNotification('ZenPomo Pro Reminder', `${modeName} timer is running: ${timerDisplay.textContent} remaining`, 'info');
+                }
+            });
+            
+            // Initialize the app
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
