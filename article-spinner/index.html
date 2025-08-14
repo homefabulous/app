@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Spinner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        textarea {
+             width: 100%;
+        height: 200px;
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: inherit;
+        overflow-x: hidden;      /* Hide horizontal scroll */
+        word-wrap: break-word;   /* Break long words */
+        white-space: pre-wrap;  /* Maintain line breaks but wrap text */
+        resize: vertical;        /* Only allow vertical resizing */
+    
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #2196F3;
+        }
+        button.secondary:hover {
+            background-color: #0b7dda;
+        }
+        .result-container {
+            margin-top: 20px;
+            position: relative;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        #spunText {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            min-height: 200px;
+            font-family: inherit;
+        }
+        .spinner-controls {
+            margin: 15px 0;
+        }
+        label {
+            margin-right: 15px;
+            white-space: nowrap;
+        }
+        select, input[type="checkbox"] {
+            margin-left: 5px;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .notification.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Article Spinner</h1>
+    <p>Enter your text below and click "Spin" to generate unique variations.</p>
+    
+    <textarea id="originalText" placeholder="Enter your text here..."></textarea>
+    
+    <div class="spinner-controls">
+        <label>
+            Variation Level:
+            <select id="variationLevel">
+                <option value="1">Low</option>
+                <option value="2" selected>Medium</option>
+                <option value="3">High</option>
+            </select>
+        </label>
+        
+        <label>
+            <input type="checkbox" id="preserveCapitalization" checked>
+            Preserve Capitalization
+        </label>
+    </div>
+    
+    <button id="spinButton">Spin Article</button>
+    
+    <div class="result-container">
+        <div class="result-header">
+            <h3>Spun Text:</h3>
+            <button id="copyButton" class="secondary" disabled>Copy to Clipboard</button>
+        </div>
+        <div id="spunText"></div>
+    </div>
+
+    <div id="notification" class="notification">Copied to clipboard!</div>
+
+    <script src="spinner.js"></script>
+</body>
+</html>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const originalText = document.getElementById('originalText');
+    const spinButton = document.getElementById('spinButton');
+    const spunText = document.getElementById('spunText');
+    const variationLevel = document.getElementById('variationLevel');
+    const preserveCapitalization = document.getElementById('preserveCapitalization');
+    const copyButton = document.getElementById('copyButton');
+    const notification = document.getElementById('notification');
+    
+    // Expanded synonym database
+    const synonyms = {
+        
+    "happy": ["joyful", "cheerful", "content", "delighted", "pleased", "blissful", "merry", "overjoyed", "jubilant", "elated"],
+    "sad": ["unhappy", "depressed", "gloomy", "melancholy", "downcast", "miserable", "heartbroken", "sorrowful", "despondent", "blue"],
+    "big": ["large", "huge", "enormous", "gigantic", "massive", "immense", "vast", "colossal", "monumental", "tremendous"],
+    "small": ["tiny", "little", "petite", "miniature", "minute", "compact", "diminutive", "wee", "slight", "microscopic"],
+    "good": ["excellent", "great", "superb", "wonderful", "outstanding", "marvelous", "first-rate", "admirable", "commendable", "splendid"],
+    "bad": ["poor", "terrible", "awful", "substandard", "inferior", "atrocious", "dreadful", "appalling", "horrible", "unacceptable"],
+    "beautiful": ["attractive", "gorgeous", "stunning", "lovely", "charming", "radiant", "alluring", "elegant", "pretty", "exquisite"],
+    "ugly": ["unattractive", "hideous", "repulsive", "unsightly", "grotesque", "homely", "monstrous", "plain", "frightful", "horrid"],
+    "fast": ["quick", "rapid", "swift", "speedy", "brisk", "fleet", "nimble", "expeditious", "hasty", "prompt"],
+    "slow": ["sluggish", "lethargic", "unhurried", "delayed", "lagging", "creeping", "dawdling", "gradual", "slack", "tardy"],
+    "smart": ["intelligent", "clever", "bright", "sharp", "brilliant", "astute", "wise", "brainy", "knowledgeable", "shrewd"],
+    "stupid": ["dumb", "foolish", "idiotic", "dense", "dimwitted", "brainless", "mindless", "ignorant", "moronic", "clueless"],
+    "strong": ["powerful", "mighty", "sturdy", "robust", "tough", "resilient", "solid", "forceful", "potent", "hardy"],
+    "weak": ["feeble", "frail", "fragile", "delicate", "powerless", "flimsy", "puny", "impotent", "ineffective", "limp"],
+    "hot": ["warm", "heated", "scorching", "blazing", "sweltering", "boiling", "steamy", "fiery", "tropical", "sizzling"],
+    "cold": ["chilly", "freezing", "icy", "frosty", "cool", "nippy", "gelid", "wintry", "arctic", "bitter"],
+    "rich": ["wealthy", "affluent", "prosperous", "opulent", "well-off", "loaded", "moneyed", "flush", "well-to-do", "lavish"],
+    "poor": ["needy", "destitute", "impoverished", "penniless", "indigent", "broke", "underprivileged", "down-and-out", "struggling"],
+    "angry": ["mad", "furious", "irate", "livid", "enraged", "outraged", "incensed", "wrathful", "fuming", "seething"],
+    "calm": ["peaceful", "serene", "tranquil", "placid", "relaxed", "unruffled", "cool", "composed", "soothing", "collected"],
+    "brave": ["courageous", "bold", "fearless", "valiant", "daring", "intrepid", "heroic", "plucky", "gallant", "audacious"],
+    "afraid": ["scared", "frightened", "fearful", "terrified", "petrified", "panicked", "jumpy", "anxious", "uneasy", "nervous"],
+    "easy": ["simple", "effortless", "straightforward", "uncomplicated", "smooth", "painless", "clear", "basic", "manageable", "undemanding"],
+    "hard": ["difficult", "challenging", "tough", "arduous", "strenuous", "grueling", "demanding", "exacting", "formidable", "laborious"],
+    "old": ["ancient", "aged", "elderly", "vintage", "antique", "senior", "timeworn", "worn", "historic", "seasoned"],
+    "young": ["youthful", "juvenile", "adolescent", "immature", "fresh", "tender", "new", "childlike", "green", "sprightly"],
+    "clean": ["spotless", "immaculate", "tidy", "neat", "sanitary", "pristine", "unsoiled", "sterile", "fresh", "pure"],
+    "dirty": ["filthy", "grimy", "soiled", "muddy", "polluted", "messy", "unclean", "stained", "dingy", "contaminated"],
+    "bright": ["shiny", "radiant", "gleaming", "sparkling", "luminous", "glowing", "vivid", "brilliant", "incandescent", "lustrous"],
+    "dark": ["dim", "gloomy", "shadowy", "murky", "dull", "obscure", "shaded", "dusky", "overcast", "pitch-black"],
+    "loud": ["noisy", "boisterous", "deafening", "clamorous", "blaring", "raucous", "piercing", "shrill", "thunderous", "uproarious"],
+    "quiet": ["silent", "hushed", "peaceful", "calm", "muted", "noiseless", "tranquil", "still", "muffled", "serene"],
+    "funny": ["humorous", "comical", "amusing", "entertaining", "witty", "hilarious", "jocular", "lighthearted", "facetious", "laughable"],
+    "serious": ["grave", "solemn", "sober", "thoughtful", "earnest", "severe", "stern", "important", "significant", "weighty"],
+    "walk": ["stroll", "amble", "saunter", "hike", "wander", "ramble", "trek", "trudge", "march", "stride"],
+    "run": ["sprint", "dash", "jog", "race", "hasten", "rush", "charge", "gallop", "bolt", "scurry"],
+    "eat": ["devour", "consume", "ingest", "munch", "chew", "feast", "gobble", "nibble", "partake", "snack"],
+    "drink": ["sip", "gulp", "swallow", "quaff", "imbibe", "down", "chug", "taste", "swig", "sup"],
+    "say": ["speak", "utter", "declare", "announce", "state", "proclaim", "remark", "mention", "tell", "voice"],
+    "look": ["gaze", "glance", "stare", "peek", "peep", "observe", "watch", "glimpse", "scan", "inspect"],
+    "make": ["create", "produce", "build", "construct", "fabricate", "form", "assemble", "craft", "devise", "generate"],
+    "do": ["perform", "execute", "complete", "accomplish", "undertake", "carry out", "achieve", "finish", "pursue", "conduct"],
+    "write": ["compose", "draft", "pen", "scribe", "record", "jot", "note", "document", "inscribe", "author"],
+    "read": ["peruse", "scan", "browse", "study", "review", "flip through", "skim", "interpret", "digest", "examine"],
+    "help": ["assist", "aid", "support", "facilitate", "serve", "back up", "encourage", "boost", "promote", "lend a hand"],
+    "use": ["employ", "utilize", "apply", "exploit", "implement", "exercise", "operate", "harness", "deploy", "administer"],
+    "buy": ["purchase", "acquire", "procure", "obtain", "get", "secure", "snag", "grab", "pick up", "collect"],
+    "sell": ["vend", "market", "trade", "peddle", "offer", "promote", "retail", "distribute", "barter", "auction"],
+    "win": ["triumph", "succeed", "prevail", "conquer", "achieve", "gain", "secure", "dominate", "outperform", "overcome"],
+    "lose": ["fail", "fall short", "miss", "be defeated", "surrender", "give up", "yield", "succumb", "forfeit", "misplace"],
+
+    "friend": ["companion", "ally", "mate", "pal", "buddy", "chum", "confidant", "partner", "comrade", "associate"],
+    "enemy": ["foe", "opponent", "rival", "adversary", "antagonist", "competitor", "nemesis", "challenger", "combatant", "opposer"],
+    "car": ["automobile", "vehicle", "ride", "motorcar", "wagon", "machine", "sedan", "coupe", "van", "truck"],
+    "house": ["home", "residence", "dwelling", "abode", "habitation", "cottage", "hut", "mansion", "villa", "apartment"],
+    "food": ["meal", "dish", "cuisine", "provisions", "nourishment", "fare", "refreshment", "delicacy", "snack", "groceries"],
+    "water": ["h2o", "liquid", "fluid", "drink", "beverage", "refreshment", "aqua", "hydration", "spring", "stream"],
+    "money": ["cash", "currency", "funds", "capital", "wealth", "assets", "income", "revenue", "fortune", "savings"],
+    "job": ["occupation", "profession", "career", "position", "role", "employment", "trade", "work", "duty", "assignment"],
+    "city": ["town", "metropolis", "municipality", "urban area", "borough", "district", "capital", "village", "suburb", "settlement"],
+    "country": ["nation", "state", "territory", "land", "realm", "kingdom", "province", "republic", "empire", "homeland"],
+    "book": ["novel", "publication", "volume", "tome", "manual", "guide", "handbook", "script", "text", "paperback"],
+    "computer": ["pc", "laptop", "desktop", "workstation", "notebook", "machine", "server", "terminal", "device", "system"],
+    "phone": ["mobile", "cellphone", "smartphone", "handset", "device", "receiver", "cell", "telephone", "gadget", "communicator"],
+    "rich": ["wealthy", "affluent", "prosperous", "opulent", "well-off", "moneyed"],
+    "poor": ["needy", "destitute", "impoverished", "penniless", "underprivileged", "bankrupt"],
+    "fast": ["quick", "speedy", "rapid", "swift", "brisk", "hasty"],
+    "slow": ["sluggish", "lethargic", "unhurried", "lagging", "delayed", "creeping"],
+    "smart": ["intelligent", "bright", "clever", "brilliant", "sharp", "astute"],
+    "stupid": ["dumb", "foolish", "dense", "ignorant", "brainless", "mindless"],
+    "funny": ["humorous", "comical", "amusing", "hilarious", "witty", "entertaining"],
+    "serious": ["solemn", "grave", "earnest", "sincere", "thoughtful", "stern"],
+    "hot": ["warm", "scorching", "blazing", "sweltering", "boiling", "torrid"],
+    "cold": ["chilly", "cool", "freezing", "frigid", "icy", "frosty"],
+    "bright": ["luminous", "radiant", "vivid", "shining", "brilliant", "gleaming"],
+    "dark": ["dim", "shadowy", "murky", "obscure", "gloomy", "dusky"],
+    "clean": ["spotless", "immaculate", "pure", "hygienic", "neat", "tidy"],
+    "dirty": ["filthy", "grimy", "soiled", "unclean", "messy", "muddy"],
+    "strong": ["powerful", "sturdy", "robust", "mighty", "solid", "durable"],
+    "weak": ["frail", "feeble", "fragile", "delicate", "infirm", "puny"],
+    "happy": ["joyful", "cheerful", "content", "delighted", "pleased", "glad"],
+    "sad": ["unhappy", "depressed", "gloomy", "melancholy", "mournful", "downcast"],
+    "walk": ["stroll", "amble", "saunter", "hike", "wander", "trek"],
+    "run": ["sprint", "dash", "jog", "race", "hurry", "bolt"],
+    "talk": ["chat", "speak", "converse", "discuss", "communicate", "gab"],
+    "eat": ["consume", "devour", "ingest", "munch", "nibble", "feast"],
+    "drink": ["sip", "gulp", "swig", "imbibe", "chug", "quaff"],
+    "look": ["gaze", "glance", "watch", "observe", "view", "see"],
+    "see": ["notice", "spot", "witness", "glimpse", "behold", "discern"],
+    "make": ["create", "build", "craft", "produce", "construct", "form"],
+    "do": ["perform", "execute", "carry out", "undertake", "accomplish", "complete"],
+    "go": ["move", "travel", "proceed", "journey", "depart", "venture"],
+    "come": ["arrive", "approach", "appear", "enter", "show up", "turn up"],
+    "say": ["state", "declare", "utter", "mention", "remark", "express"],
+    "think": ["ponder", "consider", "reflect", "mull over", "contemplate", "believe"],
+    "know": ["understand", "grasp", "comprehend", "realize", "perceive", "recognize"],
+    "love": ["adore", "cherish", "treasure", "admire", "appreciate", "revere"],
+    "hate": ["despise", "detest", "loathe", "abhor", "resent", "dislike"],
+    "man": ["gentleman", "guy", "male", "fellow", "bloke", "chap"],
+    "woman": ["lady", "female", "girl", "madam", "lass", "gal"],
+    "dog": ["canine", "pooch", "hound", "mutt", "puppy", "doggy"],
+    "cat": ["feline", "kitty", "kitten", "tomcat", "puss", "mouser"],
+    "house": ["home", "residence", "dwelling", "abode", "building", "homestead"],
+    "car": ["automobile", "vehicle", "motorcar", "ride", "auto", "sedan"],
+    "food": ["meal", "dish", "cuisine", "fare", "snack", "nourishment"],
+    "water": ["H2O", "liquid", "drink", "fluid", "beverage", "refreshment"],
+    "money": ["cash", "currency", "funds", "capital", "wealth", "finances"],
+    "job": ["occupation", "profession", "career", "post", "role", "employment"],
+    "city": ["metropolis", "town", "municipality", "urban area", "capital", "borough"],
+    "country": ["nation", "state", "land", "republic", "territory", "kingdom"],
+    "friend": ["companion", "pal", "mate", "buddy", "ally", "partner"],
+    "enemy": ["opponent", "adversary", "foe", "rival", "antagonist", "competitor"],
+    "child": ["kid", "youngster", "youth", "toddler", "minor", "infant"],
+    "parent": ["mother", "father", "guardian", "caretaker", "mom", "dad"],
+    "brave": ["courageous", "valiant", "fearless", "bold", "intrepid"],
+    "bright": ["luminous", "radiant", "shining", "brilliant", "glowing"],
+    "dark": ["dim", "shadowy", "gloomy", "murky", "dusky"],
+    "fast": ["quick", "rapid", "swift", "speedy", "brisk"],
+    "slow": ["sluggish", "unhurried", "lethargic", "lazy", "lagging"],
+    "happy": ["joyful", "cheerful", "content", "delighted", "pleased"],
+    "sad": ["unhappy", "depressed", "gloomy", "melancholy", "mournful"],
+    "angry": ["irate", "furious", "mad", "wrathful", "annoyed"],
+    "beautiful": ["attractive", "gorgeous", "stunning", "lovely", "pretty"],
+    "ugly": ["unattractive", "hideous", "repulsive", "unsightly", "grotesque"],
+    "big": ["large", "huge", "enormous", "gigantic", "massive"],
+    "small": ["tiny", "little", "petite", "miniature", "minute"],
+    "good": ["excellent", "great", "superb", "wonderful", "favorable"],
+    "bad": ["poor", "terrible", "awful", "substandard", "dreadful"],
+    "strong": ["sturdy", "robust", "powerful", "mighty", "solid"],
+    "weak": ["fragile", "frail", "feeble", "delicate", "vulnerable"],
+    "hot": ["warm", "scorching", "blazing", "fiery", "sweltering"],
+    "cold": ["chilly", "freezing", "frigid", "cool", "icy"],
+    "rich": ["wealthy", "affluent", "prosperous", "opulent", "well-off"],
+    "poor": ["needy", "destitute", "impoverished", "penniless", "underprivileged"],
+    "walk": ["stroll", "amble", "saunter", "hike", "march"],
+    "run": ["sprint", "dash", "jog", "race", "hasten"],
+    "eat": ["devour", "consume", "ingest", "munch", "feast"],
+    "drink": ["sip", "gulp", "swig", "imbibe", "quaff"],
+    "speak": ["talk", "converse", "chat", "discuss", "utter"],
+    "say": ["state", "declare", "proclaim", "mention", "remark"],
+    "look": ["gaze", "glance", "peek", "watch", "observe"],
+    "see": ["view", "notice", "spot", "perceive", "witness"],
+    "hear": ["listen", "catch", "overhear", "detect", "perceive"],
+    "think": ["ponder", "consider", "reflect", "contemplate", "mull"],
+    "make": ["create", "produce", "construct", "build", "manufacture"],
+    "do": ["perform", "execute", "carry out", "undertake", "accomplish"],
+    "write": ["compose", "draft", "pen", "author", "inscribe"],
+    "read": ["scan", "peruse", "study", "browse", "skim"],
+    "love": ["adore", "cherish", "treasure", "fancy", "appreciate"],
+    "hate": ["despise", "detest", "loathe", "dislike", "abhor"],
+    "give": ["offer", "present", "bestow", "grant", "deliver"],
+    "take": ["grab", "seize", "snatch", "accept", "collect"],
+    "help": ["assist", "aid", "support", "facilitate", "serve"],
+    "work": ["labor", "toil", "operate", "function", "serve"],
+    "man": ["gentleman", "male", "guy", "chap", "fellow"],
+    "woman": ["lady", "female", "gal", "madam", "dame"],
+    "child": ["kid", "youth", "toddler", "minor", "youngster"],
+    "car": ["automobile", "vehicle", "ride", "motorcar", "sedan"],
+    "house": ["home", "residence", "dwelling", "abode", "habitation"],
+    "dog": ["canine", "pooch", "puppy", "hound", "mutt"],
+    "cat": ["feline", "kitten", "tomcat", "mouser", "puss"],
+    "book": ["volume", "publication", "manuscript", "novel", "tome"],
+    "food": ["meal", "cuisine", "dish", "nourishment", "fare"],
+    "water": ["liquid", "H2O", "beverage", "drink", "refreshment"],
+    "money": ["cash", "currency", "funds", "capital", "wealth"],
+    "job": ["occupation", "profession", "career", "employment", "post"],
+    "friend": ["companion", "pal", "buddy", "ally", "mate"],
+    "enemy": ["foe", "opponent", "adversary", "antagonist", "rival"],
+    "city": ["metropolis", "urban area", "municipality", "town", "conurbation"],
+    "country": ["nation", "state", "land", "realm", "territory"],
+    "world": ["earth", "planet", "globe", "universe", "sphere"],
+    "computer": ["PC", "laptop", "desktop", "machine", "device"],
+    "phone": ["mobile", "cellphone", "smartphone", "handset", "receiver"],
+    "happy": ["joyful", "cheerful", "content", "delighted", "pleased", "ecstatic", "thrilled", "elated", "upbeat", "blissful"],
+    "sad": ["unhappy", "depressed", "gloomy", "melancholy", "miserable", "downcast", "despondent", "blue", "disheartened", "sorrowful"],
+    "big": ["large", "huge", "enormous", "gigantic", "massive", "colossal", "immense", "monumental", "vast", "hefty"],
+    "small": ["tiny", "little", "petite", "miniature", "minute", "slight", "compact", "diminutive", "modest", "wee"],
+    "good": ["excellent", "great", "superb", "wonderful", "fantastic", "marvelous", "outstanding", "brilliant", "splendid", "first-rate"],
+    "bad": ["poor", "terrible", "awful", "substandard", "atrocious", "dreadful", "abysmal", "lousy", "horrible", "inferior"],
+    "beautiful": ["attractive", "gorgeous", "stunning", "lovely", "elegant", "graceful", "charming", "radiant", "alluring", "exquisite"],
+    "ugly": ["unattractive", "hideous", "repulsive", "unsightly", "grotesque", "distasteful", "unappealing", "monstrous", "off-putting", "homely"],
+    "fast": ["quick", "swift", "speedy", "rapid", "brisk", "nimble", "fleet", "snappy", "prompt", "expeditious"],
+    "slow": ["sluggish", "unhurried", "leisurely", "lagging", "delayed", "plodding", "dawdling", "languid", "creeping", "gradual"],
+    "smart": ["intelligent", "bright", "clever", "brilliant", "sharp", "astute", "shrewd", "wise", "brainy", "perceptive"],
+    "stupid": ["dumb", "foolish", "ignorant", "brainless", "clueless", "dim-witted", "idiotic", "mindless", "moronic", "senseless"],
+    "strong": ["powerful", "mighty", "robust", "sturdy", "resilient", "vigorous", "solid", "tough", "forceful", "potent"],
+    "weak": ["frail", "fragile", "feeble", "delicate", "infirm", "slender", "limp", "subdued", "debilitated", "puny"],
+    "walk": ["stroll", "amble", "saunter", "hike", "wander", "trek", "march", "stride", "trudge", "meander"],
+    "run": ["sprint", "dash", "jog", "race", "gallop", "rush", "hasten", "scamper", "dart", "bolt"],
+    "eat": ["devour", "consume", "ingest", "munch", "nibble", "feast", "gulp", "chew", "swallow", "snack"],
+    "drink": ["sip", "gulp", "quaff", "swig", "imbibe", "taste", "down", "slurp", "sample", "sup"],
+    "say": ["state", "declare", "utter", "speak", "announce", "assert", "remark", "tell", "voice", "mention"],
+    "see": ["observe", "watch", "glimpse", "notice", "spot", "behold", "witness", "regard", "view", "survey"],
+    "make": ["create", "build", "produce", "construct", "fabricate", "craft", "form", "assemble", "design", "develop"],
+    "do": ["perform", "execute", "carry out", "undertake", "accomplish", "achieve", "act", "complete", "finish", "engage in"],
+    "think": ["ponder", "consider", "reflect", "contemplate", "meditate", "speculate", "reckon", "assume", "guess", "believe"],
+    "know": ["understand", "comprehend", "grasp", "realize", "perceive", "recognize", "discern", "be aware of", "appreciate", "learn"],
+    "man": ["gentleman", "guy", "male", "fellow", "chap", "lad", "sir", "bloke", "dude", "gent"],
+    "woman": ["lady", "female", "girl", "gal", "madam", "miss", "lass", "maiden", "dame", "matron"],
+    "child": ["kid", "youth", "youngster", "toddler", "teen", "minor", "adolescent", "infant", "baby", "schoolchild"],
+    "car": ["automobile", "vehicle", "motorcar", "ride", "machine", "wagon", "sedan", "coupe", "convertible", "hatchback"],
+    "house": ["home", "residence", "dwelling", "abode", "homestead", "lodging", "cottage", "villa", "mansion", "hut"],
+    "city": ["town", "metropolis", "urban area", "municipality", "borough", "district", "capital", "hub", "village", "settlement"],
+    "food": ["meal", "dish", "cuisine", "snack", "fare", "provisions", "nourishment", "diet", "grub", "refreshment"],
+    "water": ["liquid", "H2O", "aqua", "drink", "fluid", "beverage", "hydration", "spring", "stream", "brook"],
+    "money": ["cash", "currency", "funds", "capital", "wealth", "assets", "income", "earnings", "revenue", "savings"],
+    "job": ["occupation", "profession", "career", "position", "role", "work", "trade", "post", "employment", "assignment"],
+      "paint":["coating"],
+      "paints":["coatings"]
+    };
+    
+    spinButton.addEventListener('click', function() {
+        const text = originalText.value;
+        if (!text.trim()) {
+            alert('Please enter some text to spin');
+            return;
+        }
+        
+        const level = parseInt(variationLevel.value);
+        const preserveCap = preserveCapitalization.checked;
+        
+        const result = spinArticle(text, level, preserveCap);
+        spunText.textContent = result;
+        copyButton.disabled = false;
+    });
+    
+    copyButton.addEventListener('click', function() {
+        if (!spunText.textContent.trim()) {
+            alert('No spun text to copy');
+            return;
+        }
+        
+        navigator.clipboard.writeText(spunText.textContent)
+            .then(() => {
+                showNotification();
+            })
+            .catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy text to clipboard');
+            });
+    });
+    
+    function showNotification() {
+        notification.classList.add('show');
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 2000);
+    }
+    
+    function spinArticle(text, variationLevel, preserveCapitalization) {
+        // Split text into tokens (words, spaces, newlines, punctuation)
+        const tokens = text.match(/(\s+|\n|\w+|\W)/g) || [];
+        
+        for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+            
+            // Skip whitespace and non-word tokens
+            if (!/\w/.test(token)) {
+                continue;
+            }
+            
+            // Extract the actual word (without punctuation)
+            const wordMatch = token.match(/^(\W*)(\w+)(\W*)$/);
+            if (!wordMatch) continue;
+            
+            const [_, leadingPunct, word, trailingPunct] = wordMatch;
+            const lowerWord = word.toLowerCase();
+            
+            // Check if word has synonyms
+            if (synonyms[lowerWord]) {
+                // Determine if we should replace this word based on variation level
+                const shouldReplace = Math.random() < (0.3 * variationLevel);
+                
+                if (shouldReplace) {
+                    const synonymList = synonyms[lowerWord];
+                    const randomIndex = Math.floor(Math.random() * synonymList.length);
+                    let newWord = synonymList[randomIndex];
+                    
+                    // Preserve original capitalization
+                    if (preserveCapitalization && /^[A-Z]/.test(word)) {
+                        newWord = newWord.charAt(0).toUpperCase() + newWord.slice(1);
+                    }
+                    
+                    // Reconstruct the token with original punctuation
+                    tokens[i] = leadingPunct + newWord + trailingPunct;
+                }
+            }
+        }
+        
+        return tokens.join('');
+    }
+});
+</script>
+
