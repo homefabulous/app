@@ -1,0 +1,992 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to 3D Icon Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e63946;
+            --dark-red: #d00000;
+            --white: #ffffff;
+            --light-gray: #f5f5f5;
+            --black: #121212;
+            --gray: #333333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: var(--black);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--primary-red);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--white);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: var(--light-gray);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+            }
+        }
+        
+        .editor-section {
+            flex: 1;
+            background-color: var(--gray);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preview-section {
+            flex: 1;
+            background-color: var(--gray);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group h3 {
+            color: var(--white);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            border-bottom: 1px solid var(--primary-red);
+            padding-bottom: 8px;
+            display: inline-block;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--light-gray);
+            font-size: 0.9rem;
+        }
+        
+        input[type="text"], 
+        input[type="range"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: var(--black);
+            border: 1px solid var(--gray);
+            border-radius: 4px;
+            color: var(--white);
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+        
+        .color-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-option.active {
+            border-color: var(--white);
+            transform: scale(1.1);
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-red);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--dark-red);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--white);
+            border: 1px solid var(--primary-red);
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(230, 57, 70, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .preview-container {
+            width: 300px;
+            height: 300px;
+            background-color: var(--black);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            perspective: 1000px;
+        }
+        
+        #text3d {
+            font-size: 60px;
+            font-weight: bold;
+            color: var(--primary-red);
+            text-shadow: 3px 3px 0 var(--dark-red), 
+                         6px 6px 0 rgba(0, 0, 0, 0.2);
+            transform-style: preserve-3d;
+            transition: all 0.5s ease;
+        }
+        
+        .value-display {
+            font-size: 0.85rem;
+            color: var(--light-gray);
+            margin-left: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px 0;
+            color: var(--light-gray);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--gray);
+        }
+        
+        .download-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .radio-option input {
+            width: auto;
+            margin-bottom: 0;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .text-effect-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .effect-btn {
+            padding: 8px 10px;
+            background-color: var(--black);
+            border: 1px solid var(--gray);
+            color: var(--white);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .effect-btn:hover {
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+        }
+        
+        .effect-btn.active {
+            background-color: var(--primary-red);
+            color: var(--white);
+            border-color: var(--primary-red);
+        }
+        
+        .property-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .property-control label {
+            min-width: 100px;
+            margin-bottom: 0;
+        }
+        
+        .property-control input {
+            flex: 1;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Text to 3D Icon</h1>
+            <p class="subtitle">Transform your text into stunning 3D icons with professional effects</p>
+        </header>
+
+        <div class="app-container">
+            <section class="editor-section">
+                <div class="control-group">
+                    <h3>Text Content</h3>
+                    <label for="textInput">Enter your text:</label>
+                    <input type="text" id="textInput" value="3D" placeholder="Enter text for your icon">
+                    
+                    <label for="fontSelect">Font Family:</label>
+                    <select id="fontSelect">
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="Helvetica, sans-serif">Helvetica</option>
+                        <option value="Verdana, sans-serif">Verdana</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                        <option value="Impact, sans-serif" selected>Impact</option>
+                        <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+                        <option value="'Poppins', sans-serif">Poppins</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Color Options</h3>
+                    <label>Text Color:</label>
+                    <div class="color-options">
+                        <div class="color-option active" style="background-color: #e63946;" data-color="#e63946" data-property="color"></div>
+                        <div class="color-option" style="background-color: #ffffff;" data-color="#ffffff" data-property="color"></div>
+                        <div class="color-option" style="background-color: #000000;" data-color="#000000" data-property="color"></div>
+                        <div class="color-option" style="background-color: #4361ee;" data-color="#4361ee" data-property="color"></div>
+                        <div class="color-option" style="background-color: #f8961e;" data-color="#f8961e" data-property="color"></div>
+                    </div>
+                    
+                    <label>Shadow Color:</label>
+                    <div class="color-options">
+                        <div class="color-option active" style="background-color: #d00000;" data-color="#d00000" data-property="shadow"></div>
+                        <div class="color-option" style="background-color: #333333;" data-color="#333333" data-property="shadow"></div>
+                        <div class="color-option" style="background-color: #000000;" data-color="#000000" data-property="shadow"></div>
+                        <div class="color-option" style="background-color: #3a0ca3;" data-color="#3a0ca3" data-property="shadow"></div>
+                        <div class="color-option" style="background-color: #7209b7;" data-color="#7209b7" data-property="shadow"></div>
+                    </div>
+                    
+                    <label>Background Color:</label>
+                    <div class="color-options">
+                        <div class="color-option active" style="background-color: #121212;" data-color="#121212" data-property="bgcolor"></div>
+                        <div class="color-option" style="background-color: #000000;" data-color="#000000" data-property="bgcolor"></div>
+                        <div class="color-option" style="background-color: #333333;" data-color="#333333" data-property="bgcolor"></div>
+                        <div class="color-option" style="background-color: #1a1a1a;" data-color="#1a1a1a" data-property="bgcolor"></div>
+                        <div class="color-option" style="background-color: #2b2d42;" data-color="#2b2d42" data-property="bgcolor"></div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>3D Effects</h3>
+                    <label>Effect Style:</label>
+                    <div class="text-effect-options">
+                        <button class="effect-btn active" data-effect="standard">Standard 3D</button>
+                        <button class="effect-btn" data-effect="deep">Deep 3D</button>
+                        <button class="effect-btn" data-effect="layered">Layered</button>
+                        <button class="effect-btn" data-effect="sharp">Sharp Edges</button>
+                        <button class="effect-btn" data-effect="soft">Soft Shadow</button>
+                        <button class="effect-btn" data-effect="neon">Neon Glow</button>
+                    </div>
+                    
+                    <div class="property-control">
+                        <label for="depthSlider">Depth:</label>
+                        <input type="range" id="depthSlider" min="1" max="10" value="3">
+                        <span class="value-display" id="depthValue">3</span>
+                    </div>
+                    
+                    <div class="property-control">
+                        <label for="shadowSlider">Shadow:</label>
+                        <input type="range" id="shadowSlider" min="0" max="10" value="3">
+                        <span class="value-display" id="shadowValue">3</span>
+                    </div>
+                    
+                    <div class="property-control">
+                        <label for="angleSlider">Angle:</label>
+                        <input type="range" id="angleSlider" min="0" max="360" value="45">
+                        <span class="value-display" id="angleValue">45°</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Size & Rotation</h3>
+                    <div class="property-control">
+                        <label for="sizeSlider">Size:</label>
+                        <input type="range" id="sizeSlider" min="20" max="120" value="60">
+                        <span class="value-display" id="sizeValue">60px</span>
+                    </div>
+                    
+                    <div class="property-control">
+                        <label for="rotateXSlider">Rotate X:</label>
+                        <input type="range" id="rotateXSlider" min="-180" max="180" value="0">
+                        <span class="value-display" id="rotateXValue">0°</span>
+                    </div>
+                    
+                    <div class="property-control">
+                        <label for="rotateYSlider">Rotate Y:</label>
+                        <input type="range" id="rotateYSlider" min="-180" max="180" value="0">
+                        <span class="value-display" id="rotateYValue">0°</span>
+                    </div>
+                    
+                    <div class="property-control">
+                        <label for="rotateZSlider">Rotate Z:</label>
+                        <input type="range" id="rotateZSlider" min="-180" max="180" value="0">
+                        <span class="value-display" id="rotateZValue">0°</span>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="preview-section">
+                <div class="preview-container">
+                    <div id="text3d">3D</div>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="resetBtn" class="btn btn-secondary">
+                        Reset
+                    </button>
+                    <button id="randomizeBtn" class="btn btn-secondary">
+                        Randomize
+                    </button>
+                </div>
+                
+                <div class="download-options">
+                    <button id="downloadPngBtn" class="btn btn-primary">
+                        Download PNG
+                    </button>
+                    <button id="downloadSvgBtn" class="btn btn-primary">
+                        Download SVG
+                    </button>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>Text to 3D Icon Generator &copy; 2023 | Red & Black Edition</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const textInput = document.getElementById('textInput');
+            const fontSelect = document.getElementById('fontSelect');
+            const text3d = document.getElementById('text3d');
+            const previewContainer = document.querySelector('.preview-container');
+            const depthSlider = document.getElementById('depthSlider');
+            const depthValue = document.getElementById('depthValue');
+            const shadowSlider = document.getElementById('shadowSlider');
+            const shadowValue = document.getElementById('shadowValue');
+            const angleSlider = document.getElementById('angleSlider');
+            const angleValue = document.getElementById('angleValue');
+            const sizeSlider = document.getElementById('sizeSlider');
+            const sizeValue = document.getElementById('sizeValue');
+            const rotateXSlider = document.getElementById('rotateXSlider');
+            const rotateXValue = document.getElementById('rotateXValue');
+            const rotateYSlider = document.getElementById('rotateYSlider');
+            const rotateYValue = document.getElementById('rotateYValue');
+            const rotateZSlider = document.getElementById('rotateZSlider');
+            const rotateZValue = document.getElementById('rotateZValue');
+            const resetBtn = document.getElementById('resetBtn');
+            const randomizeBtn = document.getElementById('randomizeBtn');
+            const downloadPngBtn = document.getElementById('downloadPngBtn');
+            const downloadSvgBtn = document.getElementById('downloadSvgBtn');
+            const effectBtns = document.querySelectorAll('.effect-btn');
+            const colorOptions = document.querySelectorAll('.color-option');
+            
+            // Current settings
+            let currentSettings = {
+                text: '3D',
+                font: 'Impact, sans-serif',
+                color: '#e63946',
+                shadowColor: '#d00000',
+                bgColor: '#121212',
+                effect: 'standard',
+                depth: 3,
+                shadow: 3,
+                angle: 45,
+                size: 60,
+                rotateX: 0,
+                rotateY: 0,
+                rotateZ: 0
+            };
+            
+            // Initialize
+            updatePreview();
+            
+            // Event listeners
+            textInput.addEventListener('input', function() {
+                currentSettings.text = this.value;
+                updatePreview();
+            });
+            
+            fontSelect.addEventListener('change', function() {
+                currentSettings.font = this.value;
+                updatePreview();
+            });
+            
+            depthSlider.addEventListener('input', function() {
+                currentSettings.depth = parseInt(this.value);
+                depthValue.textContent = this.value;
+                updatePreview();
+            });
+            
+            shadowSlider.addEventListener('input', function() {
+                currentSettings.shadow = parseInt(this.value);
+                shadowValue.textContent = this.value;
+                updatePreview();
+            });
+            
+            angleSlider.addEventListener('input', function() {
+                currentSettings.angle = parseInt(this.value);
+                angleValue.textContent = this.value + '°';
+                updatePreview();
+            });
+            
+            sizeSlider.addEventListener('input', function() {
+                currentSettings.size = parseInt(this.value);
+                sizeValue.textContent = this.value + 'px';
+                updatePreview();
+            });
+            
+            rotateXSlider.addEventListener('input', function() {
+                currentSettings.rotateX = parseInt(this.value);
+                rotateXValue.textContent = this.value + '°';
+                updatePreview();
+            });
+            
+            rotateYSlider.addEventListener('input', function() {
+                currentSettings.rotateY = parseInt(this.value);
+                rotateYValue.textContent = this.value + '°';
+                updatePreview();
+            });
+            
+            rotateZSlider.addEventListener('input', function() {
+                currentSettings.rotateZ = parseInt(this.value);
+                rotateZValue.textContent = this.value + '°';
+                updatePreview();
+            });
+            
+            effectBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    effectBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSettings.effect = this.getAttribute('data-effect');
+                    
+                    // Apply effect-specific settings
+                    switch(currentSettings.effect) {
+                        case 'standard':
+                            depthSlider.value = 3;
+                            shadowSlider.value = 3;
+                            angleSlider.value = 45;
+                            currentSettings.depth = 3;
+                            currentSettings.shadow = 3;
+                            currentSettings.angle = 45;
+                            depthValue.textContent = '3';
+                            shadowValue.textContent = '3';
+                            angleValue.textContent = '45°';
+                            break;
+                        case 'deep':
+                            depthSlider.value = 8;
+                            shadowSlider.value = 5;
+                            angleSlider.value = 30;
+                            currentSettings.depth = 8;
+                            currentSettings.shadow = 5;
+                            currentSettings.angle = 30;
+                            depthValue.textContent = '8';
+                            shadowValue.textContent = '5';
+                            angleValue.textContent = '30°';
+                            break;
+                        case 'layered':
+                            depthSlider.value = 5;
+                            shadowSlider.value = 2;
+                            angleSlider.value = 60;
+                            currentSettings.depth = 5;
+                            currentSettings.shadow = 2;
+                            currentSettings.angle = 60;
+                            depthValue.textContent = '5';
+                            shadowValue.textContent = '2';
+                            angleValue.textContent = '60°';
+                            break;
+                        case 'sharp':
+                            depthSlider.value = 10;
+                            shadowSlider.value = 1;
+                            angleSlider.value = 45;
+                            currentSettings.depth = 10;
+                            currentSettings.shadow = 1;
+                            currentSettings.angle = 45;
+                            depthValue.textContent = '10';
+                            shadowValue.textContent = '1';
+                            angleValue.textContent = '45°';
+                            break;
+                        case 'soft':
+                            depthSlider.value = 3;
+                            shadowSlider.value = 10;
+                            angleSlider.value = 30;
+                            currentSettings.depth = 3;
+                            currentSettings.shadow = 10;
+                            currentSettings.angle = 30;
+                            depthValue.textContent = '3';
+                            shadowValue.textContent = '10';
+                            angleValue.textContent = '30°';
+                            break;
+                        case 'neon':
+                            depthSlider.value = 2;
+                            shadowSlider.value = 8;
+                            angleSlider.value = 45;
+                            currentSettings.depth = 2;
+                            currentSettings.shadow = 8;
+                            currentSettings.angle = 45;
+                            depthValue.textContent = '2';
+                            shadowValue.textContent = '8';
+                            angleValue.textContent = '45°';
+                            break;
+                    }
+                    
+                    updatePreview();
+                });
+            });
+            
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const property = this.getAttribute('data-property');
+                    const color = this.getAttribute('data-color');
+                    
+                    // Remove active class from all options in this group
+                    document.querySelectorAll(`.color-option[data-property="${property}"]`).forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    // Update settings
+                    if (property === 'color') {
+                        currentSettings.color = color;
+                    } else if (property === 'shadow') {
+                        currentSettings.shadowColor = color;
+                    } else if (property === 'bgcolor') {
+                        currentSettings.bgColor = color;
+                        previewContainer.style.backgroundColor = color;
+                    }
+                    
+                    updatePreview();
+                });
+            });
+            
+            resetBtn.addEventListener('click', resetSettings);
+            randomizeBtn.addEventListener('click', randomizeSettings);
+            
+            // Download buttons
+            downloadPngBtn.addEventListener('click', downloadAsPng);
+            downloadSvgBtn.addEventListener('click', downloadAsSvg);
+            
+            function updatePreview() {
+                // Update text content
+                text3d.textContent = currentSettings.text;
+                
+                // Apply font
+                text3d.style.fontFamily = currentSettings.font;
+                
+                // Apply color
+                text3d.style.color = currentSettings.color;
+                
+                // Generate 3D effect based on current settings
+                let textShadow = '';
+                const angleRad = (currentSettings.angle * Math.PI) / 180;
+                
+                for (let i = 1; i <= currentSettings.depth; i++) {
+                    const offsetX = i * Math.cos(angleRad);
+                    const offsetY = i * Math.sin(angleRad);
+                    const colorOpacity = 1 - (i / (currentSettings.depth * 2));
+                    
+                    if (i === 1) {
+                        textShadow += `${offsetX}px ${offsetY}px 0 ${currentSettings.shadowColor}`;
+                    } else {
+                        textShadow += `, ${offsetX}px ${offsetY}px 0 ${currentSettings.shadowColor}`;
+                    }
+                }
+                
+                // Add additional shadow layers for depth
+                if (currentSettings.shadow > 0) {
+                    for (let i = 1; i <= currentSettings.shadow; i++) {
+                        const blur = i * 2;
+                        textShadow += `, ${currentSettings.depth * Math.cos(angleRad)}px ${currentSettings.depth * Math.sin(angleRad)}px ${blur}px rgba(0, 0, 0, ${0.2 + (i * 0.1)})`;
+                    }
+                }
+                
+                // Special effects
+                if (currentSettings.effect === 'neon') {
+                    // Add glow effect
+                    textShadow += `, 0 0 ${currentSettings.shadow * 3}px ${currentSettings.color}, 
+                                   0 0 ${currentSettings.shadow * 6}px ${currentSettings.color}`;
+                }
+                
+                text3d.style.textShadow = textShadow;
+                
+                // Apply size
+                text3d.style.fontSize = currentSettings.size + 'px';
+                
+                // Apply rotation
+                text3d.style.transform = `rotateX(${currentSettings.rotateX}deg) rotateY(${currentSettings.rotateY}deg) rotateZ(${currentSettings.rotateZ}deg)`;
+                
+                // Background color
+                previewContainer.style.backgroundColor = currentSettings.bgColor;
+            }
+            
+            function resetSettings() {
+                // Reset all sliders to default values
+                depthSlider.value = 3;
+                shadowSlider.value = 3;
+                angleSlider.value = 45;
+                sizeSlider.value = 60;
+                rotateXSlider.value = 0;
+                rotateYSlider.value = 0;
+                rotateZSlider.value = 0;
+                fontSelect.value = 'Impact, sans-serif';
+                
+                // Update display values
+                depthValue.textContent = '3';
+                shadowValue.textContent = '3';
+                angleValue.textContent = '45°';
+                sizeValue.textContent = '60px';
+                rotateXValue.textContent = '0°';
+                rotateYValue.textContent = '0°';
+                rotateZValue.textContent = '0°';
+                
+                // Reset effect to standard
+                effectBtns.forEach(b => b.classList.remove('active'));
+                document.querySelector('.effect-btn[data-effect="standard"]').classList.add('active');
+                
+                // Reset color options
+                document.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('active'));
+                document.querySelector('.color-option[data-color="#e63946"]').classList.add('active');
+                document.querySelector('.color-option[data-color="#d00000"]').classList.add('active');
+                document.querySelector('.color-option[data-color="#121212"]').classList.add('active');
+                
+                // Update settings
+                currentSettings = {
+                    text: '3D',
+                    font: 'Impact, sans-serif',
+                    color: '#e63946',
+                    shadowColor: '#d00000',
+                    bgColor: '#121212',
+                    effect: 'standard',
+                    depth: 3,
+                    shadow: 3,
+                    angle: 45,
+                    size: 60,
+                    rotateX: 0,
+                    rotateY: 0,
+                    rotateZ: 0
+                };
+                
+                updatePreview();
+            }
+            
+            function randomizeSettings() {
+                // Random values for all settings
+                depthSlider.value = Math.floor(Math.random() * 10) + 1;
+                shadowSlider.value = Math.floor(Math.random() * 10) + 1;
+                angleSlider.value = Math.floor(Math.random() * 360);
+                sizeSlider.value = Math.floor(Math.random() * 100) + 20;
+                rotateXSlider.value = Math.floor(Math.random() * 360) - 180;
+                rotateYSlider.value = Math.floor(Math.random() * 360) - 180;
+                rotateZSlider.value = Math.floor(Math.random() * 360) - 180;
+                
+                // Random font
+                const fonts = Array.from(fontSelect.options).map(opt => opt.value);
+                fontSelect.value = fonts[Math.floor(Math.random() * fonts.length)];
+                
+                // Random effect
+                const effects = ['standard', 'deep', 'layered', 'sharp', 'soft', 'neon'];
+                const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+                effectBtns.forEach(b => b.classList.remove('active'));
+                document.querySelector(`.effect-btn[data-effect="${randomEffect}"]`).classList.add('active');
+                
+                // Random colors
+                const colors = ['#e63946', '#ffffff', '#000000', '#4361ee', '#f8961e', '#2ec4b6', '#7209b7'];
+                const shadowColors = ['#d00000', '#333333', '#000000', '#3a0ca3', '#7209b7', '#1a936f'];
+                const bgColors = ['#121212', '#000000', '#333333', '#1a1a1a', '#2b2d42'];
+                
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                const randomShadowColor = shadowColors[Math.floor(Math.random() * shadowColors.length)];
+                const randomBgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+                
+                // Update color buttons
+                document.querySelectorAll('.color-option[data-property="color"]').forEach(opt => opt.classList.remove('active'));
+                document.querySelectorAll('.color-option[data-property="shadow"]').forEach(opt => opt.classList.remove('active'));
+                document.querySelectorAll('.color-option[data-property="bgcolor"]').forEach(opt => opt.classList.remove('active'));
+                
+                const colorOption = document.querySelector(`.color-option[data-color="${randomColor}"]`);
+                if (colorOption) colorOption.classList.add('active');
+                
+                const shadowOption = document.querySelector(`.color-option[data-color="${randomShadowColor}"]`);
+                if (shadowOption) shadowOption.classList.add('active');
+                
+                const bgOption = document.querySelector(`.color-option[data-color="${randomBgColor}"]`);
+                if (bgOption) bgOption.classList.add('active');
+                
+                // Update display values
+                depthValue.textContent = depthSlider.value;
+                shadowValue.textContent = shadowSlider.value;
+                angleValue.textContent = angleSlider.value + '°';
+                sizeValue.textContent = sizeSlider.value + 'px';
+                rotateXValue.textContent = rotateXSlider.value + '°';
+                rotateYValue.textContent = rotateYSlider.value + '°';
+                rotateZValue.textContent = rotateZSlider.value + '°';
+                
+                // Update settings
+                currentSettings = {
+                    text: currentSettings.text, // Keep current text
+                    font: fontSelect.value,
+                    color: randomColor,
+                    shadowColor: randomShadowColor,
+                    bgColor: randomBgColor,
+                    effect: randomEffect,
+                    depth: parseInt(depthSlider.value),
+                    shadow: parseInt(shadowSlider.value),
+                    angle: parseInt(angleSlider.value),
+                    size: parseInt(sizeSlider.value),
+                    rotateX: parseInt(rotateXSlider.value),
+                    rotateY: parseInt(rotateYSlider.value),
+                    rotateZ: parseInt(rotateZSlider.value)
+                };
+                
+                updatePreview();
+            }
+            
+            function downloadAsPng() {
+                // Create a canvas element
+                const canvas = document.createElement('canvas');
+                const size = 512; // Higher resolution for better quality
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Fill background
+                ctx.fillStyle = currentSettings.bgColor;
+                ctx.fillRect(0, 0, size, size);
+                
+                // Calculate text position and size
+                const text = currentSettings.text;
+                const fontSize = (currentSettings.size * size) / 300; // Scale font size
+                const x = size / 2;
+                const y = size / 2 + fontSize * 0.35; // Adjust vertical alignment
+                
+                // Apply text styles
+                ctx.font = `bold ${fontSize}px ${currentSettings.font}`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Generate 3D effect
+                const angleRad = (currentSettings.angle * Math.PI) / 180;
+                
+                // Draw shadow layers (back to front)
+                ctx.fillStyle = currentSettings.shadowColor;
+                for (let i = currentSettings.depth; i >= 1; i--) {
+                    const offsetX = i * Math.cos(angleRad) * (size / 300);
+                    const offsetY = i * Math.sin(angleRad) * (size / 300);
+                    ctx.fillText(text, x + offsetX, y + offsetY);
+                }
+                
+                // Additional shadow blur
+                if (currentSettings.shadow > 0) {
+                    for (let i = 1; i <= currentSettings.shadow; i++) {
+                        const blurRadius = i * 2;
+                        const offsetX = currentSettings.depth * Math.cos(angleRad) * (size / 300);
+                        const offsetY = currentSettings.depth * Math.sin(angleRad) * (size / 300);
+                        
+                        // Draw blurred text (simulated with multiple semi-transparent copies)
+                        ctx.fillStyle = `rgba(0, 0, 0, ${0.2 + (i * 0.05)})`;
+                        for (let j = 0; j < blurRadius; j++) {
+                            const blurOffsetX = (Math.random() * blurRadius * 2) - blurRadius;
+                            const blurOffsetY = (Math.random() * blurRadius * 2) - blurRadius;
+                            ctx.fillText(text, x + offsetX + blurOffsetX, y + offsetY + blurOffsetY);
+                        }
+                    }
+                }
+                
+                // Draw main text
+                ctx.fillStyle = currentSettings.color;
+                ctx.fillText(text, x, y);
+                
+                // Neon glow effect
+                if (currentSettings.effect === 'neon') {
+                    ctx.save();
+                    ctx.shadowColor = currentSettings.color;
+                    ctx.shadowBlur = currentSettings.shadow * 6;
+                    ctx.fillText(text, x, y);
+                    ctx.restore();
+                }
+                
+                // Convert canvas to image and download
+                const dataURL = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = dataURL;
+                link.download = '3d-icon.png';
+                link.click();
+            }
+            
+            function downloadAsSvg() {
+                // SVG dimensions
+                const size = 512;
+                const padding = 20;
+                
+                // Calculate text position and size
+                const text = currentSettings.text;
+                const fontSize = (currentSettings.size * size) / 300;
+                const x = size / 2;
+                const y = size / 2 + fontSize * 0.35;
+                
+                // Generate SVG markup
+                let svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+                
+                // Background
+                svgMarkup += `<rect width="100%" height="100%" fill="${currentSettings.bgColor}"/>`;
+                
+                // 3D effect
+                const angleRad = (currentSettings.angle * Math.PI) / 180;
+                
+                // Shadow layers
+                for (let i = 1; i <= currentSettings.depth; i++) {
+                    const offsetX = i * Math.cos(angleRad) * (size / 300);
+                    const offsetY = i * Math.sin(angleRad) * (size / 300);
+                    const opacity = 1 - (i / (currentSettings.depth * 2));
+                    
+                    svgMarkup += `<text x="${x + offsetX}" y="${y + offsetY}" font-family="${currentSettings.font}" font-size="${fontSize}" 
+                        font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="${currentSettings.shadowColor}" 
+                        fill-opacity="${opacity}">${text}</text>`;
+                }
+                
+                if (currentSettings.shadow > 0) {
+                    for (let i = 1; i <= currentSettings.shadow; i++) {
+                        const blurRadius = i * 2;
+                        const offsetX = currentSettings.depth * Math.cos(angleRad) * (size / 300);
+                        const offsetY = currentSettings.depth * Math.sin(angleRad) * (size / 300);
+                        
+                        svgMarkup += `<text x="${x + offsetX}" y="${y + offsetY}" font-family="${currentSettings.font}" font-size="${fontSize}" 
+                            font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="black" 
+                            fill-opacity="${0.2 + (i * 0.05)}" filter="url(#blur${i})">${text}</text>`;
+                        
+                        svgMarkup += `<filter id="blur${i}"><feGaussianBlur stdDeviation="${blurRadius}"/></filter>`;
+                    }
+                }
+                
+                // Main text
+                svgMarkup += `<text x="${x}" y="${y}" font-family="${currentSettings.font}" font-size="${fontSize}" 
+                    font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="${currentSettings.color}">${text}</text>`;
+                
+                // Neon glow effect
+                if (currentSettings.effect === 'neon') {
+                    svgMarkup += `<filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="${currentSettings.shadow * 3}" result="blur"/>
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" result="final"/>
+                    </filter>`;
+                    
+                    svgMarkup += `<text x="${x}" y="${y}" font-family="${currentSettings.font}" font-size="${fontSize}" 
+                        font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="${currentSettings.color}" 
+                        filter="url(#neon-glow)">${text}</text>`;
+                }
+                
+                svgMarkup += `</svg>`;
+                
+                // Convert SVG markup to data URL and download
+                const svgBlob = new Blob([svgMarkup], {type: 'image/svg+xml'});
+                const svgURL = URL.createObjectURL(svgBlob);
+                const link = document.createElement('a');
+                link.href = svgURL;
+                link.download = '3d-icon.svg';
+                link.click();
+                
+                // Clean up
+                setTimeout(() => URL.revokeObjectURL(svgURL), 100);
+            }
+        });
+    </script>
+</body>
+</html>
