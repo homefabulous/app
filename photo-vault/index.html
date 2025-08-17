@@ -1,0 +1,702 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head><script>window.huggingface={variables:{"SPACE_CREATOR_USER_ID":"67eae6321ee212fca588f350"}};</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoVault - Local Photo Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+      
+      /* Add this to your style section */
+.confirmation-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    max-width: 90%;
+    width: 400px;
+}
+
+.confirmation-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+        .grid-item {
+            transition: all 0.3s ease;
+        }
+        .grid-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .photo-card {
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+        .photo-card img {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.3s ease;
+        }
+        .photo-card:hover img {
+            transform: scale(1.05);
+        }
+        .dark-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+            padding: 1rem;
+            color: white;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        .photo-card:hover .dark-overlay {
+            transform: translateY(0);
+        }
+        .tag {
+            display: inline-block;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        #drop-area {
+            border: 3px dashed #ccc;
+            transition: all 0.3s;
+        }
+        #drop-area.highlight {
+            border-color: #6b46c1;
+            background-color: #f3e8ff;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c4b5fd;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center">
+                <i class="fas fa-camera-retro text-3xl text-purple-600 mr-3"></i>
+                <h1 class="text-3xl font-bold text-gray-800">PhotoVault</h1>
+            </div>
+            <button id="add-photo-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add Photo
+            </button>
+        </header>
+
+        <!-- Search and Filter Section -->
+        <div class="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="relative flex-grow max-w-md">
+                <input type="text" id="search-input" placeholder="Search photos, tags..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="sort-by" class="text-sm font-medium text-gray-700">Sort by:</label>
+                <select id="sort-by" class="p-2 border rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name-a">Name (A-Z)</option>
+                    <option value="name-z">Name (Z-A)</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label for="filter-tag" class="text-sm font-medium text-gray-700">Filter by tag:</label>
+                <select id="filter-tag" class="p-2 border rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                    <option value="all">All Photos</option>
+                    <option value="nature">Nature</option>
+                    <option value="urban">Urban</option>
+                    <option value="people">People</option>
+                    <option value="travel">Travel</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Photo Grid -->
+        <div id="photo-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Photos will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="text-center py-12 hidden">
+            <i class="fas fa-images text-5xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-medium text-gray-500 mb-2">Your photo vault is empty</h3>
+            <p class="text-gray-400 mb-4">Add your first photo by clicking the "Add Photo" button</p>
+            <button id="add-first-photo-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                Add First Photo
+            </button>
+        </div>
+
+       <!-- Change the upload modal div to this: -->
+<div id="upload-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center border-b p-4">
+            <h3 class="text-lg font-semibold text-gray-800">Add New Photo</h3>
+            <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto">
+     
+  
+                    <!-- Drop Area -->
+                    <div id="drop-area" class="border-2 border-dashed rounded-lg p-8 text-center mb-6 transition">
+                        <input type="file" id="file-input" accept="image/*" class="hidden" multiple>
+                        <div id="upload-icon" class="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-purple-500"></i>
+                        </div>
+                        <h4 class="text-lg font-medium text-gray-700 mb-2">Drag & drop photos here</h4>
+                        <p class="text-gray-500 mb-4">or</p>
+                        <button id="browse-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                            Browse Files
+                        </button>
+                        <p class="text-xs text-gray-400 mt-4">Supports JPG, PNG, GIF (Max 10MB each)</p>
+                    </div>
+
+                    <!-- Preview Area -->
+                    <div id="preview-area" class="hidden">
+                        <h4 class="font-medium text-gray-700 mb-3">Selected Photos</h4>
+                        <div id="preview-container" class="grid grid-cols-3 gap-3 mb-4 max-h-60 overflow-y-auto p-2"></div>
+                    </div>
+
+                    <!-- Metadata Form -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="photo-name" class="block text-sm font-medium text-gray-700 mb-1">Photo Name</label>
+                            <input type="text" id="photo-name" class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label for="photo-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea id="photo-description" rows="3" class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500"></textarea>
+                        </div>
+                        <div>
+                            <label for="photo-tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+                            <input type="text" id="photo-tags" class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-purple-500 focus:border-purple-500" placeholder="nature, summer, vacation">
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 rounded-b-xl flex justify-end gap-3">
+                    <button id="cancel-upload" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button id="confirm-upload" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                        Save Photo(s)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change the detail modal div to this: -->
+<div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="flex justify-between items-center border-b p-4">
+            <h3 id="detail-title" class="text-lg font-semibold text-gray-800 truncate">Photo Detail</h3>
+            <div class="flex items-center gap-2">
+                <button id="edit-photo-btn" class="text-purple-600 hover:text-purple-800">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button id="delete-photo-btn" class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+                <button id="close-detail" class="text-gray-400 hover:text-gray-600 ml-2">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex flex-col md:flex-row overflow-auto flex-grow">
+            <div class="w-full md:w-2/3 p-4 flex items-center bg-gray-100">
+                <img id="detail-image" src="" alt="" class="max-h-[60vh] w-auto mx-auto rounded-lg shadow-md">
+            </div>
+            <div class="w-full md:w-1/3 border-l border-gray-200 p-4 overflow-y-auto">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Name</label>
+                        <p id="detail-name" class="text-gray-800 font-medium"></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Description</label>
+                        <p id="detail-description" class="text-gray-800"></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Uploaded</label>
+                        <p id="detail-date" class="text-gray-800"></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Tags</label>
+                        <div id="detail-tags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="pt-4 border-t border-gray-200">
+                        <button id="download-photo-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition mb-2 flex items-center justify-center gap-2">
+                            <i class="fas fa-download"></i> Download Photo
+                        </button>
+                        <button id="open-location-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition flex items-center justify-center gap-2">
+                            <i class="fas fa-folder-open"></i> Open File Location
+                        </button>
+                        <p id="location-info" class="text-xs text-gray-500 mt-2 hidden">Note: File location access is limited in web browsers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const photoGrid = document.getElementById('photo-grid');
+            const emptyState = document.getElementById('empty-state');
+            const addPhotoBtn = document.getElementById('add-photo-btn');
+            const addFirstPhotoBtn = document.getElementById('add-first-photo-btn');
+            const uploadModal = document.getElementById('upload-modal');
+            const closeModal = document.getElementById('close-modal');
+            const cancelUpload = document.getElementById('cancel-upload');
+            const browseBtn = document.getElementById('browse-btn');
+            const fileInput = document.getElementById('file-input');
+            const dropArea = document.getElementById('drop-area');
+            const previewArea = document.getElementById('preview-area');
+            const previewContainer = document.getElementById('preview-container');
+            const confirmUpload = document.getElementById('confirm-upload');
+            const detailModal = document.getElementById('detail-modal');
+            const closeDetail = document.getElementById('close-detail');
+            const searchInput = document.getElementById('search-input');
+            const sortBySelect = document.getElementById('sort-by');
+            const filterTagSelect = document.getElementById('filter-tag');
+          const downloadPhotoBtn = document.getElementById('download-photo-btn');
+const openLocationBtn = document.getElementById('open-location-btn');
+const locationInfo = document.getElementById('location-info');
+document.getElementById('edit-photo-btn').addEventListener('click', editPhoto);
+document.getElementById('delete-photo-btn').addEventListener('click', deletePhoto);
+            // State
+            let photos = JSON.parse(localStorage.getItem('photos')) || [];
+            let selectedFiles = [];
+            let currentPhotoId = null;
+
+            // Initialize
+            updateUI();
+            updateEmptyState();
+
+            // Event Listeners
+            addPhotoBtn.addEventListener('click', () => uploadModal.classList.remove('hidden'));
+            addFirstPhotoBtn.addEventListener('click', () => uploadModal.classList.remove('hidden'));
+            closeModal.addEventListener('click', () => uploadModal.classList.add('hidden'));
+            cancelUpload.addEventListener('click', () => uploadModal.classList.add('hidden'));
+            browseBtn.addEventListener('click', () => fileInput.click());
+            confirmUpload.addEventListener('click', savePhotos);
+            closeDetail.addEventListener('click', () => detailModal.classList.add('hidden'));
+            searchInput.addEventListener('input', filterPhotos);
+            sortBySelect.addEventListener('change', filterPhotos);
+            filterTagSelect.addEventListener('change', filterPhotos);
+          downloadPhotoBtn.addEventListener('click', downloadPhoto);
+openLocationBtn.addEventListener('click', showFileLocation);
+          
+          
+
+            // File handling
+            fileInput.addEventListener('change', handleFiles);
+            
+            // Drag and drop events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            // Helper Functions
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles({ target: { files } });
+            }
+
+            function handleFiles(e) {
+                selectedFiles = Array.from(e.target.files);
+                if (selectedFiles.length === 0) return;
+                
+                previewContainer.innerHTML = '';
+                selectedFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'border rounded-md overflow-hidden';
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" class="w-full h-24 object-cover">
+                            <div class="p-2 bg-white">
+                                <p class="text-xs font-medium text-gray-700 truncate">${file.name}</p>
+                                <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+                            </div>
+                        `;
+                        previewContainer.appendChild(previewItem);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                previewArea.classList.remove('hidden');
+                const firstFile = selectedFiles[0];
+                document.getElementById('photo-name').value = firstFile.name.replace(/\.[^/.]+$/, ""); // Remove file extension
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function savePhotos() {
+                const name = document.getElementById('photo-name').value.trim() || 'Untitled';
+                const description = document.getElementById('photo-description').value.trim();
+                const tags = document.getElementById('photo-tags').value
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag.length > 0);
+
+                selectedFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const newPhoto = {
+                            id: Date.now().toString(),
+                            name: name,
+                            description: description,
+                            tags: tags,
+                            image: e.target.result,
+                            date: new Date().toISOString(),
+                            lastModified: file.lastModified,
+                            size: file.size,
+                            type: file.type
+                        };
+                        
+                        photos.unshift(newPhoto);
+                        localStorage.setItem('photos', JSON.stringify(photos));
+                        
+                        if (selectedFiles.indexOf(file) === selectedFiles.length - 1) {
+                            uploadModal.classList.add('hidden');
+                            updateUI();
+                            updateEmptyState();
+                            resetForm();
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            function resetForm() {
+                document.getElementById('photo-name').value = '';
+                document.getElementById('photo-description').value = '';
+                document.getElementById('photo-tags').value = '';
+                selectedFiles = [];
+                previewArea.classList.add('hidden');
+                fileInput.value = '';
+            }
+
+            function updateUI() {
+                photoGrid.innerHTML = '';
+                
+                photos.forEach(photo => {
+                    const photoCard = document.createElement('div');
+                    photoCard.className = 'grid-item cursor-pointer';
+                    photoCard.dataset.id = photo.id;
+                    
+                    photoCard.innerHTML = `
+                        <div class="photo-card bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
+                            <img src="${photo.image}" alt="${photo.name}" loading="lazy">
+                            <div class="dark-overlay">
+                                <h4 class="font-medium truncate">${photo.name}</h4>
+                                <p class="text-sm text-gray-300 truncate">${photo.description || 'No description'}</p>
+                                <div class="mt-2 flex flex-wrap">
+                                    ${photo.tags.map(tag => 
+                                        `<span class="tag bg-purple-600 text-white text-xs px-2 py-1 rounded-full">${tag}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    photoCard.addEventListener('click', () => showPhotoDetail(photo.id));
+                    photoGrid.appendChild(photoCard);
+                });
+                
+                filterPhotos(); // Apply any existing filters
+            }
+
+            function showPhotoDetail(id) {
+                const photo = photos.find(p => p.id === id);
+                if (!photo) return;
+                
+                currentPhotoId = id;
+                document.getElementById('detail-title').textContent = photo.name;
+                document.getElementById('detail-image').src = photo.image;
+                document.getElementById('detail-name').textContent = photo.name;
+                document.getElementById('detail-description').textContent = photo.description || 'No description';
+                document.getElementById('detail-date').textContent = new Date(photo.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                const tagsContainer = document.getElementById('detail-tags');
+                tagsContainer.innerHTML = '';
+                photo.tags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.className = 'bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded-full';
+                    tagElement.textContent = tag;
+                    tagsContainer.appendChild(tagElement);
+                });
+                
+                detailModal.classList.remove('hidden');
+            }
+
+            function updateEmptyState() {
+                if (photos.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    photoGrid.classList.add('hidden');
+                } else {
+                    emptyState.classList.add('hidden');
+                    photoGrid.classList.remove('hidden');
+                }
+            }
+
+            function filterPhotos() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const sortBy = sortBySelect.value;
+                const filterTag = filterTagSelect.value;
+                
+                let filteredPhotos = photos.filter(photo => {
+                    const matchesSearch = photo.name.toLowerCase().includes(searchTerm) || 
+                                         photo.description.toLowerCase().includes(searchTerm) ||
+                                         photo.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+                    
+                    const matchesTag = filterTag === 'all' || photo.tags.includes(filterTag);
+                    
+                    return matchesSearch && matchesTag;
+                });
+                
+                // Sorting
+                switch(sortBy) {
+                    case 'newest':
+                        filteredPhotos.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        break;
+                    case 'oldest':
+                        filteredPhotos.sort((a, b) => new Date(a.date) - new Date(b.date));
+                        break;
+                    case 'name-a':
+                        filteredPhotos.sort((a, b) => a.name.localeCompare(b.name));
+                        break;
+                    case 'name-z':
+                        filteredPhotos.sort((a, b) => b.name.localeCompare(a.name));
+                        break;
+                }
+                
+                // Update UI
+                const photoCards = photoGrid.querySelectorAll('.grid-item');
+                photoCards.forEach(card => {
+                    const photoId = card.dataset.id;
+                    const shouldShow = filteredPhotos.some(p => p.id === photoId);
+                    card.style.display = shouldShow ? 'block' : 'none';
+                });
+            }
+// Add these functions to handle the new buttons
+function downloadPhoto() {
+    const photo = photos.find(p => p.id === currentPhotoId);
+    if (!photo) return;
+    
+    const link = document.createElement('a');
+    link.href = photo.image;
+    link.download = photo.name + '.jpg'; // or get extension from photo.type
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function showFileLocation() {
+    locationInfo.classList.remove('hidden');
+    // In a real desktop app, you could use Electron or similar to show the file location
+    // But in a browser, we can't access the actual file system path
+    // This is just a placeholder to show why it's not possible
+}
+         // Edit Photo Function
+function editPhoto() {
+    const photo = photos.find(p => p.id === currentPhotoId);
+    if (!photo) return;
+
+    // Populate the upload modal with the photo's data
+    document.getElementById('photo-name').value = photo.name;
+    document.getElementById('photo-description').value = photo.description || '';
+    document.getElementById('photo-tags').value = photo.tags.join(', ');
+
+    // Show the upload modal with a different title
+    document.querySelector('#upload-modal h3').textContent = 'Edit Photo';
+    
+    // Store that we're in edit mode
+    uploadModal.dataset.mode = 'edit';
+    uploadModal.dataset.editId = currentPhotoId;
+    
+    // Hide the drop area since we're editing
+    document.getElementById('drop-area').classList.add('hidden');
+    document.getElementById('preview-area').classList.add('hidden');
+    
+    uploadModal.classList.remove('hidden');
+    detailModal.classList.add('hidden');
+}
+
+// Delete Photo Function
+// Replace the simple confirm with a better looking dialog
+function deletePhoto() {
+    const dialog = document.createElement('div');
+    dialog.className = 'confirmation-dialog';
+    dialog.innerHTML = `
+        <h3 class="text-lg font-medium text-gray-800 mb-2">Delete Photo</h3>
+        <p class="text-gray-600">Are you sure you want to delete this photo? This action cannot be undone.</p>
+        <div class="confirmation-dialog-buttons">
+            <button id="cancel-delete" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium rounded-lg transition">
+                Cancel
+            </button>
+            <button id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                Delete
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    document.getElementById('cancel-delete').addEventListener('click', () => {
+        document.body.removeChild(dialog);
+    });
+    
+    document.getElementById('confirm-delete').addEventListener('click', () => {
+        photos = photos.filter(p => p.id !== currentPhotoId);
+        localStorage.setItem('photos', JSON.stringify(photos));
+        detailModal.classList.add('hidden');
+        document.body.removeChild(dialog);
+        updateUI();
+        updateEmptyState();
+    });
+}
+
+// Update the savePhotos function to handle both add and edit modes
+function savePhotos() {
+    const name = document.getElementById('photo-name').value.trim() || 'Untitled';
+    const description = document.getElementById('photo-description').value.trim();
+    const tags = document.getElementById('photo-tags').value
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+    const isEditMode = uploadModal.dataset.mode === 'edit';
+    const editId = uploadModal.dataset.editId;
+
+    if (isEditMode && editId) {
+        // Update existing photo
+        const photoIndex = photos.findIndex(p => p.id === editId);
+        if (photoIndex !== -1) {
+            photos[photoIndex] = {
+                ...photos[photoIndex],
+                name: name,
+                description: description,
+                tags: tags
+            };
+            localStorage.setItem('photos', JSON.stringify(photos));
+            updateUI();
+        }
+    } else {
+        // Add new photo(s) - existing code
+        selectedFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const newPhoto = {
+                    id: Date.now().toString(),
+                    name: name,
+                    description: description,
+                    tags: tags,
+                    image: e.target.result,
+                    date: new Date().toISOString(),
+                    lastModified: file.lastModified,
+                    size: file.size,
+                    type: file.type,
+                    originalPath: file.webkitRelativePath || file.name
+                };
+                
+                photos.unshift(newPhoto);
+                localStorage.setItem('photos', JSON.stringify(photos));
+                
+                if (selectedFiles.indexOf(file) === selectedFiles.length - 1) {
+                    updateUI();
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Reset and close modal
+    uploadModal.classList.add('hidden');
+    resetForm();
+    updateEmptyState();
+}
+
+// Update resetForm to also reset edit mode
+function resetForm() {
+    document.getElementById('photo-name').value = '';
+    document.getElementById('photo-description').value = '';
+    document.getElementById('photo-tags').value = '';
+    selectedFiles = [];
+    previewArea.classList.add('hidden');
+    fileInput.value = '';
+    document.getElementById('drop-area').classList.remove('hidden');
+    delete uploadModal.dataset.mode;
+    delete uploadModal.dataset.editId;
+    document.querySelector('#upload-modal h3').textContent = 'Add New Photo';
+} 
+            
+        });
+  
+    </script>
+
+</body>
+</html>
