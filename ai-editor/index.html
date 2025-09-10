@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Editor with Gemini AI</title>
+    <title>Code Editor with Manix AI</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.10/codemirror.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.10/theme/dracula.min.css" rel="stylesheet">
@@ -183,7 +183,7 @@
                 <button id="toggleSavedStates" class="btn btn-danger">Save/Projects</button>
                 <button id="newButton" class="btn btn-success">New</button>
                 <button id="fullscreenEditorButton" class="btn btn-secondary">Full-Screen</button>
-                <button id="geminiButton" class="btn ai-button">Gemini AI</button>
+                <button id="geminiButton" class="btn ai-button">Manix AI</button>
             </div>
             <div id="collapsibleSection">
                 <div class="form-group">
@@ -213,15 +213,16 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Gemini AI Code Assistant</h5>
+                <h5 class="modal-title">Manix AI Code Assistant</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="api-key-container">
                     <div class="form-group">
-                        <label for="api-key">Gemini API Key</label>
-                        <input type="password" class="form-control" id="api-key" placeholder="Enter your Gemini API key">
-                        <small class="form-text text-muted">Your API key is stored locally in your browser and only sent to Google's servers.</small>
+                        <label for="api-key">Manix API Key</label>
+                      use this: AIzaSyDYgSxfdlB3w5R87IDRLVKrR1m9Ub5dL4c
+                        <input type="password" class="form-control" id="api-key" placeholder="Enter your Manix API key">
+                        <small class="form-text text-muted">Your API key is stored locally in your browser and only sent to Manix's servers.</small>
                         <div id="api-status" class="api-status"></div>
                     </div>
                     <button id="save-api-key" class="btn btn-primary">Save API Key</button>
@@ -234,7 +235,7 @@
                 </div>
                 
                 <button id="send-to-gemini" class="btn ai-button mt-3">
-                    <span id="gemini-button-text">Send to Gemini</span>
+                    <span id="gemini-button-text">Send to Manix</span>
                     <span id="gemini-spinner" class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display: none;"></span>
                 </button>
                 
@@ -552,13 +553,13 @@
         const prompt = aiPromptInput.value.trim();
         
         if (!apiKey) {
-            apiStatus.textContent = 'Please enter your Gemini API key first.';
+            apiStatus.textContent = 'Please enter your Manix API key first.';
             apiStatus.className = 'api-status status-invalid';
             return;
         }
         
         if (!prompt) {
-            alert('Please enter a prompt for Gemini.');
+            alert('Please enter a prompt for Manix.');
             return;
         }
         
@@ -580,11 +581,11 @@
             applyChangesButton.disabled = false;
         } catch (error) {
             geminiResponse.textContent = `Error: ${error.message}`;
-            console.error('Gemini API error:', error);
+            console.error('Manix API error:', error);
         } finally {
             // Restore button state
             geminiSpinner.style.display = 'none';
-            geminiButtonText.textContent = 'Send to Gemini';
+            geminiButtonText.textContent = 'Send to Manix';
             sendToGeminiButton.disabled = false;
         }
     });
@@ -641,7 +642,7 @@
     async function callGeminiAPI(apiKey, code, prompt) {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
         
-        const fullPrompt = `You are an expert web developer. Please help me modify this HTML code based on the following request: ${prompt}. 
+        const fullPrompt = `You are Manix ai. You are an expert web developer. Please help me modify this HTML code based on the following request: ${prompt}. 
         
 Here is the current code:
 ${code}
@@ -680,11 +681,11 @@ Please return ONLY the complete modified code without any additional explanation
             if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
                 return data.candidates[0].content.parts[0].text;
             } else {
-                throw new Error('Unexpected response format from Gemini API');
+                throw new Error('Unexpected response format from Manix API');
             }
         } catch (error) {
-            console.error('Error calling Gemini API:', error);
-            throw new Error(`Failed to call Gemini API: ${error.message}`);
+            console.error('Error calling Manix API:', error);
+            throw new Error(`Failed to call Manix API: ${error.message}`);
         }
     }
 
