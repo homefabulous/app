@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CiteEasy - Citation Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            color: white;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .input-section, .output-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #2575fc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #6a11cb;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            background: #6a11cb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: #2575fc;
+            transform: translateY(-2px);
+        }
+        
+        .btn-full {
+            width: 100%;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #6a11cb;
+            color: #6a11cb;
+        }
+        
+        .btn-outline:hover {
+            background: #6a11cb;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+        
+        .citation-result {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            min-height: 100px;
+            border-left: 4px solid #2575fc;
+        }
+        
+        .citation-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            position: relative;
+        }
+        
+        .citation-item:last-child {
+            border-bottom: none;
+        }
+        
+        .citation-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .saved-citations {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .citation-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .toast.error {
+            background: #f44336;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+        
+        .citation-meta {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-book"></i> CiteEasy</h1>
+            <p>Generate citations quickly and save them for later use</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title"><i class="fas fa-pen"></i> Generate Citation</h2>
+                
+                <div class="input-group">
+                    <label for="url">Website URL (for auto-fill)</label>
+                    <input type="url" id="url" placeholder="https://example.com">
+                </div>
+                
+                <button id="fetch-btn" class="btn btn-full">
+                    <i class="fas fa-cloud-download-alt"></i> Fetch Website Data
+                </button>
+                
+                <div class="input-group">
+                    <label for="author">Author</label>
+                    <input type="text" id="author" placeholder="Author name">
+                </div>
+                
+                <div class="input-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" placeholder="Title of the work">
+                </div>
+                
+                <div class="input-group">
+                    <label for="website">Website Name</label>
+                    <input type="text" id="website" placeholder="Website name">
+                </div>
+                
+                <div class="input-group">
+                    <label for="date">Publication Date</label>
+                    <input type="date" id="date">
+                </div>
+                
+                <div class="input-group">
+                    <label for="style">Citation Style</label>
+                    <select id="style">
+                        <option value="apa">APA</option>
+                        <option value="mla">MLA</option>
+                        <option value="chicago">Chicago</option>
+                        <option value="harvard">Harvard</option>
+                    </select>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="generate-btn" class="btn">
+                        <i class="fas fa-magic"></i> Generate Citation
+                    </button>
+                    <button id="clear-btn" class="btn btn-outline">
+                        <i class="fas fa-broom"></i> Clear
+                    </button>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h2 class="section-title"><i class="fas fa-file-alt"></i> Your Citation</h2>
+                
+                <div class="citation-result" id="citation-output">
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice"></i>
+                        <p>Your citation will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="copy-btn" class="btn btn-outline">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button id="save-btn" class="btn">
+                        <i class="fas fa-save"></i> Save Citation
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="saved-citations">
+            <h2 class="section-title"><i class="fas fa-save"></i> Saved Citations</h2>
+            
+            <div class="citation-list" id="saved-list">
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No saved citations yet</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>CiteEasy &copy; 2023 - A simple citation generator</p>
+        </footer>
+    </div>
+    
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span>Citation copied to clipboard!</span>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const urlInput = document.getElementById('url');
+            const fetchBtn = document.getElementById('fetch-btn');
+            const authorInput = document.getElementById('author');
+            const titleInput = document.getElementById('title');
+            const websiteInput = document.getElementById('website');
+            const dateInput = document.getElementById('date');
+            const styleSelect = document.getElementById('style');
+            const generateBtn = document.getElementById('generate-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const citationOutput = document.getElementById('citation-output');
+            const copyBtn = document.getElementById('copy-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const savedList = document.getElementById('saved-list');
+            const toast = document.getElementById('toast');
+            
+            let currentCitation = '';
+            
+            // Initialize with sample data for testing
+            function initializeSampleData() {
+                // Check if we already have data
+                const citations = JSON.parse(localStorage.getItem('citations') || '[]');
+                if (citations.length === 0) {
+                    // Add sample citations
+                    const sampleCitations = [
+                        {
+                            text: 'Smith, J. (2023). <i>How to Create Citations</i>. Citation Examples. Retrieved from https://example.com',
+                            date: new Date().toLocaleString(),
+                            style: 'apa'
+                        },
+                        {
+                            text: 'Johnson, A. "<i>The Art of Referencing</i>." <i>Academic Journal</i>, June 15, 2023, https://example.com.',
+                            date: new Date().toLocaleString(),
+                            style: 'mla'
+                        }
+                    ];
+                    localStorage.setItem('citations', JSON.stringify(sampleCitations));
+                }
+            }
+            
+            // Load saved citations
+            function loadSavedCitations() {
+                initializeSampleData(); // Add sample data for testing
+                
+                const citations = JSON.parse(localStorage.getItem('citations') || '[]');
+                
+                if (citations.length === 0) {
+                    savedList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No saved citations yet</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                savedList.innerHTML = '';
+                citations.forEach((citation, index) => {
+                    const citationElement = document.createElement('div');
+                    citationElement.className = 'citation-item';
+                    
+                    // Safely get the style with a fallback
+                    const citationStyle = citation.style || 'apa';
+                    
+                    citationElement.innerHTML = `
+                        <p>${citation.text}</p>
+                        <div class="citation-meta">
+                            <span>Saved on: ${citation.date}</span>
+                            <span>Style: ${citationStyle.toUpperCase()}</span>
+                        </div>
+                        <div class="citation-actions">
+                            <button class="btn btn-sm btn-outline copy-saved-btn" data-index="${index}">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button class="btn btn-sm btn-outline delete-saved-btn" data-index="${index}">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    `;
+                    savedList.appendChild(citationElement);
+                });
+                
+                // Add event listeners to the new buttons
+                document.querySelectorAll('.copy-saved-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = this.getAttribute('data-index');
+                        copySavedCitation(index);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-saved-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = this.getAttribute('data-index');
+                        deleteCitation(index);
+                    });
+                });
+            }
+            
+            // Fetch website data using Microlink API
+            fetchBtn.addEventListener('click', async function() {
+                if (!urlInput.value) {
+                    showToast('Please enter a URL', 'error');
+                    return;
+                }
+                
+                try {
+                    // Show loading state
+                    const originalText = fetchBtn.innerHTML;
+                    fetchBtn.innerHTML = '<div class="loading"></div> Fetching...';
+                    fetchBtn.disabled = true;
+                    
+                    // Use a reliable CORS proxy
+                    const proxyUrl = 'https://api.allorigins.win/raw?url=';
+                    const encodedUrl = encodeURIComponent(`https://api.microlink.io?url=${urlInput.value}`);
+                    
+                    const response = await fetch(proxyUrl + encodedUrl);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        const result = data.data;
+                        authorInput.value = result.author || '';
+                        titleInput.value = result.title || '';
+                        websiteInput.value = result.publisher || '';
+                        
+                        if (result.date) {
+                            dateInput.value = new Date(result.date).toISOString().split('T')[0];
+                        } else {
+                            dateInput.value = '';
+                        }
+                        
+                        showToast('Website data fetched successfully!');
+                    } else {
+                        showToast('Failed to fetch website data. Please try again or enter manually.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error fetching website data. Please enter information manually.', 'error');
+                    
+                    // Try alternative method for Wikipedia URLs
+                    if (urlInput.value.includes('wikipedia.org')) {
+                        try {
+                            await fetchWikipediaData(urlInput.value);
+                        } catch (wikiError) {
+                            console.error('Wikipedia fetch also failed:', wikiError);
+                            // Fill with sample data for demonstration
+                            authorInput.value = "Wikipedia Contributors";
+                            titleInput.value = "Article Title";
+                            websiteInput.value = "Wikipedia";
+                            dateInput.value = new Date().toISOString().split('T')[0];
+                        }
+                    } else {
+                        // Fill with sample data for demonstration
+                        authorInput.value = "Smith, J.";
+                        titleInput.value = "How to Create Citations";
+                        websiteInput.value = "Citation Examples";
+                        dateInput.value = "2023-06-15";
+                    }
+                } finally {
+                    // Restore button state
+                    fetchBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Fetch Website Data';
+                    fetchBtn.disabled = false;
+                }
+            });
+            
+            // Alternative method for Wikipedia data
+            async function fetchWikipediaData(url) {
+                // Extract title from Wikipedia URL
+                const titleMatch = url.match(/\/wiki\/(.+)/);
+                if (!titleMatch) {
+                    throw new Error('Invalid Wikipedia URL');
+                }
+                
+                const title = decodeURIComponent(titleMatch[1].replace(/_/g, ' '));
+                titleInput.value = title;
+                websiteInput.value = "Wikipedia";
+                
+                // Use Wikipedia API to get more data
+                const apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error('Wikipedia API request failed');
+                }
+                
+                const data = await response.json();
+                
+                if (data.extract) {
+                    authorInput.value = "Wikipedia Contributors";
+                }
+                
+                if (data.timestamp) {
+                    dateInput.value = new Date(data.timestamp).toISOString().split('T')[0];
+                }
+                
+                showToast('Wikipedia data fetched successfully!');
+            }
+            
+            // Generate citation
+            generateBtn.addEventListener('click', function() {
+                const author = authorInput.value;
+                const title = titleInput.value;
+                const website = websiteInput.value;
+                const date = dateInput.value;
+                const style = styleSelect.value;
+                
+                if (!author || !title || !website || !date) {
+                    showToast('Please fill in all fields', 'error');
+                    return;
+                }
+                
+                currentCitation = generateCitation(author, title, website, date, style);
+                citationOutput.innerHTML = `<div class="citation-item">${currentCitation}</div>`;
+            });
+            
+            // Clear form
+            clearBtn.addEventListener('click', function() {
+                urlInput.value = '';
+                authorInput.value = '';
+                titleInput.value = '';
+                websiteInput.value = '';
+                dateInput.value = '';
+                citationOutput.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-invoice"></i>
+                        <p>Your citation will appear here</p>
+                    </div>
+                `;
+                currentCitation = '';
+            });
+            
+            // Copy citation
+            copyBtn.addEventListener('click', function() {
+                if (!currentCitation) {
+                    showToast('No citation to copy', 'error');
+                    return;
+                }
+                
+                // Create temporary element to get clean text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = currentCitation;
+                const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+                
+                // Fallback method for copying to clipboard
+                const textArea = document.createElement('textarea');
+                textArea.value = cleanText;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showToast('Citation copied to clipboard!');
+                    } else {
+                        showToast('Failed to copy citation', 'error');
+                    }
+                } catch (err) {
+                    showToast('Failed to copy citation', 'error');
+                    console.error('Error copying text: ', err);
+                }
+                
+                document.body.removeChild(textArea);
+            });
+            
+            // Save citation
+            saveBtn.addEventListener('click', function() {
+                if (!currentCitation) {
+                    showToast('No citation to save', 'error');
+                    return;
+                }
+                
+                const citations = JSON.parse(localStorage.getItem('citations') || '[]');
+                citations.push({
+                    text: currentCitation,
+                    date: new Date().toLocaleString(),
+                    style: styleSelect.value
+                });
+                
+                localStorage.setItem('citations', JSON.stringify(citations));
+                loadSavedCitations();
+                showToast('Citation saved successfully!');
+            });
+            
+            // Generate citation based on style
+            function generateCitation(author, title, website, date, style) {
+                const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const url = urlInput.value || 'website';
+                const year = new Date(date).getFullYear();
+                
+                switch(style) {
+                    case 'apa':
+                        return `${author}. (${year}). <i>${title}</i>. ${website}. Retrieved from ${url}`;
+                    case 'mla':
+                        return `${author}. "<i>${title}</i>." <i>${website}</i>, ${formattedDate}, ${url}.`;
+                    case 'chicago':
+                        return `${author}. "${title}." <i>${website}</i>. Last modified ${formattedDate}. ${url}.`;
+                    case 'harvard':
+                        return `${author} (${year}) <i>${title}</i>. [online] ${website}. Available at: ${url} [Accessed ${new Date().toLocaleDateString()}].`;
+                    default:
+                        return `${author}. (${year}). <i>${title}</i>. ${website}.`;
+                }
+            }
+            
+            // Copy saved citation
+            function copySavedCitation(index) {
+                const citations = JSON.parse(localStorage.getItem('citations') || '[]');
+                const citation = citations[index];
+                
+                // Create temporary element to get clean text
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = citation.text;
+                const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+                
+                // Fallback method for copying to clipboard
+                const textArea = document.createElement('textarea');
+                textArea.value = cleanText;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showToast('Citation copied to clipboard!');
+                    } else {
+                        showToast('Failed to copy citation', 'error');
+                    }
+                } catch (err) {
+                    showToast('Failed to copy citation', 'error');
+                    console.error('Error copying text: ', err);
+                }
+                
+                document.body.removeChild(textArea);
+            }
+            
+            // Delete citation
+            function deleteCitation(index) {
+                const citations = JSON.parse(localStorage.getItem('citations') || '[]');
+                citations.splice(index, 1);
+                localStorage.setItem('citations', JSON.stringify(citations));
+                loadSavedCitations();
+                showToast('Citation deleted');
+            }
+            
+            // Show toast notification
+            function showToast(message, type = 'success') {
+                const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+                toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+                toast.className = type === 'error' ? 'toast error' : 'toast';
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Initialize the application
+            loadSavedCitations();
+        });
+    </script>
+</body>
+</html>
