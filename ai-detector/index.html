@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Text Detector</title>
+    <style>
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; }
+        textarea { width: 100%; height: 200px; margin: 10px 0; padding: 10px; border: 2px solid #ddd; border-radius: 5px; resize: vertical; }
+        button { padding: 12px 30px; font-size: 16px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        .result { margin-top: 30px; padding: 25px; border-radius: 10px; background: #f8f9fa; }
+        .score-display { text-align: center; margin: 20px 0; }
+        
+        .meter-container { width: 100%; height: 40px; background: #e9ecef; border-radius: 20px; overflow: hidden; margin: 20px 0; position: relative; }
+        .meter-fill { height: 100%; background: linear-gradient(90deg, #28a745, #ffc107, #dc3545); transition: width 1.5s ease-in-out; border-radius: 20px; width: 0%; }
+        .meter-labels { display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px; color: #666; }
+        
+        .percentage { font-size: 3em; font-weight: bold; margin: 10px 0; }
+        .human-score { color: #28a745; }
+        .ai-score { color: #dc3545; }
+        .uncertain-score { color: #ffc107; }
+        
+        .breakdown-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .metric { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-value { font-size: 1.5em; font-weight: bold; margin: 5px 0; }
+        .metric-name { font-size: 0.9em; color: #666; }
+        
+        .confidence-level { display: inline-block; padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; margin: 10px 0; }
+        .high-confidence { background: #dc3545; }
+        .medium-confidence { background: #ffc107; }
+        .low-confidence { background: #28a745; }
+        
+        .loading { display: none; text-align: center; margin: 20px 0; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Text Detector</h1>
+        <textarea id="textInput" placeholder="Paste your text here... (Minimum 10 words)"></textarea>
+        <br>
+        <button onclick="analyzeText()" id="analyzeBtn">Analyze Text</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing text patterns...</p>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        class BasicAIDetector {
+            constructor() {
+                this.aiPatterns = [
+            'however, it is important to',
+            'in conclusion, we can see that',
+            'this suggests that the',
+            'furthermore, the results indicate',
+            'additionally, it should be noted',
+            'moreover, it is evident that',
+            'on the other hand, we must consider',
+            'as a result, it becomes clear',
+            'therefore, we can conclude that',
+            'consequently, the data shows',
+            'nevertheless, it is crucial to',
+            'similarly, we observe that',
+            'likewise, the evidence suggests',
+            'thus, it is apparent that',
+            'hence, we can deduce that',
+            'it is worth noting that',
+            'it is important to recognize that',
+            'it should be emphasized that',
+            'it is crucial to understand that',
+            'it is necessary to consider that',
+            'one must take into account that',
+            'it can be observed that',
+            'it is evident from the data that',
+            'the analysis reveals that',
+            'the findings demonstrate that',
+            'the results illustrate that',
+            'the data suggests that',
+            'research indicates that',
+            'studies have shown that',
+            'according to the literature',
+            'as an ai language model',
+            'as a large language model',
+            'i am an ai assistant',
+            'i cannot provide opinions',
+            'i do not have personal experiences',
+            'based on my training data',
+            'according to my knowledge base',
+            'my programming prevents me',
+            'i am designed to be helpful',
+            'as a helpful assistant',
+            'i do not have personal beliefs',
+            'i am not capable of feeling',
+            'i exist solely to provide',
+            'in summary, the key findings',
+            'to summarize the main points',
+            'in essence, the research demonstrates',
+            'ultimately, the evidence points to',
+            'overall, the analysis confirms',
+            'all things considered, it is clear',
+            'taking everything into account',
+            'upon careful consideration',
+            'after thorough analysis',
+            'having examined the evidence',
+            'it may be possible that',
+            'there is a possibility that',
+            'it could be argued that',
+            'one might suggest that',
+            'it seems likely that',
+            'it appears that',
+            'it tends to be that',
+            'in many cases, it is',
+            'typically, one would find that',
+            'generally speaking, the',
+            'first and foremost',
+            'it is important to first',
+            'let us begin by considering',
+            'turning our attention to',
+            'with regard to the issue of',
+            'in terms of the',
+            'when it comes to the',
+            'in the context of',
+            'with respect to the',
+            'regarding the matter of',
+            'this is because',
+            'the reason for this is',
+            'this can be attributed to',
+            'this phenomenon occurs due to',
+            'the underlying cause is',
+            'this is explained by the fact that',
+            'this results from the',
+            'this stems from the',
+            'this derives from the',
+            'in comparison to',
+            'when compared with',
+            'relative to other',
+            'unlike previous cases',
+            'similar to the way',
+            'in contrast to the',
+            'by contrast, we see that',
+            'whereas earlier examples',
+            'a significant number of',
+            'the majority of cases',
+            'a substantial amount of',
+            'considerable evidence suggests',
+            'numerous studies have',
+            'multiple factors contribute',
+            'various aspects need to be',
+            'several key points emerge',
+            'it might be suggested that',
+            'one could potentially argue',
+            'there appears to be some',
+            'it seems somewhat likely that',
+            'to some extent, this',
+            'in certain circumstances',
+            'under specific conditions',
+            'depending on the context',
+            'the challenge lies in',
+            'the main obstacle is',
+            'the primary difficulty involves',
+            'to address this issue',
+            'to overcome this challenge',
+            'the solution involves',
+            'one approach would be to',
+            'a potential strategy is',
+            'can be defined as',
+            'refers to the',
+            'is characterized by',
+            'is typically described as',
+            'essentially means that',
+            'involves the process of',
+            'consists of the following',
+            'over time, it has become',
+            'historically, this has been',
+            'in recent years, there has been',
+            'traditionally, this was',
+            'currently, the situation is',
+            'moving forward, it will be',
+            'in the future, we can expect',
+            'leads to the',
+            'results in the',
+            'gives rise to',
+            'brings about the',
+            'triggers the',
+            'initiates the process of',
+            'sets in motion a series of',
+            'it is particularly important to',
+            'special attention should be paid to',
+            'what is most significant is',
+            'the crucial point is that',
+            'above all, it is essential to',
+            'primarily, the focus should be on',
+            'to a certain extent',
+            'in most instances',
+            'under normal circumstances',
+            'generally accepted as',
+            'widely regarded as',
+            'commonly understood to be',
+            'this section will discuss',
+            'the following paragraphs will',
+            'we will now turn to',
+            'it is helpful to consider',
+            'before proceeding, it is useful to',
+            'having established that',
+            'it is recommended that',
+            'one should consider',
+            'it would be advisable to',
+            'the best course of action is',
+            'a prudent approach would be',
+            'care should be taken to'
+                ];
+            }
+
+            calculateBurstiness(text) {
+                try {
+                    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+                    if (sentences.length < 2) return 50;
+                    
+                    const lengths = sentences.map(s => s.split(/\s+/).filter(word => word.length > 0).length);
+                    const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+                    const variance = lengths.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / lengths.length;
+                    const stdDev = Math.sqrt(variance);
+                    
+                    return Math.min((stdDev / 8) * 100, 100);
+                } catch (error) {
+                    console.error('Burstiness calculation error:', error);
+                    return 50;
+                }
+            }
+
+            checkPatternConsistency(text) {
+                try {
+                    const lowerText = text.toLowerCase();
+                    let patternScore = 0;
+                    this.aiPatterns.forEach(pattern => {
+                        if (lowerText.includes(pattern)) {
+                            patternScore += 15;
+                        }
+                    });
+                    return Math.min(patternScore, 100);
+                } catch (error) {
+                    console.error('Pattern check error:', error);
+                    return 0;
+                }
+            }
+
+            analyzeVocabulary(text) {
+                try {
+                    const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+                    if (words.length < 5) return 50;
+                    
+                    const uniqueWords = new Set(words);
+                    const uniqueRatio = (uniqueWords.size / words.length) * 100;
+                    
+                    return Math.max(0, Math.min(100, 100 - uniqueRatio));
+                } catch (error) {
+                    console.error('Vocabulary analysis error:', error);
+                    return 50;
+                }
+            }
+
+            analyzeSentenceStructure(text) {
+                try {
+                    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+                    if (sentences.length < 2) return 50;
+                    
+                    const lengths = sentences.map(s => s.split(/\s+/).filter(word => word.length > 0).length);
+                    if (lengths.length === 0) return 50;
+                    
+                    const variety = (Math.max(...lengths) - Math.min(...lengths)) / Math.max(...lengths, 1) * 100;
+                    return Math.max(0, Math.min(100, 100 - variety));
+                } catch (error) {
+                    console.error('Sentence structure error:', error);
+                    return 50;
+                }
+            }
+
+            analyze(text) {
+                try {
+                    if (!text || text.trim().length === 0) {
+                        throw new Error('No text provided');
+                    }
+
+                    const wordCount = (text.match(/\b\w+\b/g) || []).length;
+                    if (wordCount < 3) {
+                        throw new Error('Text too short');
+                    }
+
+                    const burstiness = this.calculateBurstiness(text);
+                    const patterns = this.checkPatternConsistency(text);
+                    const vocabulary = this.analyzeVocabulary(text);
+                    const structure = this.analyzeSentenceStructure(text);
+
+                    // Weighted average for final AI probability
+                    const aiProbability = (
+                        (patterns * 0.4) + 
+                        (vocabulary * 0.3) + 
+                        (structure * 0.2) + 
+                        ((100 - burstiness) * 0.1)
+                    );
+
+                    const humanProbability = 100 - aiProbability;
+                    
+                    return {
+                        aiProbability: Math.round(aiProbability),
+                        humanProbability: Math.round(humanProbability),
+                        confidence: this.getConfidence(Math.abs(aiProbability - 50)),
+                        breakdown: {
+                            patternConsistency: Math.round(patterns),
+                            vocabularySimplicity: Math.round(vocabulary),
+                            sentenceUniformity: Math.round(structure),
+                            textBurstiness: Math.round(burstiness)
+                        },
+                        wordCount: wordCount,
+                        message: this.generateMessage(aiProbability, wordCount)
+                    };
+                } catch (error) {
+                    console.error('Analysis error:', error);
+                    return {
+                        error: error.message,
+                        aiProbability: 50,
+                        humanProbability: 50,
+                        confidence: 'low',
+                        breakdown: {},
+                        wordCount: 0,
+                        message: 'Error analyzing text'
+                    };
+                }
+            }
+
+            getConfidence(distanceFrom50) {
+                // Fixed the typo here - was "distanceFromPrice"
+                if (distanceFrom50 > 30) return 'high';
+                if (distanceFrom50 > 15) return 'medium';
+                return 'low';
+            }
+
+            generateMessage(aiProbability, wordCount) {
+                if (wordCount < 10) {
+                    return 'Analysis limited due to short text length';
+                }
+                
+                if (aiProbability > 70) return 'Strong indicators of AI-generated content';
+                if (aiProbability > 60) return 'Likely AI-generated with some human elements';
+                if (aiProbability > 40) return 'Mixed characteristics - uncertain origin';
+                if (aiProbability > 30) return 'Likely human-written with some AI patterns';
+                return 'Strong indicators of human-written content';
+            }
+        }
+
+        function analyzeText() {
+            const text = document.getElementById('textInput').value.trim();
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+
+            // Clear previous results
+            resultDiv.innerHTML = '';
+
+            // Basic validation
+            if (!text) {
+                showError('Please enter some text to analyze');
+                return;
+            }
+
+            const wordCount = (text.match(/\b\w+\b/g) || []).length;
+            if (wordCount < 3) {
+                showError('Please enter at least 3 words for analysis');
+                return;
+            }
+
+            // Show loading, disable button
+            analyzeBtn.disabled = true;
+            loading.style.display = 'block';
+
+            // Use immediate execution instead of timeout for better performance
+            setTimeout(() => {
+                try {
+                    const detector = new BasicAIDetector();
+                    const result = detector.analyze(text);
+                    displayResults(result);
+                } catch (error) {
+                    showError('Analysis failed: ' + error.message);
+                } finally {
+                    // Always re-enable button and hide loading
+                    loading.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                }
+            }, 100); // Short delay for UI responsiveness
+        }
+
+        function displayResults(result) {
+            const resultDiv = document.getElementById('result');
+            
+            if (result.error) {
+                showError(result.error);
+                return;
+            }
+
+            const aiPercentage = result.aiProbability;
+            const humanPercentage = result.humanProbability;
+            
+            // Determine score color
+            let scoreColorClass = 'uncertain-score';
+            if (aiPercentage > 60) scoreColorClass = 'ai-score';
+            if (aiPercentage < 40) scoreColorClass = 'human-score';
+
+            // Determine confidence class
+            const confidenceClass = result.confidence + '-confidence';
+            
+            resultDiv.innerHTML = `
+                <div class="result">
+                    <div class="score-display">
+                        <div class="percentage ${scoreColorClass}">
+                            ${aiPercentage}% AI
+                        </div>
+                        <div class="confidence-level ${confidenceClass}">
+                            ${result.confidence.toUpperCase()} CONFIDENCE
+                        </div>
+                        <p>${result.message}</p>
+                    </div>
+                    
+                    <div class="meter-container">
+                        <div class="meter-fill" id="meterFill" style="width: 0%"></div>
+                    </div>
+                    <div class="meter-labels">
+                        <span>0% (Human)</span>
+                        <span>50% (Uncertain)</span>
+                        <span>100% (AI)</span>
+                    </div>
+                    
+                    <div class="breakdown-grid">
+                        <div class="metric">
+                            <div class="metric-name">Pattern Consistency</div>
+                            <div class="metric-value">${result.breakdown.patternConsistency}%</div>
+                            <small>Higher = more AI-like</small>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-name">Vocabulary Simplicity</div>
+                            <div class="metric-value">${result.breakdown.vocabularySimplicity}%</div>
+                            <small>Higher = more AI-like</small>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-name">Sentence Uniformity</div>
+                            <div class="metric-value">${result.breakdown.sentenceUniformity}%</div>
+                            <small>Higher = more AI-like</small>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-name">Text Burstiness</div>
+                            <div class="metric-value">${result.breakdown.textBurstiness}%</div>
+                            <small>Higher = more human-like</small>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <small><strong>Word Count:</strong> ${result.wordCount} | </small>
+                        <small><strong>Human Probability:</strong> ${humanPercentage}% | </small>
+                        <small><strong>AI Probability:</strong> ${aiPercentage}%</small>
+                    </div>
+                </div>
+            `;
+
+            // Animate the meter fill after a short delay
+            setTimeout(() => {
+                const meterFill = document.getElementById('meterFill');
+                if (meterFill) {
+                    meterFill.style.width = aiPercentage + '%';
+                }
+            }, 100);
+        }
+
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+
+        // Allow Enter key to trigger analysis
+        document.getElementById('textInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                analyzeText();
+            }
+        });
+    </script>
+</body>
+</html>
