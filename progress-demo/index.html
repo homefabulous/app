@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job progress demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #4a6cf7;
+            --color-success: #4ade80;
+            --color-warning: #fbbf24;
+            --color-danger: #f87171;
+            --color-info: #60a5fa;
+            --color-dark: #1e293b;
+            --color-light: #f8fafc;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+        
+        /* Updated kanban container for mobile scrolling */
+        .kanban-container {
+            display: flex;
+            gap: 15px;
+            padding-bottom: 15px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: var(--color-primary) #e2e8f0; /* Firefox */
+        }
+        
+        /* Webkit scrollbar styling */
+        .kanban-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .kanban-container::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        
+        .kanban-container::-webkit-scrollbar-thumb {
+            background: var(--color-primary);
+            border-radius: 4px;
+        }
+        
+        .kanban-container::-webkit-scrollbar-thumb:hover {
+            background: #3a5bd9;
+        }
+        
+        .column {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            min-height: 500px;
+        }
+        
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .column-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .column-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-sm {
+            padding: 5px 8px;
+            font-size: 12px;
+        }
+        
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--color-danger);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--color-success);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .cards-container {
+            flex-grow: 1;
+            min-height: 50px;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #f8fafc;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        
+        .card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        
+        .card-content {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .card-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            background-color: #e2e8f0;
+        }
+        
+        .ghost-card {
+            border: 2px dashed var(--color-primary);
+            background-color: rgba(74, 108, 247, 0.1);
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .modal-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+        
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            background-color: white;
+        }
+        
+        .tag-input {
+            border: none;
+            outline: none;
+            flex-grow: 1;
+            min-width: 100px;
+        }
+        
+        .tag-icon {
+            display: inline-flex;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .tag-icon-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .color-option {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        
+        .color-option.selected {
+            border-color: var(--color-dark);
+        }
+        
+        .tag-preview {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .markdown-preview {
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 5px;
+            background-color: white;
+        }
+        
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            min-width: 150px;
+            z-index: 10;
+            display: none;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 3px;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .no-cards {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+        
+        /* Mobile-specific adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .kanban-container {
+                gap: 10px;
+            }
+            
+            .column {
+                flex: 0 0 280px;
+                min-height: 450px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .column {
+                flex: 0 0 260px;
+                min-height: 400px;
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1><i class="fas fa-tasks"></i> Job manager demo</h1>
+            <button @click="showAddColumnModal = true" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Column
+            </button>
+        </header>
+        
+        <div class="kanban-container">
+            <div v-for="column in columns" :key="column.id" class="column">
+                <div class="column-header">
+                    <div class="column-title">{{ column.title }}</div>
+                    <div class="column-actions">
+                        <button @click="openEditColumnModal(column)" class="btn btn-sm">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <div class="dropdown">
+                            <button @click="toggleDropdown(column.id)" class="btn btn-sm">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu" :class="{show: activeDropdown === column.id}">
+                                <div @click="deleteColumn(column.id)" class="dropdown-item">
+                                    <i class="fas fa-trash"></i> Delete
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="cards-container" 
+                     @dragover.prevent 
+                     @drop="dropCard(column.id)" 
+                     :data-column-id="column.id">
+                    <div v-if="getCardsForColumn(column.id).length === 0" class="no-cards">
+                        No tasks yet
+                    </div>
+                    <div v-for="card in getCardsForColumn(column.id)" 
+                         :key="card.id"
+                         class="card"
+                         draggable="true"
+                         @dragstart="dragCard(card.id)"
+                         @dragend="dragEnd">
+                        <div class="card-title">{{ card.title }}</div>
+                        <div class="card-content markdown-preview" v-html="renderMarkdown(card.content)"></div>
+                        <div class="card-footer">
+                            <div class="card-tags">
+                                <div v-for="tag in card.tags" :key="tag" class="tag" :style="getTagStyle(tag)">
+                                    <i v-if="getTagIcon(tag)" :class="getTagIcon(tag)"></i>
+                                    {{ tag }}
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button @click.stop="openEditCardModal(card)" class="btn btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button @click="openAddCardModal(column.id)" class="btn btn-sm btn-primary" style="margin-top: 10px;">
+                    <i class="fas fa-plus"></i> Add Task
+                </button>
+            </div>
+        </div>
+        
+        <!-- Add/Edit Column Modal -->
+        <div v-if="showAddColumnModal || showEditColumnModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        {{ showAddColumnModal ? 'Add New Column' : 'Edit Column' }}
+                    </div>
+                    <button @click="closeModal" class="modal-close">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Column Title</label>
+                    <input v-model="columnForm.title" class="form-control" type="text">
+                </div>
+                <div class="form-group" style="text-align: right;">
+                    <button @click="closeModal" class="btn">Cancel</button>
+                    <button @click="saveColumn" class="btn btn-primary">
+                        {{ showAddColumnModal ? 'Add Column' : 'Save Changes' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add/Edit Card Modal -->
+        <div v-if="showAddCardModal || showEditCardModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        {{ showAddCardModal ? 'Add New Task' : 'Edit Task' }}
+                    </div>
+                    <button @click="closeModal" class="modal-close">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Task Title</label>
+                    <input v-model="cardForm.title" class="form-control" type="text">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description (Markdown supported)</label>
+                    <textarea v-model="cardForm.content" class="form-control"></textarea>
+                    <div class="markdown-preview" v-html="renderMarkdown(cardForm.content)" v-if="cardForm.content"></div>
+                </div>
+                <div class="form-group" v-if="availableTags.length > 0">
+                    <label class="form-label">Tags</label>
+                    <div class="tags-input">
+                        <span v-for="tag in cardForm.tags" :key="tag" class="tag-preview" :style="getTagStyle(tag)">
+                            <i v-if="getTagIcon(tag)" :class="getTagIcon(tag)"></i>
+                            {{ tag }}
+                            <i @click="removeTag(tag)" class="fas fa-times" style="cursor: pointer;"></i>
+                        </span>
+                        <input 
+                            v-model="newTag" 
+                            @keydown.enter.prevent="addTag" 
+                            @keydown.tab.prevent="addTag" 
+                            class="tag-input" 
+                            placeholder="Add tag...">
+                    </div>
+                    <div v-if="suggestedTags.length > 0">
+                        <small>Click to add: </small>
+                        <span v-for="tag in suggestedTags" 
+                              :key="tag" 
+                              @click="addExistingTag(tag)" 
+                              class="tag-preview" 
+                              :style="getTagStyle(tag)" 
+                              style="cursor: pointer;">
+                            <i v-if="getTagIcon(tag)" :class="getTagIcon(tag)"></i>
+                            {{ tag }}
+                        </span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Add New Tag</label>
+                    <input v-model="newTagLabel" class="form-control" type="text" placeholder="Tag name">
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label class="form-label">Select Icon</label>
+                        <div class="tag-icon-selector">
+                            <div v-for="icon in availableIcons" :key="icon" @click="newTagIcon = icon" 
+                                class="tag-icon" :style="{backgroundColor: newTagColor}" 
+                                :class="{selected: newTagIcon === icon}">
+                                <i :class="icon" style="color: white; font-size: 10px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="form-label">Select Color</label>
+                    <div class="color-palette">
+                        <div v-for="color in availableColors" :key="color" 
+                             @click="newTagColor = color" 
+                             class="color-option" 
+                             :style="{backgroundColor: color}" 
+                             :class="{selected: newTagColor === color}"></div>
+                    </div>
+                    <button @click="createTag" class="btn btn-sm btn-success" style="margin-top: 10px;">
+                        <i class="fas fa-plus"></i> Create Tag
+                    </button>
+                </div>
+                <div class="form-group" style="text-align: right;">
+                    <button @click="closeModal" class="btn">Cancel</button>
+                    <button @click="saveCard" class="btn btn-primary">
+                        {{ showAddCardModal ? 'Add Task' : 'Save Changes' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                // State
+                const columns = ref([
+                    { id: 1, title: 'Plan' },
+                    { id: 2, title: 'In Progress' },
+                    { id: 3, title: 'Waiting inspection' },
+                    { id: 4, title: 'Done' }
+                ]);
+                
+                const cards = ref([
+                    { 
+                        id: 1, 
+                        title: 'Cleaning/pressure washing', 
+                        content: '#### Clean all surfaces including deck, pathways, driveway, and painted surfaces\n- Estimated time: 12 hrs\n- Crew members: robert, chris\n- Time started: not started', 
+                        columnId: 1, 
+                        tags: ['painting', 'high-priority'] 
+                    },
+                    { 
+                        id: 2, 
+                        title: 'Prepping porch ceiling and rails', 
+                        content: '##### Removing ceiling panel, scraping black handrails\n* Estimated time: 3 hrs\n* Crew member: Travis\n* Time started: 10:34 AM', 
+                        columnId: 2, 
+                        tags: ['low-priority'] 
+                    },
+                    { 
+                        id: 3, 
+                       title: 'Front windows', 
+                        content: '##### Painting of painted siding and windows\n* Estimated  time: 12 hrs\n* Time Started: 12:35 AM 9/31\n* Completed: 12:34 AM 10/1\n* Total time: 11 hrs 59 min\n* Crew member inspecting: Frank', 
+                        columnId: 3, 
+                        tags: ['medium-priority']
+                    },
+                    { 
+                        id: 4, 
+                        title: 'Painted siding and windows', 
+                        content: '##### Painting of painted siding and windows\n* Estimated  time: 6 hrs\n* Time Started: 8:30 AM\n* Completed: 1:30 AM\n* Total time: 5 hrs AM\n* Comleted by: Aaron', 
+                      columnId: 4, 
+                        tags: ['high-priority']
+                    }
+                ]);
+                
+                const tags = ref({
+                    'painting': { icon: 'fas fa-paint-brush', color: '#a78bfa' },
+                    'high-priority': { icon: 'fas fa-exclamation-circle', color: '#f87171' },
+                    'backend': { icon: 'fas fa-server', color: '#60a5fa' },
+                    'api': { icon: 'fas fa-code', color: '#38bdf8' },
+                    'documentation': { icon: 'fas fa-book', color: '#34d399' },
+                    'devops': { icon: 'fas fa-cogs', color: '#fbbf24' }
+                });
+                
+                const availableIcons = ref([
+                    'fas fa-bug',
+                    'fas fa-code',
+                    'fas fa-database',
+                    'fas fa-desktop',
+                    'fas fa-file-alt',
+                    'fas fa-mobile-alt',
+                    'fas fa-network-wired',
+                    'fas fa-search',
+                    'fas fa-server',
+                    'fas fa-tasks',
+                    'fas fa-user',
+                    'fas fa-users'
+                ]);
+                
+                const availableColors = ref([
+                    '#4ade80',
+                    '#60a5fa',
+                    '#f87171',
+                    '#fbbf24',
+                    '#a78bfa',
+                    '#38bdf8',
+                    '#34d399',
+                    '#f472b6',
+                    '#f59e0b',
+                    '#10b981'
+                ]);
+                
+                // Forms
+                const columnForm = ref({ id: null, title: '' });
+                const cardForm = ref({ 
+                    id: null, 
+                    title: '', 
+                    content: '', 
+                    columnId: null, 
+                    tags: [] 
+                });
+                
+                const newTag = ref('');
+                const newTagLabel = ref('');
+                const newTagIcon = ref('fas fa-tag');
+                const newTagColor = ref('#60a5fa');
+                
+                // UI state
+                const showAddColumnModal = ref(false);
+                const showEditColumnModal = ref(false);
+                const showAddCardModal = ref(false);
+                const showEditCardModal = ref(false);
+                const activeDropdown = ref(null);
+                const draggedCardId = ref(null);
+                
+                // Computed
+                const availableTags = computed(() => {
+                    return Object.keys(tags.value);
+                });
+                
+                const suggestedTags = computed(() => {
+                    if (!newTag.value) return [];
+                    return availableTags.value.filter(tag => 
+                        tag.toLowerCase().includes(newTag.value.toLowerCase()) && 
+                        !cardForm.value.tags.includes(tag)
+                    );
+                });
+                
+                // Methods
+                function generateId() {
+                    return Date.now();
+                }
+                
+                function getCardsForColumn(columnId) {
+                    return cards.value.filter(card => card.columnId === columnId);
+                }
+                
+                function getTagIcon(tag) {
+                    return tags.value[tag]?.icon || 'fas fa-tag';
+                }
+                
+                function getTagStyle(tag) {
+                    const tagData = tags.value[tag] || {};
+                    return {
+                        backgroundColor: tagData.color || '#e2e8f0',
+                        color: tagData.color ? '#ffffff' : '#1e293b'
+                    };
+                }
+                
+                function renderMarkdown(text) {
+                    return marked.parse(text || '');
+                }
+                
+                function toggleDropdown(columnId) {
+                    activeDropdown.value = activeDropdown.value === columnId ? null : columnId;
+                }
+                
+                function closeModal() {
+                    showAddColumnModal.value = false;
+                    showEditColumnModal.value = false;
+                    showAddCardModal.value = false;
+                    showEditCardModal.value = false;
+                    columnForm.value = { id: null, title: '' };
+                    cardForm.value = { id: null, title: '', content: '', columnId: null, tags: [] };
+                    newTag.value = '';
+                }
+                
+                function openAddColumnModal() {
+                    columnForm.value = { id: null, title: '' };
+                    showAddColumnModal.value = true;
+                }
+                
+                function openEditColumnModal(column) {
+                    columnForm.value = { ...column };
+                    showEditColumnModal.value = true;
+                }
+                
+                function saveColumn() {
+                    if (!columnForm.value.title) return;
+                    
+                    if (showAddColumnModal.value) {
+                        columns.value.push({
+                            id: generateId(),
+                            title: columnForm.value.title
+                        });
+                    } else {
+                        const index = columns.value.findIndex(c => c.id === columnForm.value.id);
+                        if (index !== -1) {
+                            columns.value[index].title = columnForm.value.title;
+                        }
+                    }
+                    
+                    closeModal();
+                }
+                
+                function deleteColumn(columnId) {
+                    // Move all cards from this column to the first available column
+                    const firstColumnId = columns.value[0].id;
+                    if (columns.value.length > 1 && columnId !== firstColumnId) {
+                        cards.value.forEach(card => {
+                            if (card.columnId === columnId) {
+                                card.columnId = firstColumnId;
+                            }
+                        });
+                    } else {
+                        // Just delete the cards if this is the last column
+                        cards.value = cards.value.filter(card => card.columnId !== columnId);
+                    }
+                    
+                    columns.value = columns.value.filter(column => column.id !== columnId);
+                    activeDropdown.value = null;
+                }
+                
+                function openAddCardModal(columnId) {
+                    cardForm.value = { id: null, title: '', content: '', columnId, tags: [] };
+                    showAddCardModal.value = true;
+                }
+                
+                function openEditCardModal(card) {
+                    cardForm.value = { ...card };
+                    showEditCardModal.value = true;
+                }
+                
+                function saveCard() {
+                    if (!cardForm.value.title) return;
+                    
+                    if (showAddCardModal.value) {
+                        cards.value.push({
+                            id: generateId(),
+                            title: cardForm.value.title,
+                            content: cardForm.value.content,
+                            columnId: cardForm.value.columnId,
+                            tags: [...cardForm.value.tags]
+                        });
+                    } else {
+                        const index = cards.value.findIndex(c => c.id === cardForm.value.id);
+                        if (index !== -1) {
+                            cards.value[index] = { ...cardForm.value };
+                        }
+                    }
+                    
+                    closeModal();
+                }
+                
+                function removeTag(tag) {
+                    cardForm.value.tags = cardForm.value.tags.filter(t => t !== tag);
+                }
+                
+                function addTag() {
+                    if (!newTag.value.trim()) return;
+                    
+                    const tag = newTag.value.trim();
+                    if (!cardForm.value.tags.includes(tag)) {
+                        cardForm.value.tags.push(tag);
+                    }
+                    
+                    newTag.value = '';
+                }
+                
+                function addExistingTag(tag) {
+                    if (!cardForm.value.tags.includes(tag)) {
+                        cardForm.value.tags.push(tag);
+                    }
+                    newTag.value = '';
+                }
+                
+                function createTag() {
+                    if (!newTagLabel.value.trim()) return;
+                    
+                    const tag = newTagLabel.value.trim().toLowerCase().replace(/\s+/g, '-');
+                    if (!tags.value[tag]) {
+                        tags.value[tag] = {
+                            icon: newTagIcon.value,
+                            color: newTagColor.value
+                        };
+                        
+                        if (!cardForm.value.tags.includes(tag)) {
+                            cardForm.value.tags.push(tag);
+                        }
+                        
+                        newTagLabel.value = '';
+                        newTagIcon.value = 'fas fa-tag';
+                        newTagColor.value = '#60a5fa';
+                    }
+                }
+                
+                function dragCard(cardId) {
+                    draggedCardId.value = cardId;
+                }
+                
+                function dragEnd() {
+                    draggedCardId.value = null;
+                }
+                
+                function dropCard(columnId) {
+                    if (!draggedCardId.value) return;
+                    
+                    const card = cards.value.find(c => c.id === draggedCardId.value);
+                    if (card) {
+                        card.columnId = columnId;
+                    }
+                    
+                    // Force Vue to update the UI
+                    cards.value = [...cards.value];
+                }
+                
+                // Initialize SortableJS on each column
+                onMounted(() => {
+                    setTimeout(() => {
+                        const columns = document.querySelectorAll('.cards-container');
+                        columns.forEach(columnEl => {
+                            new Sortable(columnEl, {
+                                group: 'kanban',
+                                animation: 150,
+                                ghostClass: 'ghost-card',
+                                onEnd: (evt) => {
+                                    const cardId = parseInt(evt.item.getAttribute('data-id'));
+                                    const newColumnId = parseInt(evt.to.getAttribute('data-column-id'));
+                                    
+                                    const card = cards.value.find(c => c.id === cardId);
+                                    if (card) {
+                                        card.columnId = newColumnId;
+                                    }
+                                }
+                            });
+                        });
+                    }, 500);
+                });
+                
+                return {
+                    columns,
+                    cards,
+                    columnForm,
+                    cardForm,
+                    newTag,
+                    newTagLabel,
+                    newTagIcon,
+                    newTagColor,
+                    availableTags,
+                    suggestedTags,
+                    availableIcons,
+                    availableColors,
+                    showAddColumnModal,
+                    showEditColumnModal,
+                    showAddCardModal,
+                    showEditCardModal,
+                    activeDropdown,
+                    getCardsForColumn,
+                    getTagIcon,
+                    getTagStyle,
+                    renderMarkdown,
+                    toggleDropdown,
+                    closeModal,
+                    openAddColumnModal,
+                    openEditColumnModal,
+                    saveColumn,
+                    deleteColumn,
+                    openAddCardModal,
+                    openEditCardModal,
+                    saveCard,
+                    removeTag,
+                    addTag,
+                    addExistingTag,
+                    createTag,
+                    dragCard,
+                    dragEnd,
+                    dropCard
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
