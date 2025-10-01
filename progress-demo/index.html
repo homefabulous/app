@@ -443,10 +443,14 @@
         <header>
             <h1><i class="fas fa-tasks"></i> Job manager demo</h1>
             <button @click="showAddColumnModal = true" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add Column
+                <i class="fas fa-plus"></i> Open budget tracker
             </button>
         </header>
-        
+      <center>Burn down
+      <br>
+        <h3>Man hour target: <p style="color: green;">97 hrs</p> Man hours remaining: <p style="color: red;">97 hrs</p> Progress: <p style="color: blue;">0% complete</p></h3>
+      Man hour cushion: 30 hours (none used)</center>
+      <br>
         <div class="kanban-container">
             <div v-for="column in columns" :key="column.id" class="column">
                 <div class="column-header">
@@ -508,19 +512,36 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <div class="modal-title">
-                        {{ showAddColumnModal ? 'Add New Column' : 'Edit Column' }}
+                    Real time budget tracker
                     </div>
                     <button @click="closeModal" class="modal-close">&times;</button>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Column Title</label>
-                    <input v-model="columnForm.title" class="form-control" type="text">
+                    <label class="form-label"></label>
+                    <h3>Total job price: $13,600.00
+                      <br>
+                      <hr>
+                      <br>
+                      Current payroll:
+                      <br>
+                      <hr>
+                      <br>
+                      Material cost:
+                      <br>
+                      <hr>
+                      <br>
+                      Misc expenses:
+                      <br>
+                      <hr>
+                      <br>
+                      Current profit remaining: $13,600.00
+                      <br>
+                      <hr>
+                      <br>
                 </div>
                 <div class="form-group" style="text-align: right;">
-                    <button @click="closeModal" class="btn">Cancel</button>
-                    <button @click="saveColumn" class="btn btn-primary">
-                        {{ showAddColumnModal ? 'Add Column' : 'Save Changes' }}
-                    </button>
+                    <button @click="closeModal" class="btn">Close</button>
+                      
                 </div>
             </div>
         </div>
@@ -613,41 +634,90 @@
             setup() {
                 // State
                 const columns = ref([
-                    { id: 1, title: 'Up coming tasks' },
+                    { id: 1, title: 'Tasks' },
                     { id: 2, title: 'In Progress' },
-                    { id: 3, title: 'Waiting inspection' },
-                    { id: 4, title: 'Done' }
+                    { id: 3, title: 'Waiting review' },
+                    { id: 4, title: 'Completed' }
                 ]);
                 
                 const cards = ref([
                     { 
                         id: 1, 
                         title: 'Cleaning/pressure washing', 
-                        content: '#### Clean all surfaces including deck, pathways, driveway, and painted surfaces\n- Estimated time: 12 hrs\n- Crew members: robert, chris\n- Time started: not started', 
+                        content: '#### Clean all surfaces including deck, pathways, driveway, and painted surfaces\n- Estimated time: 12 man hrs', 
                         columnId: 1, 
-                        tags: ['painting', 'high-priority'] 
+                        tags: ['high-priority'] 
                     },
                     { 
                         id: 2, 
                         title: 'Prepping porch ceiling and rails', 
-                        content: '##### Removing ceiling panel, scraping black handrails\n* Estimated time: 3 hrs\n* Crew member: Travis\n* Time started: 10:34 AM', 
-                        columnId: 2, 
+                        content: '##### Removing ceiling panel, scraping black handrails\n* Estimated time: 4 hrs', 
+                        columnId: 1, 
                         tags: ['low-priority'] 
                     },
-                    { 
+                  { 
+                        id: 2.5, 
+                       title: 'Prepping overall', 
+                        content: '##### Prepping ow windows, doors, siding, etc.\n* Estimated  time: 8 hrs', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
+                  { 
                         id: 3, 
-                       title: 'Front windows', 
-                        content: '##### Painting of painted siding and windows\n* Estimated  time: 12 hrs\n* Time Started: 12:35 AM 9/31\n* Completed: 12:34 AM 10/1\n* Total time: 11 hrs 59 min\n* Crew member inspecting: Frank', 
-                        columnId: 3, 
+                       title: 'Eves on back and sides', 
+                        content: '##### Painting of eves on back and sides\n* Estimated  time: 12 hrs', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
+                  { 
+                        id: 4, 
+                       title: 'Eves on front', 
+                        content: '##### Painting of Eves on front\n* Estimated  time: 16 hrs', 
+                        columnId: 1, 
                         tags: ['medium-priority']
                     },
                     { 
                         id: 4, 
-                        title: 'Painted siding and windows', 
-                        content: '##### Painting of painted siding and windows\n* Estimated  time: 6 hrs\n* Time Started: 8:30 AM\n* Completed: 1:30 AM\n* Total time: 5 hrs AM\n* Completed by: Aaron', 
-                      columnId: 4, 
-                        tags: ['high-priority']
-                    }
+                       title: 'Windows on front', 
+                        content: '##### Painting of Windows on front of house\n* Estimated  time: 15 hrs', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
+                  { 
+                        id: 5, 
+                       title: 'Windows', 
+                        content: '##### Windows on the rest of the house (other than the front and sun room)\n* Estimated  time: 15 hrs', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
+                    { 
+                        id: 6, 
+                        title: 'Painted siding and windows (sun room)', 
+                        content: '##### Painting of painted siding and windows on sun room area (includes above deck)\n* Estimated  time: 12hrs', 
+                      columnId: 1, 
+                        tags: ['low-priority']
+                    },
+                  { 
+                        id: 7, 
+                       title: 'Front porch area (including railing)', 
+                        content: '##### Painting of painted siding and windows (sun room)\n* Estimated  time: 6 hrs\n*Note: railing does not need to be 100%, bushes in the way, pull back and just get as much as you can get', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
+                   { 
+                        id: 8, 
+                       title: 'Final touch up', 
+                        content: '##### Final walk around and touch up before ladders, paint, and tools, put away.\n* Estimated  time: 6 hrs', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
+                   { 
+                        id: 9, 
+                       title: 'Job clean up', 
+                        content: '##### Cleaning and removing tools. Picking up of trash, paint chips, plastic, tape, etc. Loading ladders and other equipment\n* Estimated  time: 6 hrs', 
+                        columnId: 1, 
+                        tags: ['medium-priority']
+                    },
                 ]);
                 
                 const tags = ref({
