@@ -448,9 +448,9 @@
         </header>
       <center>Burn down
       <br>
-        <h3>Man hour target: <p style="color: green;">100 hrs</p>Man hours used:<p style="color: gray;">113 hrs</p> Man hours remaining:<p style="color: red;">-13 hrs</p> 
-            Job progress: <p style="color: blue;">62% complete</p></h3>
-      Buffer hours: 30 hours (6 used) 24 remaining</center>
+        <h3>Man hour target: <p style="color: green;">100 hrs</p>Man hours used:<p style="color: gray;">180.5 hrs</p> Man hours remaining:<p style="color: red;">-50.5 hrs</p> 
+            Job progress: <p style="color: blue;">100% complete</p></h3>
+      Buffer hours: 30 hours (30 used) 0 remaining</center>
       <br>
         <div class="kanban-container">
             <div v-for="column in columns" :key="column.id" class="column">
@@ -681,7 +681,7 @@
                         id: 4, 
                        title: 'Eaves on front', 
                         content: '##### Painting of Eves on front\n* Estimated man hours: 10 \n* Progress weight: 10%', 
-                        columnId: 1, 
+                        columnId: 4, 
                         tags: ['medium-priority']
                     },
                     { 
@@ -702,28 +702,28 @@
                         id: 6, 
                         title: 'Painted siding and windows (sun room)', 
                         content: '##### Painting of painted siding and windows on sun room area (includes above deck)\n* Estimated man hours: 12 \n* Progress weight: 12%', 
-                      columnId: 2, 
+                      columnId: 4, 
                         tags: ['low-priority']
                     },
                   { 
                         id: 7, 
                        title: 'Front porch area (including railing)', 
                         content: '##### Painting of entire front porch area, plus rails\n* Estimated man hours: 5  \n* Progress weight: 5% \n*Note: railing does not need to be 100%, bushes in the way, pull back and just get as much as you can get', 
-                        columnId: 1, 
+                        columnId: 4, 
                         tags: ['medium-priority']
                     },
                    { 
                         id: 8, 
                        title: 'Final touch up', 
                         content: '##### Final walk around and touch up before ladders, paint, and tools, put away.\n* Estimated man hours: 6  \n* Progress weight: 6%', 
-                        columnId: 1, 
+                        columnId: 4, 
                         tags: ['medium-priority']
                     },
                    { 
                         id: 9, 
                        title: 'Job clean up', 
                         content: '##### Cleaning and removing tools. Picking up of trash, paint chips, plastic, tape, etc. Loading ladders and other equipment\n* Estimated man hours: 5  \n* Progress weight: 5%', 
-                        columnId: 1, 
+                        columnId: 4, 
                         tags: ['medium-priority']
                     },
                 ]);
