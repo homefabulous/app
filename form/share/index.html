@@ -382,28 +382,7 @@
         return null;
       }
 
-      // Utility function to check if user is already signed up
-      function checkSignUp() {
-        if (!localStorage.getItem('userEmail') && !getCookie('userFingerprint')) {
-          window.location.href = "signup.html"; // Redirect to signup if not signed up
-        }
-      }
-
-      // Debugging: Log email and fingerprint
-      console.log('User email from localStorage:', localStorage.getItem('userEmail'));
-      console.log('User fingerprint from cookie:', getCookie('userFingerprint'));
-
-      // Check if user is signed up
-      checkSignUp();
-
-      // Get user fingerprint and email
-      const fingerprint = getCookie('userFingerprint');
-      const userEmail = localStorage.getItem('userEmail');
-
-      if (!fingerprint || !userEmail) {
-        console.error("User is not recognized. Redirecting...");
-        window.location.href = "signup.html"; // Redirect if no fingerprint or email is found
-      }
+     
 
       // Store URLs in a predefined list
       const urls = [
