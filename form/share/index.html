@@ -481,59 +481,68 @@
       });
 
       // Generate preview button functionality
-      generateButton.addEventListener('click', function() {
-        const name = document.getElementById('name').value || 'Friend';
-        
-        // Collect all friend emails
-        const friendEmails = [];
-        document.querySelectorAll('#friend-emails input[type="email"]').forEach(input => {
-          if (input.value.trim() !== '') {
-            friendEmails.push(input.value);
-          }
-        });
-
-        const assignedUrl = assignUrl();
-        const personalizedUrl = `${assignedUrl}?name=${encodeURIComponent(name)}&ref=${userId}`;
-        const statsUrl = `${assignedUrl}.stats?ref=${userId}`;
-
-        // Populate the message preview box
-        messagePreview.value = `Hi! ${name} thought you might be interested in this. Check it out!\n\n${personalizedUrl}`;
-
-        // Populate the link-only box
-        linkOnly.value = personalizedUrl;
-
-        // Populate the stats link box
-        statsLink.value = statsUrl;
-
-        // Show the share buttons
-        document.querySelectorAll('.share-button').forEach(button => {
-          button.classList.remove('hidden');
-        });
-
-        // Show the copy buttons
-        copyLinkButton.classList.remove('hidden');
-        copyStatsButton.classList.remove('hidden');
-
-        // Configure the share buttons
-        document.getElementById("sms-button").onclick = () => {
-          window.location.href = `sms:?body=Check out this amazing site: ${personalizedUrl}`;
-        };
-        document.getElementById("mailto-button").onclick = () => {
-          window.location.href = `mailto:?subject=Check out this site&body=Check out this amazing site: ${personalizedUrl}&to=${friendEmails.join(',')}`;
-        };
-        document.getElementById("whatsapp-button").onclick = () => {
-          window.location.href = `https://wa.me/?text=Check out this amazing site: ${personalizedUrl}`;
-        };
-       document.getElementById("facebook-button").onclick = () => {
-  const shareUrl = encodeURIComponent(personalizedUrl);
+generateButton.addEventListener('click', function() {
+  const name = document.getElementById('name').value || 'Friend';
   
-  // Use m.facebook.com for mobile devices
-  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-    window.open(`https://m.facebook.com/sharer.php?u=${encodeURIComponent(personalizedUrl)}`, "_blank");
-  } else {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(personalizedUrl)}`, "_blank");
-  }
-};
+  // Collect all friend emails
+  const friendEmails = [];
+  document.querySelectorAll('#friend-emails input[type="email"]').forEach(input => {
+    if (input.value.trim() !== '') {
+      friendEmails.push(input.value);
+    }
+  });
+
+  const assignedUrl = assignUrl();
+  const personalizedUrl = `${assignedUrl}?name=${encodeURIComponent(name)}&ref=${userId}`;
+  const statsUrl = `${assignedUrl}.stats?ref=${userId}`;
+
+  // Populate the message preview box
+  messagePreview.value = `Hi! ${name} thought you might be interested in this. Check it out!\n\n${personalizedUrl}`;
+
+  // Populate the link-only box
+  linkOnly.value = personalizedUrl;
+
+  // Populate the stats link box
+  statsLink.value = statsUrl;
+
+  // Show the share buttons
+  document.querySelectorAll('.share-button').forEach(button => {
+    button.classList.remove('hidden');
+  });
+
+  // Show the copy buttons
+  copyLinkButton.classList.remove('hidden');
+  copyStatsButton.classList.remove('hidden');
+
+  // Configure the share buttons
+  document.getElementById("sms-button").onclick = () => {
+    window.location.href = `sms:?body=Check out this amazing site: ${personalizedUrl}`;
+  };
+  
+  document.getElementById("mailto-button").onclick = () => {
+    const subject = encodeURIComponent("Check out this site");
+    const body = encodeURIComponent(`Check out this amazing site: ${personalizedUrl}`);
+    
+    // Create mailto link with recipients, subject, and body
+    let mailtoLink = `mailto:${friendEmails.join(',')}?subject=${subject}&body=${body}`;
+    
+    window.location.href = mailtoLink;
+  };
+  
+  document.getElementById("whatsapp-button").onclick = () => {
+    window.location.href = `https://wa.me/?text=Check out this amazing site: ${personalizedUrl}`;
+  };
+  
+  document.getElementById("facebook-button").onclick = () => {
+    const shareUrl = encodeURIComponent(personalizedUrl);
+    
+    // Use m.facebook.com for mobile devices
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.open(`https://m.facebook.com/sharer.php?u=${shareUrl}`, "_blank");
+    } else {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`, "_blank");
+    }
+  };
 });
 
       // Stats button functionality
