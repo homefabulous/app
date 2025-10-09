@@ -286,7 +286,6 @@
   <div class="container">
     <h2>
       Refer friends and get $100 digital gift card! plus another one for your friend!
-     
     </h2>
     
     <form id="share-form">
@@ -364,7 +363,6 @@
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const generateButton = document.getElementById('generate-button');
-      const shareButtons = document.getElementById('share-buttons');
       const messagePreview = document.getElementById('message-preview');
       const linkOnly = document.getElementById('link-only');
       const statsLink = document.getElementById('stats-link');
@@ -374,36 +372,17 @@
       const copyStatsButton = document.getElementById('copy-stats-button');
       let friendCount = 1;
 
-      // Utility function to get a cookie
-      function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(";").shift();
-        return null;
-      }
-
-      // Utility function to check if user is already signed up
-      function checkSignUp() {
-        if (!localStorage.getItem('userEmail') && !getCookie('userFingerprint')) {
-          window.location.href = "signup.html"; // Redirect to signup if not signed up
+      // Generate a unique identifier for this user session
+      function generateUserId() {
+        let userId = localStorage.getItem('userId');
+        if (!userId) {
+          userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          localStorage.setItem('userId', userId);
         }
+        return userId;
       }
 
-      // Debugging: Log email and fingerprint
-      console.log('User email from localStorage:', localStorage.getItem('userEmail'));
-      console.log('User fingerprint from cookie:', getCookie('userFingerprint'));
-
-      // Check if user is signed up
-      checkSignUp();
-
-      // Get user fingerprint and email
-      const fingerprint = getCookie('userFingerprint');
-      const userEmail = localStorage.getItem('userEmail');
-
-      if (!fingerprint || !userEmail) {
-        console.error("User is not recognized. Redirecting...");
-        window.location.href = "signup.html"; // Redirect if no fingerprint or email is found
-      }
+      const userId = generateUserId();
 
       // Store URLs in a predefined list
       const urls = [
@@ -429,14 +408,14 @@
         "https://example.com/url10"
       ];
 
-      // Assign URL based on fingerprint (store the URL once assigned)
+      // Assign URL based on user ID (store the URL once assigned)
       function assignUrl() {
-        let assignedUrl = localStorage.getItem(`url_${fingerprint}`);
+        let assignedUrl = localStorage.getItem(`url_${userId}`);
 
         if (!assignedUrl) {
           const randomIndex = Math.floor(Math.random() * urls.length);
           assignedUrl = urls[randomIndex];
-          localStorage.setItem(`url_${fingerprint}`, assignedUrl);
+          localStorage.setItem(`url_${userId}`, assignedUrl);
         }
 
         return assignedUrl;
@@ -514,8 +493,8 @@
         });
 
         const assignedUrl = assignUrl();
-        const personalizedUrl = `${assignedUrl}?name=${encodeURIComponent(name)}`;
-        const statsUrl = `${assignedUrl}.stats`;
+        const personalizedUrl = `${assignedUrl}?name=${encodeURIComponent(name)}&ref=${userId}`;
+        const statsUrl = `${assignedUrl}.stats?ref=${userId}`;
 
         // Populate the message preview box
         messagePreview.value = `Hi! ${name} thought you might be interested in this. Check it out!\n\n${personalizedUrl}`;
@@ -553,7 +532,7 @@
       // Stats button functionality
       document.getElementById("stats-button").addEventListener("click", () => {
         const assignedUrl = assignUrl();
-        window.location.href = `${assignedUrl}.stats`;
+        window.location.href = `${assignedUrl}.stats?ref=${userId}`;
       });
     });
   </script>
