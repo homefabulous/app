@@ -106,15 +106,38 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                  <iframe id="hidden_iframe" name="hidden_iframe"
-    onload='if(submitted) { window.location="/join/success"; }'
-    style="display:none;"></iframe>
+          <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.form-signin');
+    
+    form.addEventListener('submit', function(e) {
+        // Your validation logic
+        const email = document.getElementById('email').value;
+        
+        if (!email.includes('@')) {
+            alert('Please enter a valid email address');
+            e.preventDefault();
+            return false;
+        }
+        
+        // If validation passes, set up redirect
+        document.getElementById('hidden_iframe').addEventListener('load', function() {
+            window.location.href = "/share";
+        });
+        
+        return true;
+    });
+});
+</script>
 
-  <form class="form-signin" 
-        action="https://docs.google.com/forms/d/1etAVUOSragnQrPaTUyVeuV72IrBNIsA5ucB1NwpPg3U/formResponse"
-        method="post" 
-        target="hidden_iframe" 
-        onsubmit="return validateEmail(event);">
+<iframe id="hidden_iframe" name="hidden_iframe" style="display:none;"></iframe>
+
+<form class="form-signin" 
+      action="https://docs.google.com/forms/d/1etAVUOSragnQrPaTUyVeuV72IrBNIsA5ucB1NwpPg3U/formResponse"
+      method="post" 
+      target="hidden_iframe">
+    <!-- your form fields -->
+
                     
     <label for="name" class="sr-only"></label>
     <input type="text" class="form-control" id="name" placeholder="Name" name="entry.678604361" required>
@@ -130,6 +153,7 @@
     <br>
     <button class="btn btn-lg btn-outline-success btn-block" type="submit">CLAIM IT!</button>
     <br>
+                  </form>
                     <div class="text-center mt-4">
                         <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
                     </div>
