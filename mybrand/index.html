@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Brand Clipboard</title>
+
+<link rel="stylesheet"
+ href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"/>
+
+<style>
+html, body { height:100%; }
+body { background:#f4f6f8; }
+#elements {
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+.card.draggable {
+  cursor: grab;
+  user-select: none;
+}
+.preview-img {
+  max-height:120px;
+  max-width:100%;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container-fluid h-100 p-3">
+  <div class="row h-100">
+
+    <!-- MAIN -->
+    <div class="col-lg-7 d-flex flex-column">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="mb-0">Brand Clipboard</h4>
+        <button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#elementModal">
+          + Add Element
+        </button>
+      </div>
+
+      <!-- BRAND CONTROLS -->
+      <div class="card mb-2">
+        <div class="card-body p-2">
+          <div class="input-group mb-2">
+            <select id="brandSelect" class="form-control"></select>
+            <div class="input-group-append">
+              <button id="renameBrand" class="btn btn-outline-secondary">Edit</button>
+              <button id="deleteBrand" class="btn btn-outline-danger">Delete</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <input id="newBrand" class="form-control" placeholder="New brand name">
+            <div class="input-group-append">
+              <button id="addBrand" class="btn btn-success">Add Brand</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ELEMENT LIST -->
+      <div id="elements"></div>
+    </div>
+
+    <!-- INFO -->
+    <div class="col-lg-5">
+      <h5>How This Works</h5>
+      <ul>
+        <li>Manage brand info once</li>
+        <li>Drag blocks into other websites</li>
+        <li>Edit everything later</li>
+      </ul>
+      <div class="alert alert-info">
+        Drag works across tabs and split screen.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal fade" id="elementModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <form id="elementForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Add Element</h5>
+          <button class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="editId">
+
+          <input id="label" class="form-control mb-2" placeholder="Label" required>
+
+          <select id="type" class="form-control mb-2">
+            <option value="text">Text</option>
+            <option value="color">Color</option>
+            <option value="image">Image / Logo</option>
+          </select>
+
+          <textarea id="value" class="form-control mb-2" placeholder="Value"></textarea>
+          <input id="file" type="file" class="form-control mb-2 d-none" accept="image/*">
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* ========= IndexedDB ========= */
+const DB="brandClipboard";
+const STORES=["brands","elements"];
+
+function openDB(){
+  return new Promise(res=>{
+    const r=indexedDB.open(DB,1);
+    r.onupgradeneeded=e=>{
+      const db=e.target.result;
+      STORES.forEach(s=>db.createObjectStore(s,{keyPath:"id"}));
+    };
+    r.onsuccess=()=>res(r.result);
+  });
+}
+async function store(name,mode){
+  const db=await openDB();
+  return db.transaction(name,mode).objectStore(name);
+}
+
+/* ========= State ========= */
+let currentBrand=null;
+
+/* ========= Brands ========= */
+async function loadBrands(){
+  const s=await store("brands","readonly");
+  s.getAll().onsuccess=e=>{
+    brandSelect.innerHTML="";
+    e.target.result.forEach(b=>{
+      brandSelect.add(new Option(b.name,b.id));
+    });
+    if(e.target.result.length){
+      currentBrand=brandSelect.value;
+      renderElements();
+    }
+  };
+}
+
+addBrand.onclick=async()=>{
+  if(!newBrand.value) return;
+  const s=await store("brands","readwrite");
+  s.put({id:crypto.randomUUID(),name:newBrand.value});
+  newBrand.value="";
+  loadBrands();
+};
+
+renameBrand.onclick=async()=>{
+  const name=prompt("Rename brand:",brandSelect.selectedOptions[0].text);
+  if(!name) return;
+  const s=await store("brands","readwrite");
+  s.put({id:currentBrand,name});
+  loadBrands();
+};
+
+deleteBrand.onclick=async()=>{
+  if(!confirm("Delete brand and all elements?")) return;
+  const bs=await store("brands","readwrite");
+  const es=await store("elements","readwrite");
+  bs.delete(currentBrand);
+  es.getAll().onsuccess=e=>{
+    e.target.result.filter(x=>x.brand===currentBrand)
+      .forEach(x=>es.delete(x.id));
+  };
+  loadBrands();
+};
+
+brandSelect.onchange=e=>{
+  currentBrand=e.target.value;
+  renderElements();
+};
+
+/* ========= Modal Logic ========= */
+type.onchange=()=>{
+  file.classList.toggle("d-none",type.value!=="image");
+  value.classList.toggle("d-none",type.value==="image");
+};
+
+$('#elementModal').on('hidden.bs.modal', ()=>{
+  elementForm.reset();
+  editId.value="";
+  modalTitle.textContent="Add Element";
+  file.classList.add("d-none");
+});
+
+/* ========= Save Element ========= */
+elementForm.onsubmit=async e=>{
+  e.preventDefault();
+
+  const el={
+    id: editId.value || crypto.randomUUID(),
+    brand: currentBrand,
+    label: label.value,
+    type: type.value,
+    value: value.value,
+    blob: null
+  };
+
+  if(type.value==="image" && file.files[0]){
+    el.blob=file.files[0];
+  }
+
+  const s=await store("elements","readwrite");
+  s.put(el);
+
+  $('#elementModal').modal('hide');
+  renderElements();
+};
+
+/* ========= Render ========= */
+async function renderElements(){
+  elements.innerHTML="";
+  const s=await store("elements","readonly");
+  s.getAll().onsuccess=e=>{
+    e.target.result
+      .filter(x=>x.brand===currentBrand)
+      .forEach(drawCard);
+  };
+}
+
+function drawCard(el){
+  const c=document.createElement("div");
+  c.className="card mb-2 draggable";
+  c.draggable=true;
+
+  let body=`<strong>${el.label}</strong>
+    <span class="badge badge-secondary ml-1">${el.type}</span>`;
+
+  if(el.type==="image"){
+    const url=URL.createObjectURL(el.blob);
+    body+=`<img src="${url}" class="preview-img mt-1">`;
+  }else{
+    body+=`<div class="mt-1">${el.value}</div>`;
+  }
+
+  c.innerHTML=`<div class="card-body p-2">
+    ${body}
+    <div class="mt-2">
+      <button class="btn btn-sm btn-outline-primary mr-1">Edit</button>
+      <button class="btn btn-sm btn-outline-danger">Delete</button>
+    </div>
+  </div>`;
+
+  /* Drag */
+  c.ondragstart=e=>{
+    if(el.type==="image"){
+      e.dataTransfer.items.add(
+        new File([el.blob],"image.png",{type:el.blob.type})
+      );
+    }else{
+      e.dataTransfer.setData("text/plain",el.value);
+      e.dataTransfer.setData("text/html",`<p>${el.value}</p>`);
+    }
+  };
+
+  /* Edit */
+  c.querySelector(".btn-outline-primary").onclick=()=>{
+    editId.value=el.id;
+    label.value=el.label;
+    type.value=el.type;
+    value.value=el.value||"";
+    modalTitle.textContent="Edit Element";
+    type.onchange();
+    $('#elementModal').modal('show');
+  };
+
+  /* Delete */
+  c.querySelector(".btn-outline-danger").onclick=async()=>{
+    const s=await store("elements","readwrite");
+    s.delete(el.id);
+    renderElements();
+  };
+
+  /* Copy */
+  c.ondblclick=()=>{
+    if(el.value) navigator.clipboard.writeText(el.value);
+  };
+
+  elements.appendChild(c);
+}
+
+/* INIT */
+(async()=>{
+  const s=await store("brands","readonly");
+  s.getAll().onsuccess=e=>{
+    if(!e.target.result.length){
+      store("brands","readwrite")
+        .then(x=>x.put({id:crypto.randomUUID(),name:"Default Brand"}))
+        .then(loadBrands);
+    } else loadBrands();
+  };
+})();
+</script>
+
+</body>
+</html>
